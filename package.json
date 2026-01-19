@@ -1,0 +1,21 @@
+{
+  "name": "pontoview-system",
+  "version": "1.0.0",
+  "description": "Sistema completo de gerenciamento de painéis",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js",
+    "dev": "nodemon backend/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "sqlite3": "^5.1.6",
+    "stripe": "^14.0.0",
+    "dotenv": "^16.0.3",
+    "express-session": "^1.17.3",
+    "body-parser": "^1.20.2"
+  }
+}
