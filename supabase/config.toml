@@ -1,0 +1,20 @@
+project_id = "pontoview-backend"
+
+[functions.content-resolver]
+verify_jwt = true
+[functions.drive-oauth-start]
+verify_jwt = true
+[functions.drive-oauth-callback]
+verify_jwt = false
+[functions.drive-files]
+verify_jwt = true
+[functions.drive-media]
+verify_jwt = false
+[functions.screens-weather]
+verify_jwt = false
+[functions.screens-news]
+verify_jwt = false
+[functions.screens-billing]
+verify_jwt = true
+[functions.screens-mercadopago-webhook]
+verify_jwt = false
