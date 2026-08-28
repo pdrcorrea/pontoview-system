@@ -5,7 +5,8 @@ Este frontend é um SPA React + Vite localizado em `frontend/`.
 ## Configuração recomendada no Cloudflare Pages
 
 - Repositório: `pdrcorrea/pontoview-system`
-- Branch de produção atual: `feat/pontoview-screens-foundation`
+- Branch de preview: `feat/pontoview-screens-foundation`
+- Branch de produção: `main` somente após a validação comercial
 - Diretório raiz (Root directory): `frontend`
 - Framework preset: `Vite` (ou `None`, caso prefira preencher manualmente)
 - Comando de build: `npm run build`
@@ -16,9 +17,9 @@ Este frontend é um SPA React + Vite localizado em `frontend/`.
 O frontend já aceita as seguintes variáveis quando o Supabase for conectado:
 
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Elas não precisam ser cadastradas enquanto o backend ainda estiver em modo demonstrativo.
+Essas são chaves públicas. Segredos do Google Drive e Mercado Pago ficam exclusivamente no Supabase.
 
 ## Rotas SPA
 
