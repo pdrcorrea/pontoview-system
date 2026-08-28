@@ -7,6 +7,8 @@ import {
 } from "react";
 import {
   Copy,
+  ChevronLeft,
+  ChevronRight,
   GripVertical,
   ListVideo,
   Play,
@@ -47,6 +49,7 @@ export function PlaylistsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const load = useCallback(async () => {
     if (!organization) return;
     const [p, m] = await Promise.all([
@@ -410,6 +413,13 @@ export function PlaylistsPage() {
               >
                 Cancelar
               </button>
+              <button
+                className="btn secondary"
+                disabled={!editorItems.length}
+                onClick={() => setPreviewIndex(0)}
+              >
+                <Play /> Pré-visualizar
+              </button>
               <AsyncButton
                 busy={busy}
                 className="btn primary"
@@ -422,6 +432,89 @@ export function PlaylistsPage() {
           </div>
         </Modal>
       )}
+      {previewIndex !== null && editorItems[previewIndex] && (
+        <Modal
+          eyebrow="PRÉ-VISUALIZAÇÃO"
+          title={editing?.name || "Playlist"}
+          onClose={() => setPreviewIndex(null)}
+        >
+          <div className="playlist-preview-stage">
+            <MediaPreview
+              item={media.find(
+                (entry) => entry.id === editorItems[previewIndex].mediaId,
+              )}
+              name={editorItems[previewIndex].name}
+            />
+          </div>
+          <div className="preview-controls">
+            <button
+              className="btn secondary"
+              disabled={previewIndex === 0}
+              onClick={() =>
+                setPreviewIndex((value) => Math.max(0, (value || 0) - 1))
+              }
+            >
+              <ChevronLeft /> Anterior
+            </button>
+            <span>
+              {previewIndex + 1} de {editorItems.length}
+            </span>
+            <button
+              className="btn secondary"
+              disabled={previewIndex === editorItems.length - 1}
+              onClick={() =>
+                setPreviewIndex((value) =>
+                  Math.min(editorItems.length - 1, (value || 0) + 1),
+                )
+              }
+            >
+              Próximo <ChevronRight />
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
+  );
+}
+
+function MediaPreview({ item, name }: { item?: Media; name: string }) {
+  if (!item)
+    return (
+      <div className="preview-fallback">
+        <Play />
+        <b>{name}</b>
+      </div>
+    );
+  if (item.type === "youtube" && item.youtube_video_id)
+    return (
+      <iframe
+        title={name}
+        src={`https://www.youtube.com/embed/${item.youtube_video_id}?autoplay=0&controls=1`}
+        allow="encrypted-media; picture-in-picture"
+      />
+    );
+  if (item.type === "webpage" && item.page_url)
+    return (
+      <iframe
+        title={name}
+        src={item.page_url}
+        sandbox="allow-scripts allow-same-origin allow-forms"
+      />
+    );
+  if (item.thumbnail_url)
+    return <img src={item.thumbnail_url} alt={`Prévia de ${name}`} />;
+  if (item.type === "message")
+    return (
+      <div className="preview-message">
+        <b>{String(item.message_content?.title || name)}</b>
+        <p>{String(item.message_content?.body || "")}</p>
+      </div>
+    );
+  return (
+    <div className="preview-fallback">
+      <Play />
+      <b>{name}</b>
+      <small>{item.type.replace(/_/g, " ")}</small>
+    </div>
   );
 }

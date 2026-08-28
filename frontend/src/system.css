@@ -1022,6 +1022,44 @@
 .groups-section {
   margin-top: 28px;
 }
+.playlist-preview-stage {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #07131f;
+  color: #fff;
+}
+.playlist-preview-stage iframe,
+.playlist-preview-stage img {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: contain;
+}
+.preview-fallback,
+.preview-message {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 40px;
+  text-align: center;
+}
+.preview-message b {
+  font-size: 28px;
+}
+.preview-message p {
+  font-size: 18px;
+  line-height: 1.5;
+}
+.preview-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
 .group-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
