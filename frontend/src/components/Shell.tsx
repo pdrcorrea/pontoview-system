@@ -1,0 +1,130 @@
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  AppWindow,
+  BadgeDollarSign,
+  CalendarClock,
+  CircleHelp,
+  Headphones,
+  LayoutDashboard,
+  ListVideo,
+  LogOut,
+  Menu,
+  Monitor,
+  Settings,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
+
+const primary = [
+  ["/dashboard", "Visão geral", LayoutDashboard],
+  ["/conteudo", "Conteúdo", AppWindow],
+  ["/playlists", "Playlists", ListVideo],
+  ["/programacoes", "Programação", CalendarClock],
+  ["/telas", "Telas", Monitor],
+  ["/apps", "Apps PontoView", Sparkles],
+] as const;
+const account = [
+  ["/conta", "Minha conta", UserRound],
+  ["/financeiro", "Financeiro", BadgeDollarSign],
+  ["/ajuda", "Ajuda", CircleHelp],
+  ["/suporte", "Contato e suporte", Headphones],
+] as const;
+
+export function AppShell() {
+  const { organization, profile, role, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const title =
+    [...primary, ...account].find(([path]) =>
+      location.pathname.startsWith(path),
+    )?.[1] || "PontoView";
+  const initials = (profile?.full_name || profile?.email || "PV")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((x) => x[0])
+    .join("")
+    .toUpperCase();
+  const leave = async () => {
+    await signOut();
+    navigate("/login");
+  };
+  const links = (items: readonly (readonly [string, string, LucideIcon])[]) =>
+    items.map(([to, label, Icon]) => (
+      <NavLink
+        key={to}
+        to={to}
+        onClick={() => setOpen(false)}
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        <Icon size={18} />
+        <span>{label}</span>
+      </NavLink>
+    ));
+  return (
+    <div className="shell">
+      {open && (
+        <button
+          className="sidebar-scrim"
+          aria-label="Fechar menu"
+          onClick={() => setOpen(false)}
+        />
+      )}
+      <aside className={`sidebar ${open ? "open" : ""}`}>
+        <div className="brand">
+          <b>P</b>
+          <span>
+            <strong>PontoView</strong>
+            <small>Screens</small>
+          </span>
+          <button className="mobile-close" onClick={() => setOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="nav-label">Workspace</div>
+        <nav>{links(primary)}</nav>
+        <div className="nav-label account-label">Conta</div>
+        <nav>{links(account)}</nav>
+        <NavLink className="settings" to="/configuracoes">
+          <Settings size={18} />
+          <span>Configurações</span>
+        </NavLink>
+        <div className="org-card">
+          <span className="avatar">{initials}</span>
+          <span>
+            <strong>{organization?.display_name || "Sua empresa"}</strong>
+            <small>{role === "owner" ? "Proprietário" : role}</small>
+          </span>
+          <button className="icon-button" title="Sair" onClick={leave}>
+            <LogOut size={17} />
+          </button>
+        </div>
+      </aside>
+      <main>
+        <header className="topbar">
+          <button className="mobile-menu" onClick={() => setOpen(true)}>
+            <Menu />
+          </button>
+          <div>
+            <small>PontoView Screens</small>
+            <strong>{title}</strong>
+          </div>
+          <div className="top-actions">
+            <span className="system-ok">● Conectado</span>
+            <NavLink className="help-button" to="/ajuda">
+              <CircleHelp size={17} />
+            </NavLink>
+            <span className="top-avatar">{initials}</span>
+          </div>
+        </header>
+        <div className="page">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+}
