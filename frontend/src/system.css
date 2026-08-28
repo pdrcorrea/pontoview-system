@@ -1014,6 +1014,109 @@
   width: 100% !important;
   height: 100% !important;
 }
+.message-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.groups-section {
+  margin-top: 28px;
+}
+.group-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.group-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.group-card > svg {
+  color: #087b76;
+}
+.group-card span {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+}
+.group-card small {
+  color: #6b7f90;
+}
+.media-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.message-card {
+  position: relative;
+  min-height: 220px;
+}
+.message-card .schedule-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.message-card .message-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #e9f7f6;
+  color: #087b76;
+  margin-bottom: 18px;
+}
+.message-card h2 {
+  margin: 0 0 8px;
+}
+.message-card p {
+  color: #53687b;
+  line-height: 1.55;
+  min-height: 48px;
+}
+.message-card > strong {
+  display: block;
+  margin: 18px 0 6px;
+  color: #15344b;
+}
+.message-card > small {
+  color: #6b7f90;
+}
+.screen-picker {
+  border: 1px solid #dce4eb;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.screen-picker legend {
+  font-size: 10px;
+  font-weight: 800;
+  color: #375268;
+  padding: 0 5px;
+}
+.screen-picker legend span {
+  font-weight: 500;
+  color: #7c8f9f;
+}
+.screen-picker label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f7f9fb;
+}
+.screen-picker input {
+  width: auto;
+}
+.screen-picker small {
+  grid-column: 1/-1;
+  color: #6b7f90;
+}
+
 @media (max-width: 900px) {
   .auth-page {
     grid-template-columns: 1fr;

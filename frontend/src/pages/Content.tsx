@@ -49,6 +49,7 @@ export function ContentPage() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState<Media | null>(null);
   const [source, setSource] = useState<Source>("youtube");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +176,37 @@ export function ContentPage() {
       .eq("id", item.id);
     if (result.error) setError(result.error.message);
     else await load();
+  };
+  const saveEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editing) return;
+    setBusy(true);
+    setError(null);
+    const data = formData(event);
+    const payload: Record<string, unknown> = {
+      name: data.name,
+      duration_seconds: data.duration ? Number(data.duration) : null,
+    };
+    if (editing.type === "youtube") {
+      payload.youtube_options = {
+        ...editing.youtube_options,
+        mute: data.mute === "on",
+        controls: data.controls === "on",
+        volume: Number(data.volume || 100),
+        start: Number(data.start || 0),
+        end: data.end ? Number(data.end) : null,
+      };
+    }
+    const result = await supabase
+      .from("media")
+      .update(payload)
+      .eq("id", editing.id);
+    setBusy(false);
+    if (result.error) setError(result.error.message);
+    else {
+      setEditing(null);
+      await load();
+    }
   };
   const connectDrive = async () => {
     setBusy(true);
@@ -310,13 +342,22 @@ export function ContentPage() {
                   )}
                 </small>
               </div>
-              <button
-                className="icon-button danger-hover"
-                title="Remover"
-                onClick={() => void archive(item)}
-              >
-                <Trash2 size={17} />
-              </button>
+              <div className="media-actions">
+                <button
+                  className="icon-button"
+                  title="Editar"
+                  onClick={() => setEditing(item)}
+                >
+                  <MoreHorizontal size={17} />
+                </button>
+                <button
+                  className="icon-button danger-hover"
+                  title="Remover"
+                  onClick={() => void archive(item)}
+                >
+                  <Trash2 size={17} />
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -414,6 +455,101 @@ export function ContentPage() {
               onCancel={() => setModal(false)}
             />
           )}
+        </Modal>
+      )}
+      {editing && (
+        <Modal
+          eyebrow="EDITAR CONTEÚDO"
+          title={editing.name}
+          onClose={() => setEditing(null)}
+        >
+          <form className="youtube-form" onSubmit={saveEdit}>
+            <label>
+              Nome
+              <input name="name" required defaultValue={editing.name} />
+            </label>
+            {editing.type !== "drive_video" && (
+              <label>
+                Duração (segundos)
+                <input
+                  name="duration"
+                  type="number"
+                  min="1"
+                  defaultValue={editing.duration_seconds || ""}
+                  required={editing.type !== "youtube"}
+                />
+              </label>
+            )}
+            {editing.type === "youtube" && (
+              <>
+                <div className="form-row">
+                  <label>
+                    Volume
+                    <input
+                      name="volume"
+                      type="number"
+                      min="0"
+                      max="100"
+                      defaultValue={Number(
+                        editing.youtube_options?.volume ?? 100,
+                      )}
+                    />
+                  </label>
+                  <label>
+                    Início (seg)
+                    <input
+                      name="start"
+                      type="number"
+                      min="0"
+                      defaultValue={Number(editing.youtube_options?.start || 0)}
+                    />
+                  </label>
+                  <label>
+                    Fim (seg)
+                    <input
+                      name="end"
+                      type="number"
+                      min="1"
+                      defaultValue={String(editing.youtube_options?.end || "")}
+                    />
+                  </label>
+                </div>
+                <div className="yt-options">
+                  <label>
+                    <input
+                      name="controls"
+                      type="checkbox"
+                      defaultChecked={Boolean(
+                        editing.youtube_options?.controls,
+                      )}
+                    />{" "}
+                    Mostrar controles
+                  </label>
+                  <label>
+                    <input
+                      name="mute"
+                      type="checkbox"
+                      defaultChecked={Boolean(editing.youtube_options?.mute)}
+                    />{" "}
+                    Iniciar silenciado
+                  </label>
+                </div>
+              </>
+            )}
+            <FormMessage error={error} />
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setEditing(null)}
+              >
+                Cancelar
+              </button>
+              <AsyncButton busy={busy} className="btn primary">
+                Salvar alterações
+              </AsyncButton>
+            </div>
+          </form>
         </Modal>
       )}
     </>

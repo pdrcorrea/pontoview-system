@@ -6,7 +6,8 @@ Sistema multiempresa de mídia indoor com React, Vite, TypeScript e Supabase. O 
 
 - Cadastro, login, logout, recuperação e redefinição de senha com sessão persistente.
 - Criação automática da organização, usuário `owner`, playlist principal e trial.
-- Dashboard real, biblioteca, YouTube, Google Drive, playlists ordenáveis, programação e grupos no modelo de dados.
+- Dashboard real, biblioteca editável, YouTube, Google Drive, playlists ordenáveis, programação por tela ou grupo e grupos gerenciáveis.
+- Mensagens programadas por período, horário, dias da semana e telas selecionadas.
 - Pareamento com código de seis dígitos, token de dispositivo armazenado como hash, heartbeat e telemetria.
 - Player para Drive, YouTube, URL, Apps e comunicados, com cache local do manifesto e de arquivos do Drive.
 - Configuração independente Fullscreen ou Moldura em L.

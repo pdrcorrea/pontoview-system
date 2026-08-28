@@ -20,6 +20,8 @@ import {
   Power,
   Save,
   ShieldCheck,
+  Trash2,
+  Users,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -59,17 +61,25 @@ const defaultSettings: ScreenSettings = {
 };
 
 export function ScreensPage() {
-  const { organization } = useAuth();
+  const { organization, user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [screens, setScreens] = useState<Screen[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [groups, setGroups] = useState<
+    Array<{
+      id: string;
+      name: string;
+      screen_group_members: Array<{ screen_id: string }>;
+    }>
+  >([]);
+  const [groupModal, setGroupModal] = useState(false);
   const [selected, setSelected] = useState<Screen | null>(null);
   const [pairing, setPairing] = useState(params.get("parear") === "1");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
     if (!organization) return;
-    const [s, p] = await Promise.all([
+    const [s, p, g] = await Promise.all([
       supabase
         .from("screens")
         .select(
@@ -83,10 +93,16 @@ export function ScreensPage() {
         .select("*")
         .eq("organization_id", organization.id)
         .order("name"),
+      supabase
+        .from("screen_groups")
+        .select("id,name,screen_group_members(screen_id)")
+        .eq("organization_id", organization.id)
+        .order("name"),
     ]);
     if (s.error) setError(s.error.message);
     else setScreens((s.data || []) as unknown as Screen[]);
     if (p.data) setPlaylists(p.data as Playlist[]);
+    if (g.data) setGroups(g.data as unknown as typeof groups);
   }, [organization]);
   useEffect(() => {
     void load();
@@ -146,6 +162,54 @@ export function ScreensPage() {
       await load();
     }
   };
+  const createGroup = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!organization || !user) return;
+    setBusy(true);
+    setError(null);
+    const data = formData(event);
+    const raw = new FormData(event.currentTarget);
+    const selectedScreens = screens.filter((screen) =>
+      raw.has(`screen_${screen.id}`),
+    );
+    const group = await supabase
+      .from("screen_groups")
+      .insert({
+        organization_id: organization.id,
+        name: data.name,
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
+    let memberError: string | null = null;
+    if (!group.error && selectedScreens.length) {
+      const members = await supabase.from("screen_group_members").insert(
+        selectedScreens.map((screen) => ({
+          organization_id: organization.id,
+          group_id: group.data.id,
+          screen_id: screen.id,
+        })),
+      );
+      if (members.error) {
+        memberError = members.error.message;
+        setError(members.error.message);
+      }
+    } else if (group.error) setError(group.error.message);
+    setBusy(false);
+    if (!group.error && !memberError) {
+      setGroupModal(false);
+      await load();
+    }
+  };
+  const removeGroup = async (group: { id: string; name: string }) => {
+    if (!confirm(`Excluir o grupo “${group.name}”?`)) return;
+    const result = await supabase
+      .from("screen_groups")
+      .delete()
+      .eq("id", group.id);
+    if (result.error) setError(result.error.message);
+    else await load();
+  };
   return (
     <>
       <PageHead
@@ -185,6 +249,44 @@ export function ScreensPage() {
           action="Conectar primeira tela"
           onAction={() => setPairing(true)}
         />
+      )}
+      {!selected && screens.length > 0 && (
+        <section className="groups-section">
+          <div className="panel-title">
+            <div>
+              <h2>Grupos de telas</h2>
+              <p>Use grupos para programar vários Players de uma vez.</p>
+            </div>
+            <button
+              className="btn secondary"
+              onClick={() => setGroupModal(true)}
+            >
+              <Users /> Novo grupo
+            </button>
+          </div>
+          <div className="group-list">
+            {groups.length ? (
+              groups.map((group) => (
+                <article className="panel group-card" key={group.id}>
+                  <Users />
+                  <span>
+                    <b>{group.name}</b>
+                    <small>{group.screen_group_members.length} tela(s)</small>
+                  </span>
+                  <button
+                    className="icon-button danger-hover"
+                    title="Excluir grupo"
+                    onClick={() => void removeGroup(group)}
+                  >
+                    <Trash2 />
+                  </button>
+                </article>
+              ))
+            ) : (
+              <small>Nenhum grupo criado.</small>
+            )}
+          </div>
+        </section>
       )}
       {pairing && (
         <Modal
@@ -234,6 +336,42 @@ export function ScreensPage() {
               </button>
               <AsyncButton busy={busy} className="btn primary">
                 Conectar tela
+              </AsyncButton>
+            </div>
+          </form>
+        </Modal>
+      )}
+      {groupModal && (
+        <Modal
+          eyebrow="GRUPO DE TELAS"
+          title="Novo grupo"
+          onClose={() => setGroupModal(false)}
+        >
+          <form className="youtube-form" onSubmit={createGroup}>
+            <label>
+              Nome do grupo
+              <input name="name" required placeholder="Ex.: Lojas do Centro" />
+            </label>
+            <fieldset className="screen-picker">
+              <legend>Telas do grupo</legend>
+              {screens.map((screen) => (
+                <label key={screen.id}>
+                  <input type="checkbox" name={`screen_${screen.id}`} />
+                  <span>{screen.name}</span>
+                </label>
+              ))}
+            </fieldset>
+            <FormMessage error={error} />
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setGroupModal(false)}
+              >
+                Cancelar
+              </button>
+              <AsyncButton busy={busy} className="btn primary">
+                Criar grupo
               </AsyncButton>
             </div>
           </form>

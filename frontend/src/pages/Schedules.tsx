@@ -25,6 +25,7 @@ type ScheduleRow = {
   schedule_rules: Array<{
     id: string;
     screen_id: string | null;
+    screen_group_id: string | null;
     weekdays: number[];
     start_time: string;
     end_time: string;
@@ -45,16 +46,17 @@ export function SchedulesPage() {
   const [rows, setRows] = useState<ScheduleRow[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [screens, setScreens] = useState<Screen[]>([]);
+  const [groups, setGroups] = useState<Array<{ id: string; name: string }>>([]);
   const [modal, setModal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
     if (!organization) return;
-    const [s, p, d] = await Promise.all([
+    const [s, p, d, g] = await Promise.all([
       supabase
         .from("schedules")
         .select(
-          "id,name,playlist_id,priority,starts_at,ends_at,is_active,timezone,playlists(name),schedule_rules(id,screen_id,weekdays,start_time,end_time)",
+          "id,name,playlist_id,priority,starts_at,ends_at,is_active,timezone,playlists(name),schedule_rules(id,screen_id,screen_group_id,weekdays,start_time,end_time)",
         )
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false }),
@@ -71,11 +73,17 @@ export function SchedulesPage() {
         .eq("organization_id", organization.id)
         .eq("is_active", true)
         .order("name"),
+      supabase
+        .from("screen_groups")
+        .select("id,name")
+        .eq("organization_id", organization.id)
+        .order("name"),
     ]);
     if (s.error) setError(s.error.message);
     else setRows((s.data || []) as unknown as ScheduleRow[]);
     if (p.data) setPlaylists(p.data as Playlist[]);
     if (d.data) setScreens(d.data as Screen[]);
+    if (g.data) setGroups(g.data as Array<{ id: string; name: string }>);
   }, [organization]);
   useEffect(() => {
     void load();
@@ -86,6 +94,7 @@ export function SchedulesPage() {
     setBusy(true);
     setError(null);
     const data = formData(e);
+    const [targetType, targetId] = data.target.split(":", 2);
     const weekdays = weekdayOptions
       .filter(([id]) => new FormData(e.currentTarget).has(`day_${id}`))
       .map(([id]) => Number(id));
@@ -106,21 +115,24 @@ export function SchedulesPage() {
       })
       .select()
       .single();
+    let ruleError: string | null = null;
     if (!schedule.error) {
-      const rule = await supabase
-        .from("schedule_rules")
-        .insert({
-          organization_id: organization.id,
-          schedule_id: schedule.data.id,
-          screen_id: data.screen_id,
-          weekdays: weekdays.length ? weekdays : [0, 1, 2, 3, 4, 5, 6],
-          start_time: data.start_time || "00:00",
-          end_time: data.end_time || "23:59",
-        });
-      if (rule.error) setError(rule.error.message);
+      const rule = await supabase.from("schedule_rules").insert({
+        organization_id: organization.id,
+        schedule_id: schedule.data.id,
+        screen_id: targetType === "screen" ? targetId : null,
+        screen_group_id: targetType === "group" ? targetId : null,
+        weekdays: weekdays.length ? weekdays : [0, 1, 2, 3, 4, 5, 6],
+        start_time: data.start_time || "00:00",
+        end_time: data.end_time || "23:59",
+      });
+      if (rule.error) {
+        ruleError = rule.error.message;
+        setError(rule.error.message);
+      }
     } else setError(schedule.error.message);
     setBusy(false);
-    if (!schedule.error && !error) {
+    if (!schedule.error && !ruleError) {
       setModal(false);
       await load();
     }
@@ -189,6 +201,11 @@ export function SchedulesPage() {
                 </strong>
                 <small>
                   {formatWeekdays(rule?.weekdays)}
+                  {rule?.screen_id
+                    ? ` · ${screens.find((screen) => screen.id === rule.screen_id)?.name || "Tela"}`
+                    : rule?.screen_group_id
+                      ? ` · ${groups.find((group) => group.id === rule.screen_group_id)?.name || "Grupo"}`
+                      : ""}
                   {row.starts_at
                     ? ` · ${new Date(row.starts_at).toLocaleDateString("pt-BR")}`
                     : ""}
@@ -233,12 +250,17 @@ export function SchedulesPage() {
                 </select>
               </label>
               <label>
-                Tela
-                <select name="screen_id" required>
+                Tela ou grupo
+                <select name="target" required>
                   <option value="">Selecione…</option>
                   {screens.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
+                    <option key={s.id} value={`screen:${s.id}`}>
+                      Tela · {s.name}
+                    </option>
+                  ))}
+                  {groups.map((group) => (
+                    <option key={group.id} value={`group:${group.id}`}>
+                      Grupo · {group.name}
                     </option>
                   ))}
                 </select>

@@ -13,6 +13,7 @@ import { DashboardPage } from "./pages/Dashboard";
 import { ContentPage } from "./pages/Content";
 import { PlaylistsPage } from "./pages/Playlists";
 import { SchedulesPage } from "./pages/Schedules";
+import { MessagesPage } from "./pages/Messages";
 import { ScreensPage } from "./pages/Screens";
 import { AccountPage, OnboardingPage, SettingsPage } from "./pages/Account";
 import { BillingPage } from "./pages/Billing";
@@ -83,6 +84,7 @@ export default function App() {
           <Route path="conteudo" element={<ContentPage />} />
           <Route path="playlists" element={<PlaylistsPage />} />
           <Route path="programacoes" element={<SchedulesPage />} />
+          <Route path="mensagens" element={<MessagesPage />} />
           <Route path="telas" element={<ScreensPage />} />
           <Route path="apps" element={<AppsPage />} />
           <Route path="conta" element={<AccountPage />} />

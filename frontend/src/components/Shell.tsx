@@ -9,6 +9,7 @@ import {
   ListVideo,
   LogOut,
   Menu,
+  MessageSquareText,
   Monitor,
   Settings,
   Sparkles,
@@ -24,6 +25,7 @@ const primary = [
   ["/conteudo", "Conteúdo", AppWindow],
   ["/playlists", "Playlists", ListVideo],
   ["/programacoes", "Programação", CalendarClock],
+  ["/mensagens", "Mensagens", MessageSquareText],
   ["/telas", "Telas", Monitor],
   ["/apps", "Apps PontoView", Sparkles],
 ] as const;
