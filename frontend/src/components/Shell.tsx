@@ -94,7 +94,7 @@ export function AppShell() {
       <main>
         <header className="topbar">
           <button className="mobile-menu" onClick={() => setOpen(true)}><Menu /></button>
-          <div><small>PontoView Telas</small><strong>{title}</strong></div>
+          <div><strong>{title}</strong></div>
           <div className="top-actions">
             <span className="system-ok">● Conectado</span>
             <NavLink className="help-button" to="/ajuda"><CircleHelp size={17} /></NavLink>
