@@ -39,6 +39,7 @@ const account = [
 export function AppShell() {
   const { organization, profile, role, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [brandLogoFailed, setBrandLogoFailed] = useState(false);
   const [brandIconFailed, setBrandIconFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,17 +56,28 @@ export function AppShell() {
       {open && <button className="sidebar-scrim" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="brand">
-          <b>
-            {brandIconFailed ? "PV" : (
-              <img
-                src="/assets/pontoview-icon.svg"
-                alt=""
-                style={{ width: "100%", height: "100%", display: "block" }}
-                onError={() => setBrandIconFailed(true)}
-              />
-            )}
-          </b>
-          <span><strong>PontoView</strong><small>Telas</small></span>
+          {!brandLogoFailed ? (
+            <img
+              src="/assets/logo.png"
+              alt="PontoView Telas"
+              style={{ width: 154, maxWidth: "calc(100% - 34px)", height: 38, objectFit: "contain", objectPosition: "left center", display: "block", marginRight: "auto" }}
+              onError={() => setBrandLogoFailed(true)}
+            />
+          ) : (
+            <>
+              <b>
+                {brandIconFailed ? "PV" : (
+                  <img
+                    src="/assets/icon.png"
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                    onError={() => setBrandIconFailed(true)}
+                  />
+                )}
+              </b>
+              <span><strong>PontoView</strong><small>Telas</small></span>
+            </>
+          )}
           <button className="mobile-close" onClick={() => setOpen(false)}><X size={18} /></button>
         </div>
         <div className="nav-label">Workspace</div>
