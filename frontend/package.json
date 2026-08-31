@@ -1,0 +1,12 @@
+{
+  "name": "pontoview-telas-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend estático do PontoView Telas",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
