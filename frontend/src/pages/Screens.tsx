@@ -11,6 +11,7 @@ import {
   PanelTop,
   Play,
   Power,
+  RefreshCw,
   Save,
   ShieldCheck,
   Trash2,
@@ -76,7 +77,7 @@ export function ScreensPage() {
     const [s, p, g] = await Promise.all([
       supabase
         .from("screens")
-        .select("id,organization_id,name,slug,orientation,default_playlist_id,is_active,settings_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(*)")
+        .select("id,organization_id,name,slug,orientation,default_playlist_id,is_active,settings_revision,reload_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(*)")
         .eq("organization_id", organization.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
@@ -306,7 +307,9 @@ function ScreenEditor({
   const [name, setName] = useState(screen.name);
   const [playlist, setPlaylist] = useState(screen.default_playlist_id || "");
   const [busy, setBusy] = useState(false);
+  const [reloadBusy, setReloadBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [maintenanceMessage, setMaintenanceMessage] = useState<string | null>(null);
 
   const toggle = (key: string) => setSettings((s) => ({ ...s, widgets: { ...s.widgets, [key]: !s.widgets[key] } }));
   const setWeatherName = (value: string) => setSettings((current) => ({
@@ -333,6 +336,7 @@ function ScreenEditor({
     }
     setBusy(true);
     setError(null);
+    setMaintenanceMessage(null);
     const [a, b] = await Promise.all([
       supabase.from("screen_settings").update({
         layout_mode: settings.layout_mode,
@@ -357,6 +361,20 @@ function ScreenEditor({
     else onSaved();
   };
 
+  const requestReload = async () => {
+    if (!confirm(`Limpar o cache e recarregar o Player “${screen.name}”? A reprodução será interrompida por alguns segundos.`)) return;
+    setReloadBusy(true);
+    setError(null);
+    setMaintenanceMessage(null);
+    const result = await supabase.rpc("request_player_reload", { p_screen_id: screen.id });
+    setReloadBusy(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    setMaintenanceMessage("Comando enviado. O Player limpará o cache e recarregará automaticamente em até 15 segundos.");
+  };
+
   return (
     <div className="screen-config">
       <div className="config-top">
@@ -364,7 +382,7 @@ function ScreenEditor({
         <div><small>CONFIGURAÇÃO DA TELA</small><h2>{screen.name}</h2></div>
         <AsyncButton busy={busy} className="btn primary" onClick={() => void save()}><Save /> Salvar configuração</AsyncButton>
       </div>
-      <FormMessage error={error} />
+      <FormMessage error={error} success={maintenanceMessage} />
       <div className="config-grid">
         <section className="panel config-controls">
           <label>Nome da tela<input value={name} onChange={(e) => setName(e.target.value)} /></label>
@@ -454,6 +472,16 @@ function ScreenEditor({
               )}
             </>
           )}
+
+          <h3>Manutenção do Player</h3>
+          <div className="widget-config">
+            <small style={{ display: "block", marginBottom: 10, lineHeight: 1.5 }}>
+              Use esta opção se uma TV mantiver conteúdo ou configurações antigas. O comando preserva o pareamento da tela.
+            </small>
+            <AsyncButton busy={reloadBusy} className="btn secondary full" onClick={() => void requestReload()}>
+              <RefreshCw /> Limpar cache e recarregar Player
+            </AsyncButton>
+          </div>
 
           <button className="btn danger full disconnect" onClick={onDeactivate}><Power /> Desconectar Player</button>
         </section>
