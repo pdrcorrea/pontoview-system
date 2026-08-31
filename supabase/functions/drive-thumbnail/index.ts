@@ -54,9 +54,12 @@ Deno.serve(async (req) => {
 
     let response: Response;
     if (metadata.thumbnailLink) {
-      response = await fetch(String(metadata.thumbnailLink), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      response = await fetch(String(metadata.thumbnailLink));
+      if (!response.ok) {
+        response = await fetch(String(metadata.thumbnailLink), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
     } else if (String(metadata.mimeType || media.drive_mime_type).startsWith("image/")) {
       response = await fetch(
         `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(media.drive_file_id)}?alt=media`,
