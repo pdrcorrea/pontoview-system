@@ -10,6 +10,8 @@ verify_jwt = false
 verify_jwt = true
 [functions.drive-media]
 verify_jwt = false
+[functions.drive-thumbnail]
+verify_jwt = true
 [functions.screens-weather]
 verify_jwt = false
 [functions.screens-news]
