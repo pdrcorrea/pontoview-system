@@ -25,6 +25,7 @@ import "./styles-v2.css";
 import "./system.css";
 import "./panels.css";
 import "./branding.css";
+import "./refinements.css";
 
 function Protected() {
   const { loading, user, profile } = useAuth();
