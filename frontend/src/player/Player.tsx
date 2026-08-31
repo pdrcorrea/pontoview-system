@@ -20,10 +20,28 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.2.1";
+const PLAYER_VERSION = "1.3.0";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
+  .pv-orientation-canvas {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    overflow: hidden;
+    background: #000;
+    transform-origin: center center;
+  }
+  .pv-orientation-canvas .player-fullscreen,
+  .pv-orientation-canvas .player-lframe {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0;
+    min-height: 0;
+  }
+  .pv-orientation-canvas .player-fullscreen {
+    min-height: 100% !important;
+  }
   .pv-stage-transition {
     width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; background: #000;
     animation: pv-stage-in 560ms cubic-bezier(.22,.61,.36,1) both;
@@ -56,6 +74,14 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-company img { max-height: 100%; max-width: min(28vw,320px); object-fit: contain; }
   .footer-company svg { width: 1.25em; height: 1.25em; color: #244f7e; }
   .footer-company strong { font-size: .85em; color: #244f7e; }
+  .pv-orientation-canvas.logical-portrait .player-lframe.side-left,
+  .pv-orientation-canvas.logical-portrait .player-lframe.side-right {
+    grid-template-columns: 1fr 30%;
+  }
+  .pv-orientation-canvas.logical-portrait .player-lframe > aside {
+    padding: 4vh 2vw;
+    gap: 3vh;
+  }
   @media (orientation: portrait) {
     .weather-forecast { gap: .75vh; }
     .weather-day { grid-template-columns: minmax(36px,.8fr) 22px 1fr; }
@@ -76,6 +102,7 @@ export function PlayerPage() {
   const [connected, setConnected] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
   const [runtimeNow, setRuntimeNow] = useState(new Date());
+  const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const activationStarted = useRef(false);
   const newsFetch = useRef<{ key: string; at: number; items: PlayerManifest["news"] }>({ key: "", at: 0, items: [] });
   const routeScreenId = params.screenId;
@@ -84,6 +111,16 @@ export function PlayerPage() {
   useEffect(() => {
     const timer = window.setInterval(() => setRuntimeNow(new Date()), 15000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+    return () => {
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+    };
   }, []);
 
   const startActivation = useCallback(async () => {
@@ -142,6 +179,20 @@ export function PlayerPage() {
     }
 
     const next = result.data as PlayerManifest;
+    const reloadRevision = Number(next.screen.reloadRevision || 0);
+    const reloadKey = `pv_reload_revision_${activeDevice.screenId}`;
+    const previousReload = localStorage.getItem(reloadKey);
+    if (previousReload === null) {
+      localStorage.setItem(reloadKey, String(reloadRevision));
+    } else if (reloadRevision > Number(previousReload || 0)) {
+      localStorage.setItem(reloadKey, String(reloadRevision));
+      await clearPlayerCache(activeDevice.screenId);
+      const reloadUrl = new URL(window.location.href);
+      reloadUrl.searchParams.set("pv_reload", String(reloadRevision));
+      window.location.replace(reloadUrl.toString());
+      return;
+    }
+
     if (next.settings?.widgets?.news) {
       const categories = (next.settings.news_categories || ["general"]).join(",");
       const shouldRefresh = newsFetch.current.key !== categories || Date.now() - newsFetch.current.at >= NEWS_REFRESH_MS || !newsFetch.current.items.length;
@@ -266,11 +317,23 @@ export function PlayerPage() {
 
   if (!operating) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
 
+  const configuredPortrait = manifest.screen.orientation === "portrait";
+  const viewportPortrait = viewport.height >= viewport.width;
+  const rotateCanvas = configuredPortrait !== viewportPortrait;
+  const canvasStyle = rotateCanvas
+    ? { width: `${viewport.height}px`, height: `${viewport.width}px`, transform: "translate(-50%, -50%) rotate(90deg)" }
+    : { width: `${viewport.width}px`, height: `${viewport.height}px`, transform: "translate(-50%, -50%)" };
+
   return (
-    <div className={`pv-player-runtime ${manifest.screen.orientation === "portrait" ? "portrait" : "landscape"}`}>
+    <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}>
       <style>{PLAYER_RUNTIME_STYLE}</style>
       <div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div>
-      <PlayerLayout manifest={manifest} item={item} device={activeDevice} onEnd={handleEnd} onError={handleError} />
+      <div
+        className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${rotateCanvas ? "rotated" : ""}`}
+        style={canvasStyle}
+      >
+        <PlayerLayout manifest={manifest} item={item} device={activeDevice} onEnd={handleEnd} onError={handleError} />
+      </div>
     </div>
   );
 }
@@ -326,7 +389,14 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
 
   const stage = (
     <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={item?.itemId || "standby"}>
-      <MediaStage item={item} device={device} organization={manifest.organization} onEnd={onEnd} onError={onError} />
+      <MediaStage
+        item={item}
+        device={device}
+        organization={manifest.organization}
+        cacheRevision={Number(manifest.screen.reloadRevision || 0)}
+        onEnd={onEnd}
+        onError={onError}
+      />
     </div>
   );
 
@@ -362,10 +432,11 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
   );
 }
 
-function MediaStage({ item, device, organization, onEnd, onError }: {
+function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: {
   item: ManifestItem | null;
   device: Device;
   organization: PlayerManifest["organization"];
+  cacheRevision: number;
   onEnd: () => void;
   onError: (detail: string) => void;
 }) {
@@ -374,7 +445,7 @@ function MediaStage({ item, device, organization, onEnd, onError }: {
   const duration = item.durationSeconds || media.durationSeconds || 15;
   if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} onEnd={onEnd} onError={onError} />;
   if (media.type === "drive_image" || media.type === "drive_video") return <DriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
-  if (media.type === "webpage" && media.pageUrl) return <TimedStage seconds={duration} onEnd={onEnd}><iframe src={media.pageUrl} title={media.name} sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onError={() => onError("webpage_load_error")} /></TimedStage>;
+  if (media.type === "webpage" && media.pageUrl) return <TimedStage seconds={duration} onEnd={onEnd}><iframe src={cacheBustedUrl(media.pageUrl, cacheRevision)} title={media.name} sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onError={() => onError("webpage_load_error")} /></TimedStage>;
   if (media.type === "message") return <TimedStage seconds={duration} onEnd={onEnd}><div className="message-stage"><small>COMUNICADO</small><h1>{String(media.messageContent?.title || media.name)}</h1><p>{String(media.messageContent?.body || "")}</p></div></TimedStage>;
   if (media.type === "app") return <TimedStage seconds={duration} onEnd={onEnd}><AppStage appKey={media.appKey} name={media.name} organization={organization} /></TimedStage>;
   return <TimedStage seconds={duration} onEnd={onEnd}><div className="player-standby"><h1>{media.name}</h1></div></TimedStage>;
@@ -598,6 +669,27 @@ function BrandMark() {
   return imageFailed
     ? <span className="pv-brand-fallback">PV</span>
     : <img className="pv-brand-official" src="/assets/icon.png" alt="" onError={() => setImageFailed(true)} />;
+}
+
+async function clearPlayerCache(screenId: string) {
+  localStorage.removeItem(`pv_manifest_${screenId}`);
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith("pv-cache:") || key.startsWith("pv-last:")) localStorage.removeItem(key);
+  }
+  if ("caches" in window) {
+    const names = await caches.keys();
+    await Promise.all(names.filter((name) => name.startsWith("pontoview-")).map((name) => caches.delete(name)));
+  }
+}
+
+function cacheBustedUrl(rawUrl: string, revision: number) {
+  try {
+    const url = new URL(rawUrl, window.location.origin);
+    if (revision > 0) url.searchParams.set("pv_reload", String(revision));
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
 }
 
 function sourceName(url: string) {
