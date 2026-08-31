@@ -145,6 +145,72 @@
   object-position: left center;
 }
 
+/* O palco nunca invade as colunas do L-frame e não distorce a mídia. */
+.player-main,
+.player-fullscreen,
+.player-main .pv-stage-transition,
+.player-fullscreen .pv-stage-transition,
+.timed-stage,
+.youtube-stage {
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+.player-main .pv-stage-transition,
+.player-fullscreen .pv-stage-transition,
+.timed-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-main video,
+.player-fullscreen video,
+.timed-stage > img,
+.youtube-stage,
+.youtube-stage iframe {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain !important;
+  object-position: center center;
+  border: 0;
+}
+
+/* Financeiro: promoção de lançamento sem excesso de texto. */
+.promo-badge {
+  display: inline-flex !important;
+  width: max-content;
+  margin: 4px 0 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #edf8f2;
+  color: #276543;
+  font-size: 9px !important;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+.price {
+  display: grid;
+  gap: 2px;
+}
+.price-list {
+  font-size: 11px;
+  color: #7a8998;
+  text-decoration: line-through;
+}
+.price-current {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.price-current small {
+  color: #6b7d8f;
+}
+
 @media (max-width: 700px) {
   .help-topic-body { padding-left: 16px; }
 }
