@@ -37,6 +37,7 @@
   align-items: start;
 }
 .help-topic {
+  display: block !important;
   padding: 0;
   overflow: hidden;
 }
