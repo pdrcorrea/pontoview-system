@@ -79,6 +79,13 @@ export interface ScreenStatus {
   screenshot_at: string | null;
 }
 
+export interface OperatingHours {
+  enabled: boolean;
+  weekdays: number[];
+  start: string;
+  end: string;
+}
+
 export interface ScreenSettings {
   screen_id: string;
   layout_mode: "fullscreen" | "lframe";
@@ -87,10 +94,15 @@ export interface ScreenSettings {
   side_width_percent: number;
   bar_height_percent: number;
   widgets: Record<string, boolean>;
-  weather_location: Record<string, unknown> | null;
+  weather_location: {
+    name?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
   news_categories: string[];
   transition: "fade" | "cut";
   image_duration_seconds: number;
+  operating_hours: OperatingHours;
 }
 
 export interface DashboardData {
@@ -153,10 +165,12 @@ export interface PlayerManifest {
   messages: Array<{ id: string; title: string | null; body: string }>;
   news: Array<{
     id: string;
+    source?: string;
     title: string;
     summary: string | null;
     category: string;
     url: string;
+    image_url?: string | null;
     published_at: string;
   }>;
   syncedAt: string;
