@@ -20,7 +20,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.2.0";
+const PLAYER_VERSION = "1.2.1";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -344,7 +344,7 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
           </div>
         )}
         {settings.widgets?.weather && <WeatherWidget screenId={device.screenId} token={device.token} location={settings.weather_location} />}
-        {settings.widgets?.business && <div className="live-business"><Building2 /><span>{manifest.organization.displayName}</span></div>}
+        {settings.widgets?.business && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} />}
       </aside>
       <footer>
         {currentInfo?.kind === "news" ? (
@@ -575,6 +575,14 @@ function SourceBadge({ source, url }: { source: string; url: string }) {
       <strong>{source || "Fonte"}</strong>
     </span>
   );
+}
+
+function CompanySide({ logoUrl, name }: { logoUrl: string; name: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  if (logoUrl && !imageFailed) {
+    return <div className="live-business business-logo"><img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /></div>;
+  }
+  return <div className="live-business"><Building2 /><span>{name}</span></div>;
 }
 
 function CompanyFooter({ logoUrl, name }: { logoUrl: string; name: string }) {
