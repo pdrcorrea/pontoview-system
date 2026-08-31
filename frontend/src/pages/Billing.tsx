@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, CreditCard, ExternalLink, ShieldCheck } from "lucide-react";
+import { Check, CreditCard } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import {
   AsyncButton,
@@ -19,6 +19,7 @@ type Plan = {
   user_limit: number;
   features: Record<string, boolean>;
 };
+
 type Subscription = {
   id: string;
   status: string;
@@ -29,6 +30,7 @@ type Subscription = {
   cancel_at_period_end: boolean;
   plans: Plan | null;
 };
+
 type Payment = {
   id: string;
   status: string;
@@ -44,6 +46,7 @@ export function BillingPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     if (!organization) return;
     const [p, s, h] = await Promise.all([
@@ -67,9 +70,11 @@ export function BillingPage() {
     if (s.data) setSubscription(s.data as unknown as Subscription);
     if (h.data) setPayments(h.data as Payment[]);
   }, [organization]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const checkout = async (plan: Plan) => {
     if (!organization) return;
     setBusy(true);
@@ -81,7 +86,6 @@ export function BillingPage() {
           action: "checkout",
           organizationId: organization.id,
           planCode: plan.code,
-          returnUrl: `${window.location.origin}/financeiro`,
         },
       );
       window.location.assign(result.checkoutUrl);
@@ -94,12 +98,9 @@ export function BillingPage() {
       );
     }
   };
+
   const cancel = async () => {
-    if (
-      !organization ||
-      !confirm("Cancelar a renovação ao fim do período atual?")
-    )
-      return;
+    if (!organization || !confirm("Cancelar assinatura?")) return;
     setBusy(true);
     try {
       await invokeFunction("screens-billing", {
@@ -115,26 +116,27 @@ export function BillingPage() {
       setBusy(false);
     }
   };
+
   const plan = subscription?.plans;
   const next = subscription?.current_period_end || subscription?.trial_ends_at;
+
   return (
     <>
-      <PageHead
-        eyebrow="Assinatura"
-        title="Financeiro"
-        text="Plano, limites, cobranças e histórico confirmados pelo Mercado Pago."
-      />
+      <PageHead eyebrow="Assinatura" title="Financeiro" text="Plano e pagamentos." />
       <FormMessage error={error} />
+
       {subscription && plan && (
         <div className="billing-hero panel">
           <div>
             <span className="eyebrow">PLANO ATUAL</span>
             <h2>{plan.name}</h2>
-            <p>{plan.description}</p>
             <div className="price">
               <strong>{money(plan.price_cents)}</strong>
               <span>/ mês</span>
             </div>
+            <small>
+              {plan.screen_limit} {plan.screen_limit === 1 ? "tela" : "telas"} · {plan.user_limit} usuários
+            </small>
           </div>
           <div className="billing-status">
             <span
@@ -142,11 +144,7 @@ export function BillingPage() {
             >
               <Check /> {statusName(subscription.status)}
             </span>
-            <small>
-              {subscription.status === "trial"
-                ? "Fim do período de avaliação"
-                : "Próxima cobrança"}
-            </small>
+            <small>{subscription.status === "trial" ? "Fim do teste" : "Próxima cobrança"}</small>
             <b>{formatDate(next)}</b>
             {role === "owner" && subscription.status === "active" && (
               <AsyncButton
@@ -154,44 +152,28 @@ export function BillingPage() {
                 className="btn secondary"
                 onClick={() => void cancel()}
               >
-                Cancelar renovação
+                Cancelar assinatura
               </AsyncButton>
             )}
           </div>
         </div>
       )}
+
       <div className="plan-grid">
         {plans.map((p) => (
           <article
             className={`panel plan-card ${p.id === subscription?.plan_id ? "current" : ""}`}
             key={p.id}
           >
-            <span>
-              {p.id === subscription?.plan_id ? "PLANO ATUAL" : "PLANO"}
-            </span>
+            <span>{p.id === subscription?.plan_id ? "ATUAL" : "PLANO"}</span>
             <h2>{p.name}</h2>
-            <p>{p.description}</p>
             <div className="price">
               <strong>{money(p.price_cents)}</strong>
               <small>/mês</small>
             </div>
             <ul>
-              <li>
-                <Check />
-                {p.screen_limit} {p.screen_limit === 1 ? "tela" : "telas"}
-              </li>
-              <li>
-                <Check />
-                {p.user_limit} usuários
-              </li>
-              <li>
-                <Check />
-                Google Drive e YouTube
-              </li>
-              <li>
-                <Check />
-                Moldura em L
-              </li>
+              <li><Check />{p.screen_limit} {p.screen_limit === 1 ? "tela" : "telas"}</li>
+              <li><Check />{p.user_limit} usuários</li>
             </ul>
             {p.id !== subscription?.plan_id && role === "owner" && (
               <AsyncButton
@@ -200,19 +182,16 @@ export function BillingPage() {
                 onClick={() => void checkout(p)}
               >
                 <CreditCard />
-                Escolher plano <ExternalLink />
+                Selecionar
               </AsyncButton>
             )}
           </article>
         ))}
       </div>
+
       <section className="panel history">
         <div className="panel-title">
-          <div>
-            <h2>Histórico de pagamentos</h2>
-            <p>Eventos processados por webhook, nunca apenas pelo navegador.</p>
-          </div>
-          <ShieldCheck />
+          <h2>Pagamentos</h2>
         </div>
         <div className="table">
           <div className="tr th">
@@ -227,33 +206,45 @@ export function BillingPage() {
                 <span>{formatDate(payment.paid_at || payment.created_at)}</span>
                 <span>Assinatura PontoView</span>
                 <span>{money(payment.amount_cents)}</span>
-                <span>{payment.status}</span>
+                <span>{paymentStatus(payment.status)}</span>
               </div>
             ))
           ) : (
-            <div className="table-empty">Nenhuma cobrança registrada.</div>
+            <div className="table-empty">Nenhum pagamento registrado.</div>
           )}
         </div>
       </section>
     </>
   );
 }
+
 function money(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100);
 }
+
 function statusName(value: string) {
   return (
-    (
-      {
-        trial: "Período de avaliação",
-        active: "Assinatura ativa",
-        past_due: "Pagamento pendente",
-        canceled: "Cancelada",
-        suspended: "Suspensa",
-      } as Record<string, string>
-    )[value] || value
+    ({
+      trial: "Teste",
+      active: "Ativa",
+      past_due: "Pendente",
+      canceled: "Cancelada",
+      suspended: "Suspensa",
+    } as Record<string, string>)[value] || value
+  );
+}
+
+function paymentStatus(value: string) {
+  return (
+    ({
+      approved: "Pago",
+      paid: "Pago",
+      pending: "Pendente",
+      rejected: "Recusado",
+      cancelled: "Cancelado",
+    } as Record<string, string>)[value] || value
   );
 }
