@@ -27,7 +27,7 @@ const primary = [
   ["/programacoes", "Programação", CalendarClock],
   ["/mensagens", "Mensagens", MessageSquareText],
   ["/telas", "Telas", Monitor],
-  ["/apps", "Apps PontoView", Sparkles],
+  ["/apps", "Painéis PontoView", Sparkles],
 ] as const;
 const account = [
   ["/conta", "Minha conta", UserRound],
@@ -81,7 +81,7 @@ export function AppShell() {
           <b>P</b>
           <span>
             <strong>PontoView</strong>
-            <small>Screens</small>
+            <small>Telas</small>
           </span>
           <button className="mobile-close" onClick={() => setOpen(false)}>
             <X size={18} />
@@ -112,7 +112,7 @@ export function AppShell() {
             <Menu />
           </button>
           <div>
-            <small>PontoView Screens</small>
+            <small>PontoView Telas</small>
             <strong>{title}</strong>
           </div>
           <div className="top-actions">
