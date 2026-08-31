@@ -27,6 +27,12 @@ import "./panels.css";
 import "./branding.css";
 import "./refinements.css";
 
+const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
+
+function isDedicatedPlayerHost() {
+  return PLAYER_HOSTS.has(window.location.hostname.toLowerCase());
+}
+
 function Protected() {
   const { loading, user, profile } = useAuth();
   const location = useLocation();
@@ -49,6 +55,14 @@ function Guest({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  if (isDedicatedPlayerHost()) {
+    return (
+      <Routes>
+        <Route path="*" element={<PlayerPage />} />
+      </Routes>
+    );
+  }
+
   return (
     <AuthProvider>
       <Routes>
