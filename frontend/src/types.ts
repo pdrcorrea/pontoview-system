@@ -1,4 +1,5 @@
 export type OrganizationRole = "owner" | "admin" | "editor" | "viewer";
+export type ScreenRotation = "standard" | "right" | "left" | "180";
 export type MediaType =
   | "drive_image"
   | "drive_video"
@@ -63,6 +64,7 @@ export interface Screen {
   name: string;
   slug: string;
   orientation: "landscape" | "portrait";
+  rotation: ScreenRotation;
   default_playlist_id: string | null;
   is_active: boolean;
   settings_revision: number;
@@ -122,7 +124,7 @@ export interface DashboardData {
 }
 
 export interface PlayerManifest {
-  screen: { id: string; name: string; orientation: string; revision: number; reloadRevision?: number };
+  screen: { id: string; name: string; orientation: string; rotation?: ScreenRotation; revision: number; reloadRevision?: number };
   organization: {
     id: string;
     name: string;
