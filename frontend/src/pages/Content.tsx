@@ -21,6 +21,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
+import { DriveThumbnail } from "../components/DriveThumbnail";
 import {
   AsyncButton,
   EmptyState,
@@ -259,7 +260,7 @@ export function ContentPage() {
         drive_mime_type: mime,
         drive_modified_time: file.modifiedTime || null,
         drive_checksum: file.md5Checksum || null,
-        thumbnail_url: file.thumbnailLink || null,
+        thumbnail_url: null,
         duration_seconds: mime.startsWith("image/") ? 15 : null,
         online_required: false,
         created_by: user.id,
@@ -322,7 +323,17 @@ export function ContentPage() {
                 className={`media-thumb ${item.type === "youtube" ? "youtube-thumb" : "thumb-" + (item.id.charCodeAt(0) % 4)}`}
               >
                 {thumbIcon(item)}
-                {item.thumbnail_url && <img src={item.thumbnail_url} alt="" />}
+                {item.type === "drive_image" || item.type === "drive_video" ? (
+                  <DriveThumbnail mediaId={item.id} />
+                ) : item.thumbnail_url ? (
+                  <img
+                    src={item.thumbnail_url}
+                    alt=""
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : null}
                 <span>{formatDuration(item.duration_seconds)}</span>
               </div>
               <div className="media-info">
