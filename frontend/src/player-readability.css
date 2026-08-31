@@ -42,6 +42,70 @@
 /* L-frame is normally viewed several metres away, so secondary data must not collapse into laptop-sized type. */
 .player-lframe > footer {
   font-size: clamp(18px, 1.55vw, 30px) !important;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding-top: clamp(8px, 1.1vh, 16px) !important;
+  padding-bottom: clamp(8px, 1.1vh, 16px) !important;
+  line-height: 1.15;
+  overflow: hidden;
+}
+
+.player-lframe > footer > * {
+  min-width: 0;
+}
+
+.player-lframe > footer .footer-headline {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.18;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-lframe > footer .news-source {
+  height: auto;
+  max-height: 100%;
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+.player-lframe > footer .news-source-icon {
+  width: clamp(32px, 2.2vw, 46px);
+  height: clamp(32px, 2.2vw, 46px);
+  flex: 0 0 auto;
+}
+
+/* Keep organization branding inside the footer instead of letting the source image dictate its size. */
+.player-lframe > footer .footer-company {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100% !important;
+  min-width: 0;
+  overflow: hidden;
+  animation: none !important;
+}
+
+.player-lframe > footer .footer-company img {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-height: clamp(36px, 7vh, 72px) !important;
+  max-width: min(34vw, 380px) !important;
+  object-fit: contain !important;
+  object-position: left center;
+  flex: 0 1 auto;
+}
+
+.player-lframe > footer .footer-company strong {
+  font-size: .82em;
+  line-height: 1.1;
 }
 
 .live-clock small {
@@ -74,7 +138,13 @@
 }
 
 @media (max-height: 720px) and (orientation: landscape) {
-  .player-lframe > footer { font-size: clamp(16px, 1.45vw, 25px) !important; }
+  .player-lframe > footer {
+    font-size: clamp(16px, 1.45vw, 25px) !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+  .player-lframe > footer .footer-company img { max-height: clamp(30px, 6vh, 52px) !important; }
+  .player-lframe > footer .news-source-icon { width: clamp(28px, 2vw, 38px); height: clamp(28px, 2vw, 38px); }
   .live-weather small { font-size: clamp(11px, .9vw, 16px) !important; }
   .live-weather .weather-detail { font-size: clamp(10px, .78vw, 14px) !important; }
   .weather-day > small { font-size: clamp(10px, .76vw, 14px) !important; }
