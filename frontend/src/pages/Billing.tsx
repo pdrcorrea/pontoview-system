@@ -15,8 +15,9 @@ type Plan = {
   name: string;
   description: string;
   price_cents: number;
+  list_price_cents: number | null;
+  promotion_percent: number;
   screen_limit: number;
-  user_limit: number;
   features: Record<string, boolean>;
 };
 
@@ -130,12 +131,12 @@ export function BillingPage() {
           <div>
             <span className="eyebrow">PLANO ATUAL</span>
             <h2>{plan.name}</h2>
-            <div className="price">
-              <strong>{money(plan.price_cents)}</strong>
-              <span>/ mês</span>
-            </div>
+            {plan.promotion_percent > 0 && (
+              <span className="promo-badge">LANÇAMENTO · {plan.promotion_percent}% OFF</span>
+            )}
+            <PlanPrice plan={plan} />
             <small>
-              {plan.screen_limit} {plan.screen_limit === 1 ? "tela" : "telas"} · {plan.user_limit} usuários
+              {plan.screen_limit} {plan.screen_limit === 1 ? "tela" : "telas"}
             </small>
           </div>
           <div className="billing-status">
@@ -167,13 +168,12 @@ export function BillingPage() {
           >
             <span>{p.id === subscription?.plan_id ? "ATUAL" : "PLANO"}</span>
             <h2>{p.name}</h2>
-            <div className="price">
-              <strong>{money(p.price_cents)}</strong>
-              <small>/mês</small>
-            </div>
+            {p.promotion_percent > 0 && (
+              <span className="promo-badge">LANÇAMENTO · {p.promotion_percent}% OFF</span>
+            )}
+            <PlanPrice plan={p} compact />
             <ul>
               <li><Check />{p.screen_limit} {p.screen_limit === 1 ? "tela" : "telas"}</li>
-              <li><Check />{p.user_limit} usuários</li>
             </ul>
             {p.id !== subscription?.plan_id && role === "owner" && (
               <AsyncButton
@@ -215,6 +215,25 @@ export function BillingPage() {
         </div>
       </section>
     </>
+  );
+}
+
+function PlanPrice({ plan, compact = false }: { plan: Plan; compact?: boolean }) {
+  const hasPromotion = Boolean(
+    plan.promotion_percent > 0 &&
+      plan.list_price_cents &&
+      plan.list_price_cents > plan.price_cents,
+  );
+  return (
+    <div className={`price ${compact ? "compact-price" : ""}`}>
+      {hasPromotion && (
+        <span className="price-list">de {money(Number(plan.list_price_cents))}</span>
+      )}
+      <span className="price-current">
+        <strong>{money(plan.price_cents)}</strong>
+        <small>/mês</small>
+      </span>
+    </div>
   );
 }
 
