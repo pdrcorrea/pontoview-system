@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PontoView Telas • Painéis Automáticos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24..48,300..700,0,0" rel="stylesheet">
+<link rel="stylesheet" href="shared/pontoview.css">
+<style>
+body{overflow:auto;min-height:100vh}.pv-shell{height:auto;min-height:100vh}.top-actions{display:flex;align-items:center;gap:10px}.back{display:inline-flex;align-items:center;gap:7px;color:var(--pv-soft);text-decoration:none;padding:9px 13px;border:1px solid var(--pv-line);border-radius:999px;background:rgba(255,255,255,.055);font-size:12px;font-weight:650}.back:hover{background:rgba(255,255,255,.09)}.intro{margin:clamp(26px,4vh,46px) 0 clamp(22px,3vh,34px)}.eyebrow{display:flex;align-items:center;gap:9px;color:var(--pv-sky);font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;margin-bottom:16px}.intro h1{margin:0;font-size:clamp(38px,5vw,76px);line-height:1;letter-spacing:-.055em;font-weight:650;max-width:12ch}.intro p{margin:16px 0 0;max-width:760px;color:var(--pv-soft);font-size:clamp(15px,1.2vw,19px);line-height:1.5}.hub{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-bottom:34px}.hub a{text-decoration:none;color:inherit}.hub-card{height:100%;min-height:196px;padding:24px;border-radius:28px;background:rgba(255,255,255,.075);border:1px solid var(--pv-line);transition:transform .25s var(--pv-ease),background .25s ease,border-color .25s ease;position:relative;overflow:hidden}.hub-card::after{content:"";position:absolute;width:120px;aspect-ratio:1;border-radius:50%;border:14px solid rgba(105,207,242,.04);right:-30px;bottom:-42px}.hub-card:hover{transform:translateY(-4px);background:rgba(255,255,255,.105);border-color:rgba(105,207,242,.28)}.hub-icon{width:52px;height:52px;border-radius:17px;display:grid;place-items:center;background:rgba(105,207,242,.10);color:var(--pv-sky);margin-bottom:30px}.hub-icon span{font-size:30px}.hub-title{font-size:23px;font-weight:650;letter-spacing:-.03em;margin-bottom:9px}.hub-text{font-size:13px;line-height:1.48;color:var(--pv-soft);max-width:34ch}.tag{position:absolute;right:18px;top:18px;font-size:9px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.48)}.footer-note{font-size:11px;color:var(--pv-faint);text-align:center;margin-bottom:5px}@media(max-width:1100px){.hub{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.pv-header{align-items:flex-start}.top-actions{flex-direction:column;align-items:flex-end}.hub{grid-template-columns:1fr}.hub-card{min-height:172px}.intro h1{font-size:42px}.pv-source{display:none}}
+</style>
+</head>
+<body>
+<div class="pv-ambient"></div>
+<div class="pv-shell">
+<header class="pv-header">
+  <div class="pv-brand"><div class="pv-badge"><span class="material-symbols-outlined">tv</span></div><div><div class="pv-title">PontoView Telas</div><div style="margin-top:6px;color:var(--pv-soft);font-size:12px">Biblioteca de Painéis Automáticos</div></div></div>
+  <div class="top-actions"><a class="back" href="../dashboard.html"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>Dashboard</a><div class="pv-source"><span class="material-symbols-outlined">auto_awesome</span><span>Conteúdo nativo</span></div></div>
+</header>
+<main>
+<section class="intro"><div class="eyebrow"><span class="material-symbols-outlined">auto_awesome</span>Conteúdo para TVs</div><h1>Conteúdo que mantém a tela viva.</h1><p>Escolha um painel pronto para usar em playlists do PontoView Telas. Os módulos são responsivos, funcionam em orientação horizontal ou vertical e foram pensados para atualização automática, leitura confortável e baixo consumo de APIs.</p></section>
+<section class="hub">
+<a href="hoje/"><article class="hub-card"><span class="tag">Automático</span><div class="hub-icon"><span class="material-symbols-outlined">calendar_today</span></div><div class="hub-title">Hoje</div><div class="hub-text">Data, feriados, estação do ano e calendário nacional.</div></article></a>
+<a href="saudacoes/"><article class="hub-card"><span class="tag">Ambiente</span><div class="hub-icon"><span class="material-symbols-outlined">waving_hand</span></div><div class="hub-title">Saudações</div><div class="hub-text">Bom dia, boa tarde, boa noite e mensagens de boas-vindas adaptadas ao horário.</div></article></a>
+<a href="hora/"><article class="hub-card"><span class="tag">Tempo real</span><div class="hub-icon"><span class="material-symbols-outlined">schedule</span></div><div class="hub-title">Hora Exata</div><div class="hub-text">Relógio, data e localização aproximada com ambientação por período.</div></article></a>
+<a href="tempo/"><article class="hub-card"><span class="tag">Clima</span><div class="hub-icon"><span class="material-symbols-outlined">partly_cloudy_day</span></div><div class="hub-title">Previsão do Tempo</div><div class="hub-text">Condição atual, sensação, umidade, chuva, vento e próximos dias.</div></article></a>
+<a href="noticias/"><article class="hub-card"><span class="tag">RSS</span><div class="hub-icon"><span class="material-symbols-outlined">newspaper</span></div><div class="hub-title">Notícias</div><div class="hub-text">Notícias com fonte, imagem, resumo adaptativo e QR Code para leitura completa.</div></article></a>
+<a href="saude/"><article class="hub-card"><span class="tag">Rotativo</span><div class="hub-icon"><span class="material-symbols-outlined">health_and_safety</span></div><div class="hub-title">Dicas de Saúde</div><div class="hub-text">Orientações curtas de saúde e bem-estar para ambientes de espera.</div></article></a>
+<a href="orientacoes/"><article class="hub-card"><span class="tag">Rotativo</span><div class="hub-icon"><span class="material-symbols-outlined">info</span></div><div class="hub-title">Orientações</div><div class="hub-text">Mensagens de convivência, atendimento, segurança e boas práticas.</div></article></a>
+<a href="curiosidades/"><article class="hub-card"><span class="tag">Editorial</span><div class="hub-icon"><span class="material-symbols-outlined">lightbulb</span></div><div class="hub-title">Curiosidades</div><div class="hub-text">Descobertas em páginas de leitura automática, com imagens e fonte aberta.</div></article></a>
+<a href="cultura/"><article class="hub-card"><span class="tag">Editorial</span><div class="hub-icon"><span class="material-symbols-outlined">palette</span></div><div class="hub-title">Cultura</div><div class="hub-text">Arte, arquitetura, música, literatura e patrimônio em narrativa visual paginada.</div></article></a>
+<a href="economia/"><article class="hub-card"><span class="tag">Mercado</span><div class="hub-icon"><span class="material-symbols-outlined">monitoring</span></div><div class="hub-title">Economia</div><div class="hub-text">Dólar, euro, Bitcoin, Selic e IPCA com destaques e indicadores visuais.</div></article></a>
+<a href="sustentabilidade/"><article class="hub-card"><span class="tag">Indicadores</span><div class="hub-icon"><span class="material-symbols-outlined">eco</span></div><div class="hub-title">Sustentabilidade</div><div class="hub-text">Energia solar, renováveis, florestas e emissões com dados ambientais.</div></article></a>
+</section>
+</main>
+<footer class="pv-footer" style="flex-direction:column;gap:7px"><div class="pv-footer-brand">PontoView</div><div class="footer-note">PontoView Telas • Biblioteca nativa de conteúdo</div></footer>
+</div>
+</body>
+</html>
