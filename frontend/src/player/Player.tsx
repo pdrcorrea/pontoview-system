@@ -15,9 +15,30 @@ import {
 } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.0.0";
+const PLAYER_VERSION = "1.0.1";
 const DEVICE_KEY = "pontoview_player_device_v1";
+const PLAYER_RUNTIME_STYLE = `
+  .pv-stage-transition {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #000;
+    animation: pv-stage-in 560ms cubic-bezier(.22,.61,.36,1) both;
+    will-change: opacity, transform;
+  }
+  @keyframes pv-stage-in {
+    from { opacity: 0; transform: scale(1.006); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pv-stage-transition { animation-duration: 1ms; }
+  }
+`;
+
 type Device = { screenId: string; token: string };
+type ManifestItem = PlayerManifest["items"][number];
 
 export function PlayerPage() {
   const params = useParams();
@@ -37,6 +58,7 @@ export function PlayerPage() {
     device && (!routeScreenId || routeScreenId === device.screenId)
       ? device
       : null;
+
   const startActivation = useCallback(async () => {
     if (activationStarted.current) return;
     activationStarted.current = true;
@@ -53,9 +75,11 @@ export function PlayerPage() {
       expiresAt: row.expires_at,
     });
   }, []);
+
   useEffect(() => {
     if (!activeDevice) void startActivation();
   }, [activeDevice, startActivation]);
+
   useEffect(() => {
     if (!activation) return;
     const poll = window.setInterval(async () => {
@@ -83,6 +107,7 @@ export function PlayerPage() {
     }, 2000);
     return () => window.clearInterval(poll);
   }, [activation, startActivation]);
+
   const sync = useCallback(
     async (silent = false) => {
       if (!activeDevice) return;
@@ -95,8 +120,9 @@ export function PlayerPage() {
         if (cached) {
           setManifest(cached);
           setConnected(false);
-        } else if (!silent)
+        } else if (!silent) {
           setError("Não foi possível sincronizar este Player.");
+        }
         if (result.error.message.includes("INVALID_DEVICE_TOKEN")) {
           localStorage.removeItem(DEVICE_KEY);
           setDevice(null);
@@ -104,6 +130,7 @@ export function PlayerPage() {
         }
         return;
       }
+
       const next = result.data as PlayerManifest;
       if (next.settings?.widgets?.news) {
         try {
@@ -120,6 +147,7 @@ export function PlayerPage() {
           if (news?.items) next.news = news.items;
         } catch {}
       }
+
       localStorage.setItem(
         `pv_manifest_${activeDevice.screenId}`,
         JSON.stringify(next),
@@ -133,6 +161,7 @@ export function PlayerPage() {
     },
     [activeDevice],
   );
+
   useEffect(() => {
     void sync();
     const timer = window.setInterval(() => void sync(true), 15000);
@@ -149,7 +178,18 @@ export function PlayerPage() {
       window.removeEventListener("offline", offline);
     };
   }, [sync]);
+
   const item = manifest?.items[index] || null;
+  const playbackRef = useRef<{
+    manifest: PlayerManifest | null;
+    item: ManifestItem | null;
+    index: number;
+  }>({ manifest: null, item: null, index: 0 });
+
+  useEffect(() => {
+    playbackRef.current = { manifest, item, index };
+  }, [manifest, item, index]);
+
   useEffect(() => {
     if (!activeDevice || !manifest) return;
     const heartbeat = () =>
@@ -168,7 +208,8 @@ export function PlayerPage() {
     heartbeat();
     const timer = window.setInterval(heartbeat, 30000);
     return () => window.clearInterval(timer);
-  }, [activeDevice, manifest, item?.media.id]);
+  }, [activeDevice, manifest?.playlist?.id, item?.media.id]);
+
   useEffect(() => {
     if (!activeDevice || !manifest || !item) return;
     void supabase.rpc("player_event", {
@@ -180,28 +221,35 @@ export function PlayerPage() {
       p_payload: { position: index },
     });
   }, [activeDevice, manifest?.playlist?.id, item?.itemId, index]);
+
   const advance = useCallback(
     (failed = false, detail?: string) => {
-      if (!manifest || !activeDevice || !item) return;
+      const current = playbackRef.current;
+      if (!current.manifest || !activeDevice || !current.item) return;
+
       void supabase.rpc("player_event", {
         p_screen_id: activeDevice.screenId,
         p_token: activeDevice.token,
         p_event_type: failed ? "media_error" : "content_ended",
-        p_media_id: item.media.id,
-        p_playlist_id: manifest.playlist?.id || null,
+        p_media_id: current.item.media.id,
+        p_playlist_id: current.manifest.playlist?.id || null,
         p_payload: failed
           ? { detail: detail || "playback_error" }
-          : { position: index },
+          : { position: current.index },
       });
-      setIndex((current) => (current + 1) % Math.max(1, manifest.items.length));
+
+      const itemCount = Math.max(1, current.manifest.items.length);
+      setIndex((position) => (position + 1) % itemCount);
     },
-    [manifest, activeDevice, item, index],
+    [activeDevice],
   );
+
   const handleEnd = useCallback(() => advance(false), [advance]);
   const handleError = useCallback(
     (detail: string) => advance(true, detail),
     [advance],
   );
+
   useEffect(() => {
     if (item?.media.onlineRequired && !navigator.onLine) {
       const timer = window.setTimeout(
@@ -211,6 +259,7 @@ export function PlayerPage() {
       return () => window.clearTimeout(timer);
     }
   }, [item?.itemId, advance]);
+
   if (!activeDevice)
     return (
       <ActivationView
@@ -223,6 +272,7 @@ export function PlayerPage() {
         }}
       />
     );
+
   if (!manifest)
     return (
       <div className="player-boot">
@@ -232,10 +282,12 @@ export function PlayerPage() {
         {error && <small>{error}</small>}
       </div>
     );
+
   return (
     <div
       className={`pv-player-runtime ${manifest.screen.orientation === "portrait" ? "portrait" : ""}`}
     >
+      <style>{PLAYER_RUNTIME_STYLE}</style>
       <div className={`connection-dot ${connected ? "" : "offline"}`}>
         {connected ? (
           ""
@@ -305,7 +357,7 @@ function PlayerLayout({
   onError,
 }: {
   manifest: PlayerManifest;
-  item: PlayerManifest["items"][number] | null;
+  item: ManifestItem | null;
   device: Device;
   onEnd: () => void;
   onError: (detail: string) => void;
@@ -313,10 +365,12 @@ function PlayerLayout({
   const settings = manifest.settings;
   const [clock, setClock] = useState(new Date());
   const [infoIndex, setInfoIndex] = useState(0);
+
   useEffect(() => {
     const timer = window.setInterval(() => setClock(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
   const info = useMemo(
     () =>
       [
@@ -325,6 +379,7 @@ function PlayerLayout({
       ].filter(Boolean),
     [manifest.news, manifest.messages],
   );
+
   useEffect(() => {
     if (!info.length) return;
     const timer = window.setInterval(
@@ -333,17 +388,22 @@ function PlayerLayout({
     );
     return () => window.clearInterval(timer);
   }, [info.length]);
+
   const stage = (
-    <MediaStage
-      item={item}
-      device={device}
-      organization={manifest.organization}
-      onEnd={onEnd}
-      onError={onError}
-    />
+    <div className="pv-stage-transition" key={item?.itemId || "standby"}>
+      <MediaStage
+        item={item}
+        device={device}
+        organization={manifest.organization}
+        onEnd={onEnd}
+        onError={onError}
+      />
+    </div>
   );
+
   if (settings.layout_mode !== "lframe")
     return <main className="player-fullscreen">{stage}</main>;
+
   return (
     <main
       className={`player-lframe side-${settings.side_position} bar-${settings.bar_position}`}
@@ -406,7 +466,7 @@ function MediaStage({
   onEnd,
   onError,
 }: {
-  item: PlayerManifest["items"][number] | null;
+  item: ManifestItem | null;
   device: Device;
   organization: PlayerManifest["organization"];
   onEnd: () => void;
@@ -420,8 +480,10 @@ function MediaStage({
         <p>Aguardando conteúdo na playlist.</p>
       </div>
     );
+
   const media = item.media;
   const duration = item.durationSeconds || media.durationSeconds || 15;
+
   if (media.type === "youtube" && media.youtubeVideoId)
     return (
       <YouTubeStage
@@ -431,6 +493,7 @@ function MediaStage({
         onError={onError}
       />
     );
+
   if (media.type === "drive_image" || media.type === "drive_video")
     return (
       <DriveStage
@@ -441,6 +504,7 @@ function MediaStage({
         onError={onError}
       />
     );
+
   if (media.type === "webpage" && media.pageUrl)
     return (
       <TimedStage seconds={duration} onEnd={onEnd}>
@@ -452,6 +516,7 @@ function MediaStage({
         />
       </TimedStage>
     );
+
   if (media.type === "message")
     return (
       <TimedStage seconds={duration} onEnd={onEnd}>
@@ -462,6 +527,7 @@ function MediaStage({
         </div>
       </TimedStage>
     );
+
   if (media.type === "app")
     return (
       <TimedStage seconds={duration} onEnd={onEnd}>
@@ -472,6 +538,7 @@ function MediaStage({
         />
       </TimedStage>
     );
+
   return (
     <TimedStage seconds={duration} onEnd={onEnd}>
       <div className="player-standby">
@@ -504,13 +571,14 @@ function DriveStage({
   onEnd,
   onError,
 }: {
-  media: PlayerManifest["items"][number]["media"];
+  media: ManifestItem["media"];
   duration: number;
   device: Device;
   onEnd: () => void;
   onError: (d: string) => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+
   useEffect(() => {
     let active = true;
     let objectUrl: string | null = null;
@@ -525,6 +593,7 @@ function DriveStage({
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [media.id, media.driveChecksum, device.screenId, device.token, onError]);
+
   if (!url)
     return (
       <div className="player-loading">
@@ -532,6 +601,7 @@ function DriveStage({
         <small>Preparando {media.name}</small>
       </div>
     );
+
   if (media.type === "drive_video")
     return (
       <video
@@ -542,6 +612,7 @@ function DriveStage({
         onError={() => onError("drive_video_error")}
       />
     );
+
   return (
     <TimedStage seconds={duration} onEnd={onEnd}>
       <img src={url} alt="" onError={() => onError("drive_image_error")} />
@@ -549,10 +620,7 @@ function DriveStage({
   );
 }
 
-async function loadDriveAsset(
-  media: PlayerManifest["items"][number]["media"],
-  device: Device,
-) {
+async function loadDriveAsset(media: ManifestItem["media"], device: Device) {
   const cache = await caches.open("pontoview-media-v1");
   const key = new Request(
     `${location.origin}/__pv_cache/${device.screenId}/${media.id}/${media.driveChecksum || "latest"}`,
@@ -560,6 +628,7 @@ async function loadDriveAsset(
   const cached = await cache.match(key);
   if (cached) return URL.createObjectURL(await cached.blob());
   if (!navigator.onLine) throw new Error("offline");
+
   const response = await fetch(`${functionsUrl}/drive-media`, {
     method: "POST",
     headers: {
@@ -588,6 +657,24 @@ function YouTubeStage({
 }) {
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
+  const onEndRef = useRef(onEnd);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  }, [onEnd]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  const controls = Boolean(options?.controls);
+  const mute = Boolean(options?.mute);
+  const volume = Number(options?.volume ?? 100);
+  const start = Number(options?.start || 0);
+  const rawEnd = Number(options?.end || 0);
+  const end = rawEnd > 0 ? rawEnd : undefined;
+
   useEffect(() => {
     let active = true;
     loadYouTubeApi()
@@ -597,33 +684,40 @@ function YouTubeStage({
           videoId,
           playerVars: {
             autoplay: 1,
-            controls: options.controls ? 1 : 0,
-            mute: options.mute ? 1 : 0,
-            start: Number(options.start || 0),
-            end: options.end ? Number(options.end) : undefined,
+            controls: controls ? 1 : 0,
+            mute: mute ? 1 : 0,
+            start,
+            end,
             playsinline: 1,
             rel: 0,
+            loop: 0,
             modestbranding: 1,
+            origin: window.location.origin,
           },
           events: {
             onReady: (event: any) => {
-              event.target.setVolume(Number(options.volume ?? 100));
-              if (options.mute) event.target.mute();
+              event.target.setVolume(volume);
+              if (mute) event.target.mute();
               event.target.playVideo();
             },
             onStateChange: (event: any) => {
-              if (event.data === 0) onEnd();
+              if (event.data === 0) onEndRef.current();
             },
-            onError: (event: any) => onError(`youtube_${event.data}`),
+            onError: (event: any) =>
+              onErrorRef.current(`youtube_${event.data}`),
           },
         });
       })
-      .catch(() => onError("youtube_api_error"));
+      .catch(() => onErrorRef.current("youtube_api_error"));
+
     return () => {
       active = false;
-      player.current?.destroy?.();
+      const current = player.current;
+      player.current = null;
+      current?.destroy?.();
     };
-  }, [videoId, onEnd, onError, options]);
+  }, [videoId, controls, mute, volume, start, end]);
+
   return <div className="youtube-stage" ref={host} />;
 }
 
@@ -659,6 +753,7 @@ function AppStage({
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
   if (appKey === "clock")
     return (
       <div className="clock-app">
@@ -677,6 +772,7 @@ function AppStage({
         </span>
       </div>
     );
+
   return (
     <div className="generic-app">
       <span className="player-mark">P</span>
@@ -698,6 +794,7 @@ function WeatherWidget({
     temperature: number | null;
     name?: string;
   } | null>(null);
+
   useEffect(() => {
     void fetch(`${functionsUrl}/screens-weather`, {
       method: "POST",
@@ -712,6 +809,7 @@ function WeatherWidget({
       .then((r) => (r.ok ? r.json() : null))
       .then((result) => result && setData(result));
   }, [screenId, token]);
+
   return (
     <div className="live-weather">
       <CloudSun />
@@ -733,6 +831,7 @@ function readDevice(): Device | null {
     return null;
   }
 }
+
 function readManifest(id: string): PlayerManifest | null {
   try {
     return JSON.parse(localStorage.getItem(`pv_manifest_${id}`) || "null");
@@ -744,6 +843,7 @@ function readManifest(id: string): PlayerManifest | null {
 interface YTPlayer {
   destroy?: () => void;
 }
+
 declare global {
   interface Window {
     YT: {

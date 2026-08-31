@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeDollarSign,
   BookOpen,
   Calendar,
   CalendarClock,
+  Check,
   ChevronRight,
   Cloud,
   Clock3,
@@ -262,27 +263,114 @@ export function AppsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState<PanelApp | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(() => new Set());
+  const inFlight = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!organization) {
+      setAddedKeys(new Set());
+      return;
+    }
+    let active = true;
+    const urls = apps.map((app) => panelUrl(app.slug));
+    void supabase
+      .from("media")
+      .select("page_url,status")
+      .eq("organization_id", organization.id)
+      .eq("type", "webpage")
+      .in("page_url", urls)
+      .neq("status", "archived")
+      .then(({ data }) => {
+        if (!active) return;
+        const existingUrls = new Set(
+          (data || []).map((row) => String(row.page_url || "")),
+        );
+        setAddedKeys(
+          new Set(
+            apps
+              .filter((app) => existingUrls.has(panelUrl(app.slug)))
+              .map((app) => app.key),
+          ),
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, [organization]);
 
   const add = async (app: PanelApp) => {
-    if (!organization || !user || busyKey) return;
+    if (!organization || !user || inFlight.current.has(app.key)) return;
+    if (addedKeys.has(app.key)) {
+      setMessage(`${app.title} já está na sua biblioteca.`);
+      return;
+    }
+
+    inFlight.current.add(app.key);
     setBusyKey(app.key);
     setMessage(null);
-    const result = await supabase.from("media").insert({
-      organization_id: organization.id,
-      type: "webpage",
-      name: app.title,
-      page_url: panelUrl(app.slug),
-      duration_seconds: app.duration,
-      online_required: false,
-      status: "ready",
-      created_by: user.id,
-    });
-    setBusyKey(null);
-    setMessage(
-      result.error
-        ? result.error.message
-        : `${app.title} adicionado à sua biblioteca.`,
-    );
+    const url = panelUrl(app.slug);
+
+    try {
+      const activeResult = await supabase
+        .from("media")
+        .select("id,status")
+        .eq("organization_id", organization.id)
+        .eq("type", "webpage")
+        .eq("page_url", url)
+        .neq("status", "archived")
+        .limit(1)
+        .maybeSingle();
+      if (activeResult.error) throw activeResult.error;
+
+      if (activeResult.data) {
+        setAddedKeys((current) => new Set(current).add(app.key));
+        setMessage(`${app.title} já está na sua biblioteca.`);
+        return;
+      }
+
+      const archivedResult = await supabase
+        .from("media")
+        .select("id")
+        .eq("organization_id", organization.id)
+        .eq("type", "webpage")
+        .eq("page_url", url)
+        .eq("status", "archived")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (archivedResult.error) throw archivedResult.error;
+
+      const payload = {
+        organization_id: organization.id,
+        type: "webpage" as const,
+        name: app.title,
+        page_url: url,
+        duration_seconds: app.duration,
+        online_required: false,
+        status: "ready",
+        created_by: user.id,
+      };
+
+      const result = archivedResult.data?.id
+        ? await supabase
+            .from("media")
+            .update(payload)
+            .eq("id", archivedResult.data.id)
+        : await supabase.from("media").insert(payload);
+      if (result.error) throw result.error;
+
+      setAddedKeys((current) => new Set(current).add(app.key));
+      setMessage(`${app.title} adicionado à sua biblioteca.`);
+    } catch (cause) {
+      setMessage(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível adicionar este painel.",
+      );
+    } finally {
+      inFlight.current.delete(app.key);
+      setBusyKey(null);
+    }
   };
 
   return (
@@ -296,6 +384,7 @@ export function AppsPage() {
       <div className="apps-grid pv-panel-catalog">
         {apps.map((app) => {
           const Icon = app.icon;
+          const isAdded = addedKeys.has(app.key);
           return (
             <article className="app-card pv-panel-card" key={app.key}>
               <div className="pv-panel-card-top">
@@ -320,11 +409,15 @@ export function AppsPage() {
                 </button>
                 <button
                   className="btn secondary"
-                  disabled={busyKey !== null}
+                  disabled={busyKey !== null || isAdded}
                   onClick={() => void add(app)}
                 >
-                  <Sparkles />
-                  {busyKey === app.key ? "Adicionando…" : "Adicionar"}
+                  {isAdded ? <Check /> : <Sparkles />}
+                  {isAdded
+                    ? "Adicionado"
+                    : busyKey === app.key
+                      ? "Adicionando…"
+                      : "Adicionar"}
                 </button>
               </div>
             </article>
@@ -349,11 +442,15 @@ export function AppsPage() {
             <span>{preview.description}</span>
             <button
               className="btn primary"
-              disabled={busyKey !== null}
+              disabled={busyKey !== null || addedKeys.has(preview.key)}
               onClick={() => void add(preview)}
             >
-              <Sparkles />
-              Adicionar à biblioteca
+              {addedKeys.has(preview.key) ? <Check /> : <Sparkles />}
+              {addedKeys.has(preview.key)
+                ? "Já adicionado"
+                : busyKey === preview.key
+                  ? "Adicionando…"
+                  : "Adicionar à biblioteca"}
             </button>
           </div>
         </Modal>
