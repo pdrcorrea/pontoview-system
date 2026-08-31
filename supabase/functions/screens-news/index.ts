@@ -11,7 +11,7 @@ type NormalizedNews = {
 
 type EditorialResult = {
   allowed: boolean;
-  reason?: "advertising" | "clickbait" | "sensitive" | "controversial";
+  reason?: "advertising" | "clickbait" | "sensitive" | "controversial" | "blocked_source";
 };
 
 function clean(value: unknown, max = 1000) {
@@ -62,6 +62,17 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
   const source = clean(item.source, 200);
   const url = clean(item.url || item.link, 1500);
   const text = plain(`${title} ${summary} ${source} ${url}`);
+  const normalizedSource = plain(source);
+  const normalizedUrl = plain(url);
+
+  // Remove Folha de S.Paulo completely from the PontoView news rotation, including cached items.
+  const blockedSources = [
+    "folha de s.paulo", "folha de s. paulo", "folha de sao paulo", "folha s.paulo", "folha s. paulo",
+    "folha.uol.com.br", "www1.folha.uol.com.br",
+  ];
+  if (blockedSources.some((term) => normalizedSource.includes(term) || normalizedUrl.includes(term))) {
+    return { allowed: false, reason: "blocked_source" };
+  }
 
   // Advertising and sponsored/native-ad language. Intentionally conservative for public displays.
   const advertisingTerms = [
@@ -81,19 +92,32 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
     }
   } catch {}
 
-  // Clickbait score: one signal is usually harmless; repeated signals indicate an intentionally incomplete or sensational headline.
+  // Clickbait score: strong inducements are blocked immediately; generic CTAs need another sensational signal.
   let clickbaitScore = 0;
-  const clickbaitPhrases = [
-    "voce nao vai acreditar", "ninguem esperava", "chocou a internet", "surpreendeu a todos",
-    "veja o que aconteceu", "veja quem", "descubra agora", "entenda o motivo", "saiba o motivo",
-    "motivo vai te surpreender", "revelacao bombastica", "bombou na web", "internet vai a loucura",
-    "de cair o queixo", "de arrepiar", "esta dando o que falar", "nao perca", "urgente!",
+  const strongClickbaitPhrases = [
+    "voce nao vai acreditar", "nao vai acreditar", "ninguem esperava", "ninguem te conta",
+    "chocou a internet", "surpreendeu a todos", "veja o que aconteceu", "veja quem",
+    "descubra agora", "motivo vai te surpreender", "revelacao bombastica", "bombou na web",
+    "internet vai a loucura", "de cair o queixo", "de arrepiar", "esta dando o que falar",
+    "nao perca", "urgente!", "segredo revelado", "segredo que", "isso vai te surpreender",
+    "voce precisa saber", "tudo o que voce precisa saber", "esse e o motivo", "este e o motivo",
+    "fotos mostram", "antes e depois", "viraliza nas redes", "viralizou nas redes",
   ];
-  if (clickbaitPhrases.some((term) => text.includes(term))) clickbaitScore += 2;
+  if (strongClickbaitPhrases.some((term) => text.includes(term))) clickbaitScore += 2;
+
+  const clickInducingPhrases = [
+    "saiba mais", "veja mais", "confira", "confira agora", "confira detalhes", "veja detalhes",
+    "veja como", "saiba como", "descubra", "entenda", "entenda o motivo", "entenda por que",
+    "saiba o motivo", "saiba por que", "clique aqui", "assista", "veja o video", "veja o vídeo",
+    "leia mais", "continue lendo", "veja a lista", "confira a lista", "descubra quem", "veja quem",
+    "o que se sabe", "o que sabemos", "saiba tudo", "veja tudo", "entenda tudo",
+  ];
+  if (clickInducingPhrases.some((term) => text.includes(plain(term)))) clickbaitScore += 1;
+
   if (/\?\s*$/.test(title)) clickbaitScore += 1;
   if ((title.match(/!/g) || []).length >= 1) clickbaitScore += 1;
   if (/\.{3,}\s*$/.test(title)) clickbaitScore += 1;
-  if (/^(veja|saiba|descubra|entenda|confira)\b/i.test(plain(title))) clickbaitScore += 1;
+  if (/^(veja|saiba|descubra|entenda|confira|assista|clique|leia)\b/i.test(plain(title))) clickbaitScore += 1;
   const letters = title.replace(/[^A-Za-zÀ-ÿ]/g, "");
   const uppercase = title.replace(/[^A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇ]/g, "");
   if (letters.length >= 12 && uppercase.length / letters.length > 0.72) clickbaitScore += 2;
@@ -149,7 +173,7 @@ Deno.serve(async (req) => {
 
     let providerItems: Record<string, unknown>[] = [];
     try {
-      const response = await fetch(SOURCE_URL, { headers: { Accept: "application/json", "User-Agent": "PontoView-Telas/1.2" } });
+      const response = await fetch(SOURCE_URL, { headers: { Accept: "application/json", "User-Agent": "PontoView-Telas/1.3" } });
       if (response.ok) {
         const json = await response.json();
         providerItems = Array.isArray(json) ? json : Array.isArray(json?.items) ? json.items : [];
