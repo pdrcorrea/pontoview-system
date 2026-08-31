@@ -16,7 +16,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -45,6 +45,25 @@ export function AppShell() {
   const navigate = useNavigate();
   const title = [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
   const initials = (profile?.full_name || profile?.email || "PV").split(/\s+/).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
   const leave = async () => { await signOut(); navigate("/login"); };
   const links = (items: readonly (readonly [string, string, LucideIcon])[]) => items.map(([to, label, Icon]) => (
     <NavLink key={to} to={to} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
@@ -54,7 +73,7 @@ export function AppShell() {
   return (
     <div className="shell">
       {open && <button className="sidebar-scrim" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
-      <aside className={`sidebar ${open ? "open" : ""}`}>
+      <aside id="main-sidebar" className={`sidebar ${open ? "open" : ""}`} aria-hidden={!open && undefined}>
         <div className="brand">
           {!brandLogoFailed ? (
             <img
@@ -78,13 +97,13 @@ export function AppShell() {
               <span><strong>PontoView</strong><small>Telas</small></span>
             </>
           )}
-          <button className="mobile-close" onClick={() => setOpen(false)}><X size={18} /></button>
+          <button className="mobile-close" aria-label="Fechar menu" onClick={() => setOpen(false)}><X size={18} /></button>
         </div>
         <div className="nav-label">Workspace</div>
         <nav>{links(primary)}</nav>
         <div className="nav-label account-label">Conta</div>
         <nav>{links(account)}</nav>
-        <NavLink className="settings" to="/configuracoes"><Settings size={18} /><span>Configurações</span></NavLink>
+        <NavLink className="settings" to="/configuracoes" onClick={() => setOpen(false)}><Settings size={18} /><span>Configurações</span></NavLink>
         <div className="org-card">
           <span className="avatar">{initials}</span>
           <span><strong>{organization?.display_name || "Sua empresa"}</strong><small>{role === "owner" ? "Proprietário" : role}</small></span>
@@ -93,7 +112,7 @@ export function AppShell() {
       </aside>
       <main>
         <header className="topbar">
-          <button className="mobile-menu" onClick={() => setOpen(true)}><Menu /></button>
+          <button className="mobile-menu" aria-label="Abrir menu" aria-controls="main-sidebar" aria-expanded={open} onClick={() => setOpen(true)}><Menu /></button>
           <div><strong>{title}</strong></div>
           <div className="top-actions">
             <span className="system-ok">● Conectado</span>
