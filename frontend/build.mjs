@@ -12,3 +12,4 @@ for (const entry of ['index.html', 'dashboard.html', 'financeiro.html', 'paineis
 }
 
 console.log('PontoView Telas: build estático concluído em frontend/dist');
+console.log('Deploy de produção solicitado: 2026-08-31');
