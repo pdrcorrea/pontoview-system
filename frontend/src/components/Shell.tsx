@@ -39,6 +39,7 @@ const account = [
 export function AppShell() {
   const { organization, profile, role, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [brandIconFailed, setBrandIconFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const title = [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
@@ -54,7 +55,16 @@ export function AppShell() {
       {open && <button className="sidebar-scrim" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="brand">
-          <b><img src="/assets/pontoview-icon.svg" alt="" style={{ width: "100%", height: "100%", display: "block" }} /></b>
+          <b>
+            {brandIconFailed ? "PV" : (
+              <img
+                src="/assets/pontoview-icon.svg"
+                alt=""
+                style={{ width: "100%", height: "100%", display: "block" }}
+                onError={() => setBrandIconFailed(true)}
+              />
+            )}
+          </b>
           <span><strong>PontoView</strong><small>Telas</small></span>
           <button className="mobile-close" onClick={() => setOpen(false)}><X size={18} /></button>
         </div>
