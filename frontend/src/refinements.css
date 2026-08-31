@@ -1,0 +1,149 @@
+/* Refinamentos visuais do PontoView Telas */
+.topbar > div:first-of-type {
+  display: flex;
+  align-items: center;
+}
+.topbar > div:first-of-type strong {
+  margin-top: 0;
+  font-size: 15px;
+}
+
+.device-grid {
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+}
+.device-card.compact-device {
+  padding: 16px 18px;
+  display: grid;
+  gap: 13px;
+}
+.compact-device .device-head {
+  margin: 0;
+  align-items: center;
+}
+.compact-device .device-head h2 {
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+.compact-device dl {
+  margin: 0;
+  padding-top: 12px;
+}
+.compact-device .btn {
+  margin-top: 1px;
+}
+
+.help-grid.help-topics {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: start;
+}
+.help-topic {
+  padding: 0;
+  overflow: hidden;
+}
+.help-topic summary {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 13px;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+}
+.help-topic summary::-webkit-details-marker { display: none; }
+.help-topic summary > span:first-child {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #eef3f7;
+  color: #244f7e;
+}
+.help-topic summary svg { width: 19px; }
+.help-topic summary h2 { margin: 0 0 4px; }
+.help-topic summary p { margin: 0; }
+.help-topic summary > svg {
+  width: 16px;
+  color: #7a8998;
+  transition: transform .2s ease;
+}
+.help-topic[open] summary > svg { transform: rotate(90deg); }
+.help-topic-body {
+  border-top: 1px solid #edf1f4;
+  padding: 14px 16px 17px 71px;
+}
+.help-topic-body p {
+  margin: 0 0 10px;
+  color: #52677b;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.help-topic-body ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 7px;
+  color: #3d5267;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.support-contact-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0 0 18px;
+}
+.support-contact-strip .btn {
+  text-decoration: none;
+}
+.btn.whatsapp {
+  background: #eef8f2;
+  border-color: #cfe7d8;
+  color: #226342;
+}
+.btn.whatsapp:hover { background: #e5f4eb; }
+.support-note {
+  display: block;
+  margin-top: 8px;
+  color: #718194;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* Badge de aviso: forte o suficiente para TV, sem aparência promocional. */
+.player-lframe > footer > b {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .55em;
+  background: #0b3764;
+  border: 1px solid rgba(105, 207, 242, .42);
+  box-shadow: 0 5px 16px rgba(3, 42, 97, .13);
+  padding: .48em .82em;
+  border-radius: .52em;
+  letter-spacing: .1em;
+}
+.player-lframe > footer > b::before {
+  content: "";
+  width: .42em;
+  height: .42em;
+  border-radius: 999px;
+  background: #69cff2;
+  box-shadow: 0 0 0 .18em rgba(105, 207, 242, .14);
+}
+.live-business.business-logo {
+  width: 100%;
+  min-height: 38px;
+}
+.live-business.business-logo img {
+  display: block;
+  max-width: 100%;
+  max-height: clamp(38px, 5vh, 74px);
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (max-width: 700px) {
+  .help-topic-body { padding-left: 16px; }
+}
