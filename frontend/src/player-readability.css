@@ -40,6 +40,10 @@
 }
 
 /* L-frame is normally viewed several metres away, so secondary data must not collapse into laptop-sized type. */
+.player-lframe {
+  position: relative;
+}
+
 .player-lframe > footer {
   font-size: clamp(18px, 1.55vw, 30px) !important;
   min-width: 0;
@@ -50,6 +54,10 @@
   padding-bottom: clamp(8px, 1.1vh, 16px) !important;
   line-height: 1.15;
   overflow: hidden;
+}
+
+.player-lframe:has(> aside .live-business) > footer {
+  padding-right: clamp(150px, 18vw, 290px) !important;
 }
 
 .player-lframe > footer > * {
@@ -79,7 +87,63 @@
   flex: 0 0 auto;
 }
 
-/* Keep organization branding inside the footer instead of letting the source image dictate its size. */
+/* The company brand lives permanently at the right edge of the information bar. */
+.player-lframe > aside .live-business {
+  position: absolute;
+  z-index: 8;
+  right: clamp(22px, 2.5vw, 52px);
+  width: clamp(110px, 13vw, 220px);
+  height: 15%;
+  margin: 0 !important;
+  padding: clamp(7px, .8vh, 12px) 0;
+  box-sizing: border-box;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .55em;
+  overflow: hidden;
+  pointer-events: none;
+  font-size: clamp(12px, .9vw, 17px) !important;
+}
+
+.player-lframe.bar-bottom > aside .live-business {
+  bottom: 0;
+  top: auto;
+}
+
+.player-lframe.bar-top > aside .live-business {
+  top: 0;
+  bottom: auto;
+}
+
+.player-lframe > aside .live-business.business-logo img {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 70% !important;
+  object-fit: contain !important;
+  object-position: right center;
+}
+
+.player-lframe > aside .live-business svg {
+  width: 1.2em;
+  height: 1.2em;
+  flex: 0 0 auto;
+}
+
+.player-lframe > aside .live-business span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Avoid a second copy of the brand when there is no news/message item. */
+.player-lframe:has(> aside .live-business) > footer .footer-company {
+  display: none !important;
+}
+
+/* Fallback footer branding stays constrained when the business widget is disabled. */
 .player-lframe > footer .footer-company {
   display: flex !important;
   align-items: center;
@@ -129,10 +193,6 @@
   font-size: clamp(13px, .92vw, 18px) !important;
 }
 
-.live-business {
-  font-size: clamp(13px, 1.05vw, 20px) !important;
-}
-
 .news-source strong {
   font-size: .78em !important;
 }
@@ -143,6 +203,9 @@
     padding-top: 6px !important;
     padding-bottom: 6px !important;
   }
+  .player-lframe:has(> aside .live-business) > footer { padding-right: clamp(125px, 17vw, 235px) !important; }
+  .player-lframe > aside .live-business { width: clamp(95px, 12.5vw, 185px); padding-top: 5px; padding-bottom: 5px; }
+  .player-lframe > aside .live-business.business-logo img { max-height: 66% !important; }
   .player-lframe > footer .footer-company img { max-height: clamp(30px, 6vh, 52px) !important; }
   .player-lframe > footer .news-source-icon { width: clamp(28px, 2vw, 38px); height: clamp(28px, 2vw, 38px); }
   .live-weather small { font-size: clamp(11px, .9vw, 16px) !important; }
