@@ -2,10 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Building2,
+  Cloud,
+  CloudFog,
+  CloudLightning,
+  CloudRain,
   CloudSun,
   Loader2,
   Monitor,
+  Newspaper,
   RefreshCw,
+  Snowflake,
+  Sun,
   WifiOff,
   Wind,
 } from "lucide-react";
@@ -13,7 +20,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.1.0";
+const PLAYER_VERSION = "1.2.0";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -25,10 +32,35 @@ const PLAYER_RUNTIME_STYLE = `
   .pv-stage-transition.cut { animation: none; }
   @keyframes pv-stage-in { from { opacity: 0; transform: scale(1.006); } to { opacity: 1; transform: scale(1); } }
   .pv-player-power-off { position: fixed; inset: 0; z-index: 99999; width: 100vw; height: 100vh; background: #000; cursor: none; }
-  .pv-brand-image { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .live-weather small.condition { opacity: .78; }
-  .live-weather .weather-detail { display: flex; gap: .7em; margin-top: .25em; font-size: clamp(8px,.75vw,14px); color: #61768a; }
+  .pv-brand-official { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .pv-brand-fallback { width: 100%; height: 100%; display: grid; place-items: center; font-weight: 800; font-size: .7em; letter-spacing: -.04em; }
+  .live-weather { display: block; }
+  .weather-current { display: flex; align-items: center; gap: 1vw; }
+  .weather-current > svg { width: clamp(30px,3vw,58px); height: auto; flex: 0 0 auto; }
+  .live-weather small.condition { opacity: .8; }
+  .live-weather .weather-detail { display: flex; gap: .7em; margin-top: .25em; font-size: clamp(8px,.72vw,13px); color: #61768a; }
   .live-weather .weather-detail svg { width: 1em; height: 1em; }
+  .weather-forecast { margin-top: 2.2vh; border-top: 1px solid #d6e0e7; padding-top: 1.7vh; display: grid; gap: 1.15vh; }
+  .weather-day { display: grid !important; grid-template-columns: minmax(42px,.75fr) 26px 1fr; align-items: center; gap: .55vw; color: #40586d; }
+  .weather-day > small { font-size: clamp(8px,.74vw,13px); font-weight: 700; color: #40586d; text-transform: uppercase; letter-spacing: .04em; }
+  .weather-day > svg { width: clamp(17px,1.45vw,28px); height: auto; color: #244f7e; }
+  .weather-day > span { display: flex; justify-content: flex-end; gap: .45em; font-size: clamp(9px,.82vw,15px); white-space: nowrap; }
+  .weather-day .min { color: #6a8295; }
+  .player-lframe > footer .news-source { display: inline-flex; align-items: center; gap: .55em; flex: 0 0 auto; animation: none; }
+  .news-source-icon { position: relative; width: 1.7em; height: 1.7em; border-radius: .38em; background: #edf3f7; display: grid !important; place-items: center; overflow: hidden; }
+  .news-source-icon svg { width: 56%; height: 56%; color: #244f7e; }
+  .news-source-icon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+  .news-source strong { font-size: .72em; color: #244f7e; max-width: 14em; overflow: hidden; text-overflow: ellipsis; }
+  .footer-headline { overflow: hidden; text-overflow: ellipsis; }
+  .footer-company { display: flex !important; align-items: center; height: 70%; gap: .7em; animation: none !important; }
+  .footer-company img { max-height: 100%; max-width: min(28vw,320px); object-fit: contain; }
+  .footer-company svg { width: 1.25em; height: 1.25em; color: #244f7e; }
+  .footer-company strong { font-size: .85em; color: #244f7e; }
+  @media (orientation: portrait) {
+    .weather-forecast { gap: .75vh; }
+    .weather-day { grid-template-columns: minmax(36px,.8fr) 22px 1fr; }
+    .news-source strong { max-width: 8em; }
+  }
   @media (prefers-reduced-motion: reduce) { .pv-stage-transition { animation-duration: 1ms; } }
 `;
 
@@ -229,7 +261,7 @@ export function PlayerPage() {
 
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
   if (!manifest) return (
-    <div className="player-boot"><span className="player-mark"><img className="pv-brand-image" src="/assets/pontoview-icon.svg" alt="" /></span><Loader2 className="spin" /><p>Sincronizando conteúdo…</p>{error && <small>{error}</small>}</div>
+    <div className="player-boot"><span className="player-mark"><BrandMark /></span><Loader2 className="spin" /><p>Sincronizando conteúdo…</p>{error && <small>{error}</small>}</div>
   );
 
   if (!operating) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
@@ -246,7 +278,7 @@ export function PlayerPage() {
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
   return (
     <div className="activation-screen">
-      <div className="activation-brand"><span className="player-mark"><img className="pv-brand-image" src="/assets/pontoview-icon.svg" alt="PontoView" /></span><b>PontoView Player</b></div>
+      <div className="activation-brand"><span className="player-mark"><BrandMark /></span><b>PontoView Player</b></div>
       <section>
         <Monitor /><small>CONECTAR ESTA TELA</small><h1>{activation?.code || "••••••"}</h1>
         <p>No painel PontoView, acesse <b>Telas → Conectar tela</b> e informe este código.</p>
@@ -271,8 +303,18 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
   useEffect(() => { const timer = window.setInterval(() => setClock(new Date()), 1000); return () => window.clearInterval(timer); }, []);
 
   const info = useMemo(() => [
-    ...(settings.widgets?.news ? manifest.news.map((news) => ({ kind: "news", text: news.title })) : []),
-    ...(settings.widgets?.messages ? manifest.messages.map((message) => ({ kind: "message", text: message.body })) : []),
+    ...(settings.widgets?.news ? manifest.news.map((news) => ({
+      kind: "news" as const,
+      text: news.title,
+      source: news.source || sourceName(news.url),
+      url: news.url,
+    })) : []),
+    ...(settings.widgets?.messages ? manifest.messages.map((message) => ({
+      kind: "message" as const,
+      text: message.body,
+      source: "",
+      url: "",
+    })) : []),
   ].filter((entry) => entry.text), [settings.widgets, manifest.news, manifest.messages]);
 
   useEffect(() => {
@@ -290,6 +332,7 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
 
   if (settings.layout_mode !== "lframe") return <main className="player-fullscreen">{stage}</main>;
   const currentInfo = info.length ? info[infoIndex % info.length] : null;
+  const logoUrl = String(manifest.organization.settings?.logoUrl || "");
   return (
     <main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position}`}>
       <div className="player-main">{stage}</div>
@@ -304,7 +347,16 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
         {settings.widgets?.business && <div className="live-business"><Building2 /><span>{manifest.organization.displayName}</span></div>}
       </aside>
       <footer>
-        {currentInfo ? <><b>{currentInfo.kind === "message" ? "AVISO" : "AGORA"}</b><span key={`${currentInfo.kind}-${infoIndex}`}>{currentInfo.text}</span></> : <span>{manifest.organization.displayName}</span>}
+        {currentInfo?.kind === "news" ? (
+          <>
+            <SourceBadge source={currentInfo.source} url={currentInfo.url} />
+            <span className="footer-headline" key={`news-${infoIndex}`}>{currentInfo.text}</span>
+          </>
+        ) : currentInfo?.kind === "message" ? (
+          <><b>AVISO</b><span className="footer-headline" key={`message-${infoIndex}`}>{currentInfo.text}</span></>
+        ) : (
+          <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />
+        )}
       </footer>
     </main>
   );
@@ -317,7 +369,7 @@ function MediaStage({ item, device, organization, onEnd, onError }: {
   onEnd: () => void;
   onError: (detail: string) => void;
 }) {
-  if (!item) return <div className="player-standby"><span className="player-mark"><img className="pv-brand-image" src="/assets/pontoview-icon.svg" alt="" /></span><h1>{organization.displayName}</h1><p>Aguardando conteúdo na playlist.</p></div>;
+  if (!item) return <div className="player-standby"><span className="player-mark"><BrandMark /></span><h1>{organization.displayName}</h1><p>Aguardando conteúdo na playlist.</p></div>;
   const media = item.media;
   const duration = item.durationSeconds || media.durationSeconds || 15;
   if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} onEnd={onEnd} onError={onError} />;
@@ -419,8 +471,17 @@ function AppStage({ appKey, name, organization }: { appKey: string | null; name:
   const [now, setNow] = useState(new Date());
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(timer); }, []);
   if (appKey === "clock") return <div className="clock-app"><b>{now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b><span>{now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span></div>;
-  return <div className="generic-app"><span className="player-mark"><img className="pv-brand-image" src="/assets/pontoview-icon.svg" alt="" /></span><small>APP PONTOVIEW</small><h1>{name}</h1><p>{organization.displayName}</p></div>;
+  return <div className="generic-app"><span className="player-mark"><BrandMark /></span><small>APP PONTOVIEW</small><h1>{name}</h1><p>{organization.displayName}</p></div>;
 }
+
+type ForecastDay = {
+  date: string;
+  weather_code: number | null;
+  condition?: string;
+  temp_min: number | null;
+  temp_max: number | null;
+  precipitation_probability?: number | null;
+};
 
 type WeatherData = {
   temperature: number | null;
@@ -430,6 +491,7 @@ type WeatherData = {
   weather_code?: number | null;
   condition?: string;
   name?: string;
+  forecast?: ForecastDay[];
 };
 
 function WeatherWidget({ screenId, token, location }: {
@@ -451,22 +513,100 @@ function WeatherWidget({ screenId, token, location }: {
     return () => { active = false; window.clearInterval(timer); };
   }, [screenId, token, locationKey]);
 
+  const forecast = Array.isArray(data?.forecast) ? data.forecast.slice(1, 4) : [];
   return (
     <div className="live-weather">
-      <CloudSun />
-      <span>
-        <b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b>
-        <small className="condition">{data?.condition || data?.name || "Clima"}</small>
-        <small>{data?.name || String(location?.name || "Configure a cidade")}</small>
-        {(data?.apparent_temperature != null || data?.wind_speed != null) && (
-          <span className="weather-detail">
-            {data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}
-            {data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}
-          </span>
-        )}
-      </span>
+      <div className="weather-current">
+        <WeatherGlyph code={data?.weather_code} />
+        <span>
+          <b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b>
+          <small className="condition">{data?.condition || "Clima"}</small>
+          <small>{data?.name || String(location?.name || "Configure a cidade")}</small>
+          {(data?.apparent_temperature != null || data?.wind_speed != null) && (
+            <span className="weather-detail">
+              {data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}
+              {data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}
+            </span>
+          )}
+        </span>
+      </div>
+      {forecast.length > 0 && (
+        <div className="weather-forecast">
+          {forecast.map((day) => (
+            <div className="weather-day" key={day.date} title={day.condition || "Previsão"}>
+              <small>{forecastLabel(day.date)}</small>
+              <WeatherGlyph code={day.weather_code} />
+              <span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+function WeatherGlyph({ code }: { code?: number | null }) {
+  const value = Number(code ?? 3);
+  const Icon = value <= 1 ? Sun
+    : value === 2 ? CloudSun
+      : value === 3 ? Cloud
+        : [45, 48].includes(value) ? CloudFog
+          : [71, 73, 75].includes(value) ? Snowflake
+            : [95, 96, 99].includes(value) ? CloudLightning
+              : CloudRain;
+  return <Icon aria-hidden="true" />;
+}
+
+function forecastLabel(date: string) {
+  const parsed = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "Dia";
+  return parsed.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+}
+
+function SourceBadge({ source, url }: { source: string; url: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const favicon = faviconUrl(url);
+  return (
+    <span className="news-source">
+      <span className="news-source-icon">
+        <Newspaper />
+        {favicon && !imageFailed && <img src={favicon} alt="" onError={() => setImageFailed(true)} />}
+      </span>
+      <strong>{source || "Fonte"}</strong>
+    </span>
+  );
+}
+
+function CompanyFooter({ logoUrl, name }: { logoUrl: string; name: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  if (logoUrl && !imageFailed) {
+    return <span className="footer-company"><img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /></span>;
+  }
+  return <span className="footer-company"><Building2 /><strong>{name}</strong></span>;
+}
+
+function BrandMark() {
+  const [imageFailed, setImageFailed] = useState(false);
+  return imageFailed
+    ? <span className="pv-brand-fallback">PV</span>
+    : <img className="pv-brand-official" src="/assets/pontoview-icon.svg" alt="" onError={() => setImageFailed(true)} />;
+}
+
+function sourceName(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Fonte";
+  }
+}
+
+function faviconUrl(url: string) {
+  try {
+    const host = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`;
+  } catch {
+    return "";
+  }
 }
 
 function readDevice(): Device | null {
