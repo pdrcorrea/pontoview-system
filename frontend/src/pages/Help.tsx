@@ -1,23 +1,29 @@
 import { useMemo, useState } from "react";
 import {
+  BadgeDollarSign,
   BookOpen,
+  Calendar,
   CalendarClock,
   ChevronRight,
   Cloud,
   Clock3,
+  Eye,
+  HeartPulse,
+  Leaf,
+  Lightbulb,
   ListVideo,
-  MenuSquare,
   MessageSquareText,
   Monitor,
   Newspaper,
   PanelRight,
   Search,
+  Smile,
   Sparkles,
   Youtube,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { PageHead } from "../components/ui";
+import { Modal, PageHead } from "../components/ui";
 import { supabase } from "../lib/supabase";
 
 const guides: Array<[string, string, LucideIcon]> = [
@@ -62,6 +68,7 @@ const guides: Array<[string, string, LucideIcon]> = [
     Clock3,
   ],
 ];
+
 export function HelpPage() {
   const [q, setQ] = useState("");
   const filtered = useMemo(
@@ -134,83 +141,223 @@ export function HelpPage() {
   );
 }
 
-const apps = [
-  ["clock", "Relógio", "Hora e data com leitura rápida.", Clock3, false],
-  [
-    "weather",
-    "Previsão do tempo",
-    "Clima com cache centralizado.",
-    Cloud,
-    false,
-  ],
-  ["news", "Notícias", "Conteúdo normalizado por categoria.", Newspaper, true],
-  [
-    "menu_board",
-    "Menu Board",
-    "Cardápios digitais responsivos.",
-    MenuSquare,
-    false,
-  ],
-  [
-    "messages",
-    "Comunicados",
-    "Avisos internos e mensagens.",
-    MessageSquareText,
-    false,
-  ],
-  ["busboard", "BusBoard", "Horários de partidas e chegadas.", Monitor, true],
-] as const;
+type PanelApp = {
+  key: string;
+  title: string;
+  description: string;
+  slug: string;
+  icon: LucideIcon;
+  duration: number;
+  category: string;
+};
+
+const apps: PanelApp[] = [
+  {
+    key: "today",
+    title: "Hoje",
+    description: "Data, feriados, estação do ano e calendário em uma tela elegante.",
+    slug: "hoje",
+    icon: Calendar,
+    duration: 25,
+    category: "Utilidades",
+  },
+  {
+    key: "greetings",
+    title: "Saudações",
+    description: "Bom dia, boa tarde, boa noite e boas-vindas com visual dinâmico.",
+    slug: "saudacoes",
+    icon: Smile,
+    duration: 18,
+    category: "Ambiente",
+  },
+  {
+    key: "clock",
+    title: "Hora Exata",
+    description: "Relógio em destaque, data e localização aproximada.",
+    slug: "hora",
+    icon: Clock3,
+    duration: 20,
+    category: "Utilidades",
+  },
+  {
+    key: "weather",
+    title: "Previsão do Tempo",
+    description: "Condição atual, sensação térmica e previsão para os próximos dias.",
+    slug: "tempo",
+    icon: Cloud,
+    duration: 28,
+    category: "Informação",
+  },
+  {
+    key: "news",
+    title: "Notícias",
+    description: "Notícias com imagem, fonte e QR Code em layout próprio para TV.",
+    slug: "noticias",
+    icon: Newspaper,
+    duration: 32,
+    category: "Informação",
+  },
+  {
+    key: "health",
+    title: "Dicas de Saúde",
+    description: "Conteúdo curto de saúde e bem-estar, renovado a cada atualização.",
+    slug: "saude",
+    icon: HeartPulse,
+    duration: 28,
+    category: "Bem-estar",
+  },
+  {
+    key: "guidance",
+    title: "Orientações",
+    description: "Mensagens úteis de atendimento, segurança e boa convivência.",
+    slug: "orientacoes",
+    icon: MessageSquareText,
+    duration: 24,
+    category: "Ambiente",
+  },
+  {
+    key: "curiosities",
+    title: "Curiosidades",
+    description: "Temas interessantes em páginas automáticas com tempo confortável de leitura.",
+    slug: "curiosidades",
+    icon: Lightbulb,
+    duration: 76,
+    category: "Editorial",
+  },
+  {
+    key: "culture",
+    title: "Cultura",
+    description: "Arte, música, literatura e patrimônio em uma experiência editorial paginada.",
+    slug: "cultura",
+    icon: BookOpen,
+    duration: 82,
+    category: "Editorial",
+  },
+  {
+    key: "economy",
+    title: "Economia",
+    description: "Dólar, euro, Bitcoin, Selic e IPCA com destaques visuais e indicadores.",
+    slug: "economia",
+    icon: BadgeDollarSign,
+    duration: 30,
+    category: "Indicadores",
+  },
+  {
+    key: "sustainability",
+    title: "Sustentabilidade",
+    description: "Energia, renováveis, florestas e emissões apresentados de forma visual.",
+    slug: "sustentabilidade",
+    icon: Leaf,
+    duration: 30,
+    category: "Indicadores",
+  },
+];
+
+function panelUrl(slug: string) {
+  return `${window.location.origin}/paineis/${slug}/`;
+}
+
 export function AppsPage() {
   const { organization, user } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
-  const add = async (app: (typeof apps)[number]) => {
-    if (!organization || !user) return;
-    const result = await supabase
-      .from("media")
-      .insert({
-        organization_id: organization.id,
-        type: "app",
-        name: app[1],
-        app_key: app[0],
-        duration_seconds: 30,
-        online_required: app[4],
-        created_by: user.id,
-      });
+  const [preview, setPreview] = useState<PanelApp | null>(null);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const add = async (app: PanelApp) => {
+    if (!organization || !user || busyKey) return;
+    setBusyKey(app.key);
+    setMessage(null);
+    const result = await supabase.from("media").insert({
+      organization_id: organization.id,
+      type: "webpage",
+      name: app.title,
+      page_url: panelUrl(app.slug),
+      duration_seconds: app.duration,
+      online_required: false,
+      status: "ready",
+      created_by: user.id,
+    });
+    setBusyKey(null);
     setMessage(
       result.error
         ? result.error.message
-        : `${app[1]} adicionado à biblioteca.`,
+        : `${app.title} adicionado à sua biblioteca.`,
     );
   };
+
   return (
     <>
       <PageHead
-        eyebrow="Conteúdo dinâmico"
-        title="Apps PontoView"
-        text="Painéis prontos para playlists ou para as áreas da Moldura em L."
+        eyebrow="Conteúdo PontoView"
+        title="Painéis Automáticos"
+        text="Conteúdos prontos para TV, com atualização inteligente, leitura confortável e visual PontoView. Visualize antes de adicionar à biblioteca."
       />
       {message && <div className="form-message success">{message}</div>}
-      <div className="apps-grid">
+      <div className="apps-grid pv-panel-catalog">
         {apps.map((app) => {
-          const Icon = app[3];
+          const Icon = app.icon;
           return (
-            <article className="app-card" key={app[0]}>
-              <span className="app-icon">
-                <Icon />
-              </span>
-              <h2>{app[1]}</h2>
-              <p>{app[2]}</p>
-              <button
-                className="btn secondary full"
-                onClick={() => void add(app)}
-              >
-                <Sparkles />
-                Adicionar à biblioteca
-              </button>
+            <article className="app-card pv-panel-card" key={app.key}>
+              <div className="pv-panel-card-top">
+                <span className="app-icon">
+                  <Icon />
+                </span>
+                <small className="pv-panel-category">{app.category}</small>
+              </div>
+              <h2>{app.title}</h2>
+              <p>{app.description}</p>
+              <div className="pv-panel-meta">
+                <span>{app.duration}s na playlist</span>
+                <span>Responsivo 16:9 / 9:16</span>
+              </div>
+              <div className="pv-panel-actions">
+                <button
+                  className="btn tertiary"
+                  onClick={() => setPreview(app)}
+                >
+                  <Eye />
+                  Visualizar
+                </button>
+                <button
+                  className="btn secondary"
+                  disabled={busyKey !== null}
+                  onClick={() => void add(app)}
+                >
+                  <Sparkles />
+                  {busyKey === app.key ? "Adicionando…" : "Adicionar"}
+                </button>
+              </div>
             </article>
           );
         })}
       </div>
+      {preview && (
+        <Modal
+          eyebrow="PRÉ-VISUALIZAÇÃO DO PAINEL"
+          title={preview.title}
+          onClose={() => setPreview(null)}
+        >
+          <div className="pv-panel-preview">
+            <iframe
+              key={preview.key}
+              src={panelUrl(preview.slug)}
+              title={`Pré-visualização: ${preview.title}`}
+              allow="fullscreen"
+            />
+          </div>
+          <div className="pv-panel-preview-footer">
+            <span>{preview.description}</span>
+            <button
+              className="btn primary"
+              disabled={busyKey !== null}
+              onClick={() => void add(preview)}
+            >
+              <Sparkles />
+              Adicionar à biblioteca
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

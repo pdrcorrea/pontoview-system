@@ -1,0 +1,131 @@
+.pv-panel-catalog {
+  align-items: stretch;
+}
+
+.pv-panel-card {
+  display: flex;
+  min-height: 310px;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.pv-panel-card::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -70px;
+  top: -70px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(31, 111, 213, 0.09), transparent 70%);
+  pointer-events: none;
+}
+
+.pv-panel-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pv-panel-category {
+  padding: 6px 9px;
+  border: 1px solid #dce5ef;
+  border-radius: 999px;
+  color: #55708f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #f8fafc;
+}
+
+.pv-panel-card h2 {
+  margin-top: 24px;
+}
+
+.pv-panel-card p {
+  min-height: 54px;
+}
+
+.pv-panel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: auto 0 18px;
+  padding-top: 18px;
+}
+
+.pv-panel-meta span {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f4f7fa;
+  color: #667a91;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.pv-panel-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 9px;
+}
+
+.pv-panel-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.pv-panel-preview {
+  width: min(1120px, 82vw);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid #d9e3ed;
+  background: #061d3d;
+  box-shadow: 0 18px 44px rgba(10, 31, 57, 0.16);
+}
+
+.pv-panel-preview iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #061d3d;
+}
+
+.pv-panel-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.pv-panel-preview-footer > span {
+  max-width: 62ch;
+  color: #63758b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .pv-panel-preview {
+    width: 78vw;
+  }
+  .pv-panel-preview-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 620px) {
+  .pv-panel-actions {
+    grid-template-columns: 1fr;
+  }
+  .pv-panel-preview {
+    width: 86vw;
+  }
+}

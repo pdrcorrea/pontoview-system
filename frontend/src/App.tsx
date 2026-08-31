@@ -23,6 +23,7 @@ import { PlayerPage } from "./player/Player";
 import "./styles.css";
 import "./styles-v2.css";
 import "./system.css";
+import "./panels.css";
 
 function Protected() {
   const { loading, user, profile } = useAuth();
