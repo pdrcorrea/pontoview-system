@@ -22,17 +22,20 @@ const reply = (body: unknown, status = 200) =>
       "Cache-Control": "no-store",
     },
   });
+
 class HttpError extends Error {
   constructor(public status: number, message: string) {
     super(message);
   }
 }
+
 function handleError(error: unknown) {
   console.error(error);
   return error instanceof HttpError
     ? reply({ error: error.message }, error.status)
     : reply({ error: "INTERNAL_ERROR" }, 500);
 }
+
 async function requireUser(req: Request) {
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) throw new HttpError(401, "AUTH_REQUIRED");
@@ -40,6 +43,7 @@ async function requireUser(req: Request) {
   if (error || !data.user) throw new HttpError(401, "INVALID_SESSION");
   return data.user;
 }
+
 async function requireOrgRole(
   userId: string,
   organizationId: string,
@@ -54,6 +58,7 @@ async function requireOrgRole(
   if (!data || !roles.includes(data.role))
     throw new HttpError(403, "ACCESS_DENIED");
 }
+
 async function mp(path: string, method = "GET", body?: unknown) {
   const token = Deno.env.get("MP_ACCESS_TOKEN");
   if (!token) throw new HttpError(503, "MERCADO_PAGO_NOT_CONFIGURED");
@@ -80,6 +85,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST")
     return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
+
   try {
     const user = await requireUser(req);
     const body = await req.json().catch(() => ({}));
@@ -105,7 +111,7 @@ Deno.serve(async (req) => {
         admin.from("organizations").select("*").eq("id", organizationId).single(),
         admin
           .from("screen_subscriptions")
-          .select("*,plans(*)")
+          .select("*,plans(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
           .eq("organization_id", organizationId)
           .maybeSingle(),
         admin
@@ -119,7 +125,7 @@ Deno.serve(async (req) => {
         admin
           .from("plans")
           .select(
-            "id,code,name,description,price_cents,currency,billing_period,screen_limit,user_limit,trial_days,features,sort_order",
+            "id,code,name,description,price_cents,list_price_cents,promotion_percent,currency,billing_period,screen_limit,user_limit,trial_days,features,sort_order",
           )
           .eq("is_active", true)
           .order("sort_order", { ascending: true }),
@@ -159,6 +165,8 @@ Deno.serve(async (req) => {
           cancel_at_period_end: true,
           canceled_at: new Date().toISOString(),
           provider_status: "cancelled",
+          pending_plan_id: null,
+          pending_plan_requested_at: null,
         })
         .eq("id", subscription.id);
       return reply({ ok: true });
@@ -176,6 +184,7 @@ Deno.serve(async (req) => {
     if (!plan) throw new HttpError(404, "PLAN_NOT_FOUND");
 
     const returnUrl = CANONICAL_RETURN_URL;
+    const requestedAt = new Date().toISOString();
 
     if (
       subscription.provider_subscription_id &&
@@ -191,11 +200,17 @@ Deno.serve(async (req) => {
           },
         },
       );
+
       await admin
         .from("screen_subscriptions")
-        .update({ plan_id: plan.id, provider_plan_id: plan.code })
+        .update({
+          pending_plan_id: plan.id,
+          pending_plan_requested_at: requestedAt,
+          provider_plan_id: plan.code,
+        })
         .eq("id", subscription.id);
-      return reply({ checkoutUrl: `${returnUrl}?plan=updated` });
+
+      return reply({ checkoutUrl: `${returnUrl}?plan=pending` });
     }
 
     const payload = {
@@ -212,6 +227,7 @@ Deno.serve(async (req) => {
       },
       status: "pending",
     };
+
     const created = await mp("/preapproval", "POST", payload);
     if (!created.id || !created.init_point)
       throw new HttpError(502, "CHECKOUT_CREATION_FAILED");
@@ -219,7 +235,8 @@ Deno.serve(async (req) => {
     await admin
       .from("screen_subscriptions")
       .update({
-        plan_id: plan.id,
+        pending_plan_id: plan.id,
+        pending_plan_requested_at: requestedAt,
         provider: "mercadopago",
         provider_subscription_id: String(created.id),
         provider_plan_id: plan.code,
