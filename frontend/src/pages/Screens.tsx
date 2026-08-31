@@ -32,7 +32,7 @@ import {
 } from "../components/ui";
 import { defaultOperatingHours } from "../lib/operatingHours";
 import { supabase } from "../lib/supabase";
-import type { Playlist, Screen, ScreenSettings, ScreenStatus } from "../types";
+import type { Playlist, Screen, ScreenRotation, ScreenSettings, ScreenStatus } from "../types";
 
 const defaultSettings: ScreenSettings = {
   screen_id: "",
@@ -56,6 +56,13 @@ const defaultSettings: ScreenSettings = {
   operating_hours: defaultOperatingHours,
 };
 
+const rotationLabels: Record<ScreenRotation, string> = {
+  standard: "Padrão",
+  right: "90° à direita",
+  left: "90° à esquerda",
+  "180": "180°",
+};
+
 export function ScreensPage() {
   const { organization, user } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -77,7 +84,7 @@ export function ScreensPage() {
     const [s, p, g] = await Promise.all([
       supabase
         .from("screens")
-        .select("id,organization_id,name,slug,orientation,default_playlist_id,is_active,settings_revision,reload_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(*)")
+        .select("id,organization_id,name,slug,orientation,rotation,default_playlist_id,is_active,settings_revision,reload_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(*)")
         .eq("organization_id", organization.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
@@ -264,12 +271,13 @@ function ScreenCard({ screen, onManage }: { screen: Screen; onManage: () => void
   const rawSettings = screen.screen_settings;
   const settings = (Array.isArray(rawSettings) ? rawSettings[0] : rawSettings) as ScreenSettings | undefined;
   const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 120000);
+  const rotation = screen.rotation || "standard";
   return (
     <article className="device-card compact-device">
       <div className="device-head">
         <div>
           <h2>{screen.name}</h2>
-          <p>{settings?.layout_mode === "lframe" ? "Moldura em L" : "Tela cheia"} · {screen.orientation === "portrait" ? "Vertical" : "Horizontal"}</p>
+          <p>{settings?.layout_mode === "lframe" ? "Moldura em L" : "Tela cheia"} · {screen.orientation === "portrait" ? "Vertical" : "Horizontal"}{rotation !== "standard" ? ` · ${rotationLabels[rotation]}` : ""}</p>
         </div>
         <span className={online ? "status active" : "status offline-status"}>{online ? <Wifi /> : <WifiOff />}{online ? " Online" : " Offline"}</span>
       </div>
@@ -304,6 +312,7 @@ function ScreenEditor({
     operating_hours: { ...defaultOperatingHours, ...initial?.operating_hours },
   });
   const [orientation, setOrientation] = useState<"landscape" | "portrait">(screen.orientation || "landscape");
+  const [rotation, setRotation] = useState<ScreenRotation>(screen.rotation || "standard");
   const [name, setName] = useState(screen.name);
   const [playlist, setPlaylist] = useState(screen.default_playlist_id || "");
   const [busy, setBusy] = useState(false);
@@ -352,6 +361,7 @@ function ScreenEditor({
       supabase.from("screens").update({
         name,
         orientation,
+        rotation,
         default_playlist_id: playlist || null,
         settings_revision: screen.settings_revision + 1,
       }).eq("id", screen.id),
@@ -403,6 +413,20 @@ function ScreenEditor({
               <Monitor style={{ transform: "rotate(90deg)" }} /><b>Vertical</b><small>Formato 9:16 para telas em retrato.</small>
             </button>
           </div>
+
+          <h3>Rotação da imagem</h3>
+          <label>
+            Rotação
+            <select value={rotation} onChange={(event) => setRotation(event.target.value as ScreenRotation)}>
+              <option value="standard">Padrão</option>
+              <option value="right">Girar 90° à direita</option>
+              <option value="left">Girar 90° à esquerda</option>
+              <option value="180">Girar 180°</option>
+            </select>
+            <small style={{ display: "block", marginTop: 7, lineHeight: 1.5 }}>
+              Use esta opção quando a TV estiver instalada fisicamente girada. A orientação define o formato do conteúdo; a rotação define como ele é virado no display.
+            </small>
+          </label>
 
           <h3>Modo de exibição</h3>
           <div className="layout-choice">
@@ -489,10 +513,10 @@ function ScreenEditor({
         <section className="panel preview-config">
           <div className="preview-label">
             <span>PRÉ-VISUALIZAÇÃO · {orientation === "portrait" ? "9:16" : "16:9"}</span>
-            <small>{playlists.find((p) => p.id === playlist)?.name || "Sem playlist"}</small>
+            <small>{rotationLabels[rotation]} · {playlists.find((p) => p.id === playlist)?.name || "Sem playlist"}</small>
           </div>
           <ScreenPreview settings={settings} orientation={orientation} />
-          <div className="preview-note"><ShieldCheck /><span>A orientação e a moldura pertencem à tela. A playlist continua sendo exibida integralmente.</span></div>
+          <div className="preview-note"><ShieldCheck /><span>A orientação define o formato lógico e a rotação corrige a montagem física da TV. A playlist continua sendo exibida integralmente.</span></div>
         </section>
       </div>
     </div>
