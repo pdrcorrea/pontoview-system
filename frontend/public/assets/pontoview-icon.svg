@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">PontoView</title>
+  <rect width="64" height="64" rx="16" fill="#032A61"/>
+  <path d="M17 19.5C17 16.46 19.46 14 22.5 14h19C46.19 14 50 17.81 50 22.5v8C50 35.19 46.19 39 41.5 39H27v11H17V19.5Z" fill="#FFFFFF"/>
+  <path d="M27 23h13.5a3.5 3.5 0 1 1 0 7H27v-7Z" fill="#69CFF2"/>
+  <circle cx="45.5" cy="46.5" r="4.5" fill="#69CFF2"/>
+</svg>
