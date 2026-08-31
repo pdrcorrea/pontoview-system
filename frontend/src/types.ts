@@ -66,6 +66,7 @@ export interface Screen {
   default_playlist_id: string | null;
   is_active: boolean;
   settings_revision: number;
+  reload_revision?: number;
   screen_status?: ScreenStatus | ScreenStatus[] | null;
   screen_settings?: ScreenSettings | ScreenSettings[] | null;
 }
@@ -121,7 +122,7 @@ export interface DashboardData {
 }
 
 export interface PlayerManifest {
-  screen: { id: string; name: string; orientation: string; revision: number };
+  screen: { id: string; name: string; orientation: string; revision: number; reloadRevision?: number };
   organization: {
     id: string;
     name: string;
