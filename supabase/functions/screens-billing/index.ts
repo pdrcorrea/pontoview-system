@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
         admin.from("organizations").select("*").eq("id", organizationId).single(),
         admin
           .from("screen_subscriptions")
-          .select("*,plans(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
+          .select("*,plans:plans!screen_subscriptions_plan_id_fkey(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
           .eq("organization_id", organizationId)
           .maybeSingle(),
         admin
@@ -145,10 +145,14 @@ Deno.serve(async (req) => {
 
     const { data: subscription, error: subError } = await admin
       .from("screen_subscriptions")
-      .select("*,plans(*)")
+      .select("*,plans:plans!screen_subscriptions_plan_id_fkey(*)")
       .eq("organization_id", organizationId)
       .single();
-    if (subError || !subscription)
+    if (subError) {
+      console.error("Subscription lookup failed", subError);
+      throw new HttpError(500, "SUBSCRIPTION_LOOKUP_FAILED");
+    }
+    if (!subscription)
       throw new HttpError(404, "SUBSCRIPTION_NOT_FOUND");
 
     if (body.action === "cancel") {
