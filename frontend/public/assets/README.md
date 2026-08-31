@@ -1,9 +1,13 @@
-# Assets PontoView
+# Assets oficiais do PontoView
 
-Pasta pública para os ativos visuais do PontoView Telas.
+Esta pasta foi criada apenas para receber os arquivos oficiais de identidade visual fornecidos pelo projeto.
 
-- `pontoview-icon.svg`: ícone quadrado para favicon, Player e aplicações compactas.
-- `pontoview-logo.svg`: assinatura horizontal para fundos claros.
-- `pontoview-logo-white.svg`: assinatura horizontal para fundos escuros.
+Nenhum ícone ou logotipo provisório deve ser criado automaticamente aqui.
 
-Os arquivos SVG são vetoriais e podem ser substituídos por versões oficiais futuras mantendo os mesmos nomes, sem alterar o código do frontend.
+Nomes esperados pelo frontend quando os arquivos forem adicionados:
+
+- `pontoview-icon.svg` — ícone compacto usado no favicon, menu e Player.
+- `pontoview-logo.svg` — assinatura horizontal para fundos claros.
+- `pontoview-logo-white.svg` — assinatura horizontal para fundos escuros.
+
+Enquanto `pontoview-icon.svg` não existir, a interface usa um fallback textual discreto (`PV`). Assim que o arquivo oficial for colocado nesta pasta com esse nome, ele passa a ser utilizado automaticamente.
