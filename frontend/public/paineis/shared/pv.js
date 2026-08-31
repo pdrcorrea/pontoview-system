@@ -5,13 +5,13 @@
     .pv-shell{grid-template-rows:auto minmax(0,1fr)!important}
   `;
   document.head.appendChild(style);
-  const removeRedundantClock = () => {
+  const hideRedundantClock = () => {
     const clock = document.getElementById("clock");
     const source = clock?.closest(".pv-source");
-    if (source) source.remove();
+    if (source instanceof HTMLElement) source.style.display = "none";
   };
-  removeRedundantClock();
-  document.addEventListener("DOMContentLoaded", removeRedundantClock, { once: true });
+  hideRedundantClock();
+  document.addEventListener("DOMContentLoaded", hideRedundantClock, { once: true });
 })();
 
 window.PV = (() => {
