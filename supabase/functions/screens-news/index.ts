@@ -11,7 +11,7 @@ type NormalizedNews = {
 
 type EditorialResult = {
   allowed: boolean;
-  reason?: "advertising" | "clickbait" | "sensitive" | "controversial" | "blocked_source";
+  reason?: "advertising" | "clickbait" | "sensitive" | "controversial" | "blocked_source" | "broken_encoding";
 };
 
 function clean(value: unknown, max = 1000) {
@@ -20,10 +20,15 @@ function clean(value: unknown, max = 1000) {
 }
 
 function plain(value: unknown) {
-  return clean(value, 2400)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  return clean(value, 2400).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function hasBrokenEncoding(value: unknown) {
+  const text = clean(value, 3000);
+  if (!text) return false;
+  if (text.includes("\uFFFD")) return true;
+  // Common UTF-8/Windows-1252 mojibake sequences. Legitimate Portuguese accents do not match these patterns.
+  return /(Ã[\x80-\xBF]|Â[\x80-\xBF]|â(?:€|€™|€œ|€�|€“|€”|€¦|„|†)|ðŸ|ï¿½)/.test(text);
 }
 
 function classify(title: string, summary: string, localQuery = "") {
@@ -59,13 +64,17 @@ function normalizeItem(item: Record<string, unknown>, localQuery: string): Norma
 function editorialCheck(item: Record<string, unknown>): EditorialResult {
   const title = clean(item.title, 500);
   const summary = clean(item.summary || item.description, 1200);
-  const source = clean(item.source, 200);
-  const url = clean(item.url || item.link, 1500);
+  const source = clean(item.source || item.sourceDomain, 200);
+  const url = clean(item.url || item.link || item.sourceUrl, 1500);
+
+  if (hasBrokenEncoding(title) || hasBrokenEncoding(summary) || hasBrokenEncoding(source)) {
+    return { allowed: false, reason: "broken_encoding" };
+  }
+
   const text = plain(`${title} ${summary} ${source} ${url}`);
   const normalizedSource = plain(source);
   const normalizedUrl = plain(url);
 
-  // Remove Folha de S.Paulo completely from the PontoView news rotation, including cached items.
   const blockedSources = [
     "folha de s.paulo", "folha de s. paulo", "folha de sao paulo", "folha s.paulo", "folha s. paulo",
     "folha.uol.com.br", "www1.folha.uol.com.br",
@@ -74,7 +83,6 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
     return { allowed: false, reason: "blocked_source" };
   }
 
-  // Advertising and sponsored/native-ad language. Intentionally conservative for public displays.
   const advertisingTerms = [
     "publieditorial", "publipost", "conteudo patrocinado", "conteudo publicitario", "informe publicitario",
     "oferta", "ofertas", "promocao", "promocoes", "cupom", "cupons", "desconto", "descontos",
@@ -85,14 +93,12 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
   if (advertisingTerms.some((term) => text.includes(term))) return { allowed: false, reason: "advertising" };
 
   try {
-    const parsed = new URL(url);
-    const path = plain(parsed.pathname);
+    const path = plain(new URL(url).pathname);
     if (["/ofertas", "/promocoes", "/shopping", "/cupom", "/cupons", "/publieditorial"].some((segment) => path.includes(segment))) {
       return { allowed: false, reason: "advertising" };
     }
   } catch {}
 
-  // Clickbait score: strong inducements are blocked immediately; generic CTAs need another sensational signal.
   let clickbaitScore = 0;
   const strongClickbaitPhrases = [
     "voce nao vai acreditar", "nao vai acreditar", "ninguem esperava", "ninguem te conta",
@@ -108,12 +114,11 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
   const clickInducingPhrases = [
     "saiba mais", "veja mais", "confira", "confira agora", "confira detalhes", "veja detalhes",
     "veja como", "saiba como", "descubra", "entenda", "entenda o motivo", "entenda por que",
-    "saiba o motivo", "saiba por que", "clique aqui", "assista", "veja o video", "veja o vídeo",
+    "saiba o motivo", "saiba por que", "clique aqui", "assista", "veja o video",
     "leia mais", "continue lendo", "veja a lista", "confira a lista", "descubra quem", "veja quem",
     "o que se sabe", "o que sabemos", "saiba tudo", "veja tudo", "entenda tudo",
   ];
-  if (clickInducingPhrases.some((term) => text.includes(plain(term)))) clickbaitScore += 1;
-
+  if (clickInducingPhrases.some((term) => text.includes(term))) clickbaitScore += 1;
   if (/\?\s*$/.test(title)) clickbaitScore += 1;
   if ((title.match(/!/g) || []).length >= 1) clickbaitScore += 1;
   if (/\.{3,}\s*$/.test(title)) clickbaitScore += 1;
@@ -123,7 +128,6 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
   if (letters.length >= 12 && uppercase.length / letters.length > 0.72) clickbaitScore += 2;
   if (clickbaitScore >= 2) return { allowed: false, reason: "clickbait" };
 
-  // Material inappropriate for TVs in receptions, clinics, offices and other shared spaces.
   const sensitiveTerms = [
     "estupro", "estuprada", "abuso sexual", "violencia sexual", "pornografia", "nudez",
     "esquartejado", "decapitado", "decapitada", "corpo carbonizado", "corpo mutilado", "cadaver",
@@ -132,15 +136,13 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
   ];
   if (sensitiveTerms.some((term) => text.includes(term))) return { allowed: false, reason: "sensitive" };
 
-  // Avoid gossip, personal attacks and outrage-bait while preserving ordinary factual politics/economy coverage.
   const controversialTerms = [
     "barraco", "treta", "detona", "humilha", "esculacha", "lacrou", "cancelado", "cancelada",
-    "guerra nas redes", "troca de farpas", "climao", "polêmica nas redes", "polemica nas redes",
-    "revolta internautas", "gera revolta", "causa indignacao", "ataque pessoal", "xinga", "xingou",
-    "fofoca", "amante", "traicao", "separacao bombastica",
+    "guerra nas redes", "troca de farpas", "climao", "polemica nas redes", "revolta internautas",
+    "gera revolta", "causa indignacao", "ataque pessoal", "xinga", "xingou", "fofoca", "amante",
+    "traicao", "separacao bombastica",
   ];
   if (controversialTerms.some((term) => text.includes(term))) return { allowed: false, reason: "controversial" };
-
   return { allowed: true };
 }
 
@@ -167,13 +169,12 @@ Deno.serve(async (req) => {
     const { data: fresh } = await admin.from("news_cache")
       .select("id,source,category,title,summary,url,image_url,published_at")
       .gt("expires_at", new Date().toISOString()).order("published_at", { ascending: false }).limit(80);
-    const safeFresh = applyEditorialFilter((fresh || []) as Record<string, unknown>[]);
-    const usableFresh = filterCategories(safeFresh, categories).slice(0, 16);
+    const usableFresh = filterCategories(applyEditorialFilter((fresh || []) as Record<string, unknown>[]), categories).slice(0, 16);
     if (usableFresh.length >= 6) return reply({ items: usableFresh, cached: true, source: "PontoView", editorialFilter: "public-safe" });
 
     let providerItems: Record<string, unknown>[] = [];
     try {
-      const response = await fetch(SOURCE_URL, { headers: { Accept: "application/json", "User-Agent": "PontoView-Telas/1.3" } });
+      const response = await fetch(SOURCE_URL, { headers: { Accept: "application/json", "User-Agent": "PontoView-Telas/1.4" } });
       if (response.ok) {
         const json = await response.json();
         providerItems = Array.isArray(json) ? json : Array.isArray(json?.items) ? json.items : [];
@@ -183,7 +184,6 @@ Deno.serve(async (req) => {
     const normalized = providerItems.map((item) => normalizeItem(item, localQuery)).filter(Boolean) as NormalizedNews[];
     const safeNormalized = applyEditorialFilter(normalized as unknown as Record<string, unknown>[]) as unknown as NormalizedNews[];
     if (safeNormalized.length) {
-      // Only approved headlines enter the shared cache, preventing rejected content from resurfacing later.
       await admin.from("news_cache").upsert(safeNormalized, { onConflict: "source,url" });
       return reply({ items: filterCategories(safeNormalized, categories).slice(0, 16), cached: false, source: "PontoView", editorialFilter: "public-safe" });
     }
