@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
+  Building2,
   Check,
   Cloud,
   FileVideo,
+  ImageUp,
   ListVideo,
   Monitor,
   ShieldCheck,
@@ -27,13 +29,18 @@ type DriveConnection = {
   last_sync_at: string | null;
 };
 
+const BRANDING_BUCKET = "organization-branding";
+const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
 export function AccountPage() {
   const { organization, profile, user, refresh } = useAuth();
   const [members, setMembers] = useState<Membership[]>([]);
   const [drives, setDrives] = useState<DriveConnection[]>([]);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const logoUrl = String(organization?.settings?.logoUrl || "");
   const load = useCallback(async () => {
     if (!organization) return;
     const [m, d] = await Promise.all([
@@ -61,15 +68,49 @@ export function AccountPage() {
     setError(null);
     setSuccess(null);
     const data = formData(e);
+    let nextLogoUrl = logoUrl;
+
+    if (logoFile) {
+      if (!LOGO_TYPES.includes(logoFile.type)) {
+        setBusy(false);
+        setError("Use uma logo em PNG, JPG ou WebP.");
+        return;
+      }
+      if (logoFile.size > 2 * 1024 * 1024) {
+        setBusy(false);
+        setError("A logo deve ter no máximo 2 MB.");
+        return;
+      }
+      const extension = logoFile.type === "image/png" ? "png" : logoFile.type === "image/webp" ? "webp" : "jpg";
+      const path = `${organization.id}/logo.${extension}`;
+      const upload = await supabase.storage.from(BRANDING_BUCKET).upload(path, logoFile, {
+        contentType: logoFile.type,
+        cacheControl: "3600",
+        upsert: true,
+      });
+      if (upload.error) {
+        setBusy(false);
+        setError(upload.error.message || "Não foi possível enviar a logo.");
+        return;
+      }
+      const publicAsset = supabase.storage.from(BRANDING_BUCKET).getPublicUrl(path);
+      nextLogoUrl = `${publicAsset.data.publicUrl}?v=${Date.now()}`;
+    }
+
+    const organizationPatch: Record<string, unknown> = {
+      name: data.organization_name,
+      display_name: data.display_name,
+      document: data.document || null,
+    };
+    if (logoFile) {
+      organizationPatch.settings = {
+        ...organization.settings,
+        logoUrl: nextLogoUrl,
+      };
+    }
+
     const [o, p] = await Promise.all([
-      supabase
-        .from("organizations")
-        .update({
-          name: data.organization_name,
-          display_name: data.display_name,
-          document: data.document || null,
-        })
-        .eq("id", organization.id),
+      supabase.from("organizations").update(organizationPatch).eq("id", organization.id),
       supabase
         .from("profiles")
         .update({ full_name: data.full_name, phone: data.phone || null })
@@ -81,7 +122,25 @@ export function AccountPage() {
         o.error?.message || p.error?.message || "Não foi possível salvar.",
       );
     else {
-      setSuccess("Dados atualizados.");
+      setLogoFile(null);
+      setSuccess(logoFile ? "Dados e identidade visual atualizados." : "Dados atualizados.");
+      await refresh();
+    }
+  };
+  const removeLogo = async () => {
+    if (!organization || !logoUrl) return;
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    const result = await supabase
+      .from("organizations")
+      .update({ settings: { ...organization.settings, logoUrl: null } })
+      .eq("id", organization.id);
+    setBusy(false);
+    if (result.error) setError(result.error.message);
+    else {
+      setLogoFile(null);
+      setSuccess("Logo removida do Player.");
       await refresh();
     }
   };
@@ -130,6 +189,29 @@ export function AccountPage() {
               defaultValue={organization?.display_name}
             />
           </label>
+          <div className="branding-upload">
+            <div className="branding-preview">
+              {logoUrl ? <img src={logoUrl} alt="Logo atual da empresa" /> : <Building2 />}
+            </div>
+            <div className="branding-copy">
+              <b>Logo exibida nas telas</b>
+              <small>PNG, JPG ou WebP · máximo 2 MB. Prefira fundo transparente e formato horizontal.</small>
+              <label className="branding-file">
+                <ImageUp />
+                {logoFile ? logoFile.name : "Escolher logo"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => setLogoFile(event.target.files?.[0] || null)}
+                />
+              </label>
+              {logoUrl && (
+                <button type="button" className="branding-remove" onClick={() => void removeLogo()}>
+                  Remover logo do Player
+                </button>
+              )}
+            </div>
+          </div>
           <label>
             Documento
             <input name="document" placeholder="CNPJ ou CPF" />
