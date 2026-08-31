@@ -1,3 +1,19 @@
+(() => {
+  const style = document.createElement("style");
+  style.textContent = `
+    .pv-footer{display:none!important}
+    .pv-shell{grid-template-rows:auto minmax(0,1fr)!important}
+  `;
+  document.head.appendChild(style);
+  const removeRedundantClock = () => {
+    const clock = document.getElementById("clock");
+    const source = clock?.closest(".pv-source");
+    if (source) source.remove();
+  };
+  removeRedundantClock();
+  document.addEventListener("DOMContentLoaded", removeRedundantClock, { once: true });
+})();
+
 window.PV = (() => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const qs = (name, fallback = "") => new URLSearchParams(location.search).get(name) || fallback;
