@@ -589,7 +589,7 @@ function BrandMark() {
   const [imageFailed, setImageFailed] = useState(false);
   return imageFailed
     ? <span className="pv-brand-fallback">PV</span>
-    : <img className="pv-brand-official" src="/assets/pontoview-icon.svg" alt="" onError={() => setImageFailed(true)} />;
+    : <img className="pv-brand-official" src="/assets/icon.png" alt="" onError={() => setImageFailed(true)} />;
 }
 
 function sourceName(url: string) {
