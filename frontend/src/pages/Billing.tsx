@@ -25,11 +25,14 @@ type Subscription = {
   id: string;
   status: string;
   plan_id: string;
+  pending_plan_id: string | null;
+  pending_plan_requested_at: string | null;
   trial_ends_at: string | null;
   current_period_end: string | null;
   grace_period_ends_at: string | null;
   cancel_at_period_end: boolean;
   plans: Plan | null;
+  pending_plan: Plan | null;
 };
 
 type Payment = {
@@ -58,7 +61,7 @@ export function BillingPage() {
         .order("sort_order"),
       supabase
         .from("screen_subscriptions")
-        .select("*,plans(*)")
+        .select("*,plans(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
         .eq("organization_id", organization.id)
         .maybeSingle(),
       supabase
@@ -119,6 +122,7 @@ export function BillingPage() {
   };
 
   const plan = subscription?.plans;
+  const pendingPlan = subscription?.pending_plan;
   const next = subscription?.current_period_end || subscription?.trial_ends_at;
 
   return (
@@ -138,6 +142,11 @@ export function BillingPage() {
             <small>
               {plan.screen_limit} {plan.screen_limit === 1 ? "tela" : "telas"}
             </small>
+            {pendingPlan && pendingPlan.id !== plan.id && (
+              <small className="pending-plan-note">
+                Alteração pendente: {pendingPlan.name}
+              </small>
+            )}
           </div>
           <div className="billing-status">
             <span
@@ -161,32 +170,36 @@ export function BillingPage() {
       )}
 
       <div className="plan-grid">
-        {plans.map((p) => (
-          <article
-            className={`panel plan-card ${p.id === subscription?.plan_id ? "current" : ""}`}
-            key={p.id}
-          >
-            <span>{p.id === subscription?.plan_id ? "ATUAL" : "PLANO"}</span>
-            <h2>{p.name}</h2>
-            {p.promotion_percent > 0 && (
-              <span className="promo-badge">LANÇAMENTO · {p.promotion_percent}% OFF</span>
-            )}
-            <PlanPrice plan={p} compact />
-            <ul>
-              <li><Check />{p.screen_limit} {p.screen_limit === 1 ? "tela" : "telas"}</li>
-            </ul>
-            {p.id !== subscription?.plan_id && role === "owner" && (
-              <AsyncButton
-                busy={busy}
-                className="btn primary full"
-                onClick={() => void checkout(p)}
-              >
-                <CreditCard />
-                Selecionar
-              </AsyncButton>
-            )}
-          </article>
-        ))}
+        {plans.map((p) => {
+          const current = p.id === subscription?.plan_id;
+          const pending = p.id === subscription?.pending_plan_id && !current;
+          return (
+            <article
+              className={`panel plan-card ${current ? "current" : ""} ${pending ? "pending" : ""}`}
+              key={p.id}
+            >
+              <span>{current ? "ATUAL" : pending ? "AGUARDANDO PAGAMENTO" : "PLANO"}</span>
+              <h2>{p.name}</h2>
+              {p.promotion_percent > 0 && (
+                <span className="promo-badge">LANÇAMENTO · {p.promotion_percent}% OFF</span>
+              )}
+              <PlanPrice plan={p} compact />
+              <ul>
+                <li><Check />{p.screen_limit} {p.screen_limit === 1 ? "tela" : "telas"}</li>
+              </ul>
+              {!current && !pending && role === "owner" && (
+                <AsyncButton
+                  busy={busy}
+                  className="btn primary full"
+                  onClick={() => void checkout(p)}
+                >
+                  <CreditCard />
+                  Selecionar
+                </AsyncButton>
+              )}
+            </article>
+          );
+        })}
       </div>
 
       <section className="panel history">
