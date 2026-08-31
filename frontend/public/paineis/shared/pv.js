@@ -1,17 +1,16 @@
 (() => {
-  const style = document.createElement("style");
-  style.textContent = `
-    .pv-footer{display:none!important}
-    .pv-shell{grid-template-rows:auto minmax(0,1fr)!important}
-  `;
-  document.head.appendChild(style);
-  const hideRedundantClock = () => {
+  const cleanPanelChrome = () => {
+    document.querySelectorAll(".pv-footer-brand").forEach((brand) => brand.remove());
+    document.querySelectorAll(".pv-footer").forEach((footer) => {
+      const hasUsefulContent = Boolean(footer.textContent?.trim() || footer.querySelector("img,svg,a,.credit"));
+      if (!hasUsefulContent && footer instanceof HTMLElement) footer.style.display = "none";
+    });
     const clock = document.getElementById("clock");
     const source = clock?.closest(".pv-source");
     if (source instanceof HTMLElement) source.style.display = "none";
   };
-  hideRedundantClock();
-  document.addEventListener("DOMContentLoaded", hideRedundantClock, { once: true });
+  cleanPanelChrome();
+  document.addEventListener("DOMContentLoaded", cleanPanelChrome, { once: true });
 })();
 
 window.PV = (() => {
