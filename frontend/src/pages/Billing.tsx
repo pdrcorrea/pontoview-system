@@ -61,7 +61,7 @@ export function BillingPage() {
         .order("sort_order"),
       supabase
         .from("screen_subscriptions")
-        .select("*,plans(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
+        .select("*,plans:plans!screen_subscriptions_plan_id_fkey(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
         .eq("organization_id", organization.id)
         .maybeSingle(),
       supabase
@@ -71,7 +71,8 @@ export function BillingPage() {
         .order("created_at", { ascending: false }),
     ]);
     if (p.data) setPlans(p.data as Plan[]);
-    if (s.data) setSubscription(s.data as unknown as Subscription);
+    if (s.error) setError(s.error.message);
+    else if (s.data) setSubscription(s.data as unknown as Subscription);
     if (h.data) setPayments(h.data as Payment[]);
   }, [organization]);
 
