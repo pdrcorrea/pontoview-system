@@ -262,20 +262,14 @@ function ScreenCard({ screen, onManage }: { screen: Screen; onManage: () => void
   const status = (Array.isArray(rawStatus) ? rawStatus[0] : rawStatus) as ScreenStatus | null;
   const rawSettings = screen.screen_settings;
   const settings = (Array.isArray(rawSettings) ? rawSettings[0] : rawSettings) as ScreenSettings | undefined;
-  const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 90000);
+  const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 120000);
   return (
-    <article className="device-card">
-      <div className="tv-preview detailed" style={{ aspectRatio: screen.orientation === "portrait" ? "9 / 16" : "16 / 9", maxWidth: screen.orientation === "portrait" ? 160 : undefined, marginInline: "auto" }}>
-        {status?.screenshot_url ? (
-          <img src={status.screenshot_url} alt={`Última captura de ${screen.name}`} />
-        ) : settings?.layout_mode === "lframe" ? (
-          <div className="tiny-layout"><div className="tiny-content" /><div className="tiny-side" /><div className="tiny-ticker" /></div>
-        ) : (
-          <div className="tiny-full"><Play /></div>
-        )}
-      </div>
+    <article className="device-card compact-device">
       <div className="device-head">
-        <div><h2>{screen.name}</h2><p>{settings?.layout_mode === "lframe" ? "Moldura em L" : "Tela cheia"} · {screen.orientation === "portrait" ? "Vertical" : "Horizontal"}</p></div>
+        <div>
+          <h2>{screen.name}</h2>
+          <p>{settings?.layout_mode === "lframe" ? "Moldura em L" : "Tela cheia"} · {screen.orientation === "portrait" ? "Vertical" : "Horizontal"}</p>
+        </div>
         <span className={online ? "status active" : "status offline-status"}>{online ? <Wifi /> : <WifiOff />}{online ? " Online" : " Offline"}</span>
       </div>
       <dl>
