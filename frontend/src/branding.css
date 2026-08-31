@@ -1,0 +1,102 @@
+.branding-upload {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 13px;
+  margin: 2px 0 14px;
+  border: 1px solid #dce4eb;
+  border-radius: 12px;
+  background: #f8fafb;
+}
+
+.branding-preview {
+  height: 82px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid #e0e7ed;
+  background: #fff;
+  overflow: hidden;
+}
+
+.branding-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.branding-preview svg {
+  width: 28px;
+  height: 28px;
+  color: #8193a4;
+}
+
+.branding-copy,
+.branding-copy b,
+.branding-copy small {
+  display: block;
+}
+
+.branding-copy b {
+  font-size: 10px;
+  color: #344c62;
+}
+
+.branding-copy small {
+  margin-top: 4px;
+  font-size: 8.5px;
+  line-height: 1.45;
+  color: #748596;
+}
+
+.branding-file {
+  width: max-content;
+  margin-top: 9px;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #ccd8e2;
+  background: #fff;
+  color: #244f7e !important;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+}
+
+.branding-file svg {
+  width: 14px;
+  height: 14px;
+}
+
+.branding-file input {
+  position: absolute;
+  width: 1px !important;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.branding-remove {
+  display: block;
+  margin-top: 7px;
+  border: 0;
+  background: transparent;
+  color: #8d5260;
+  padding: 0;
+  font-size: 8.5px;
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .branding-upload {
+    grid-template-columns: 1fr;
+  }
+  .branding-preview {
+    width: 140px;
+  }
+}
