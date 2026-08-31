@@ -38,20 +38,33 @@ async function geocode(name: string) {
   return { latitude, longitude, name: [String(row.name || query).trim(), state].filter(Boolean).join(" · ") };
 }
 
+function buildForecast(json: any) {
+  const daily = json?.daily || {};
+  const dates = Array.isArray(daily.time) ? daily.time : [];
+  return dates.slice(0, 4).map((date: string, index: number) => ({
+    date,
+    weather_code: daily.weather_code?.[index] ?? null,
+    condition: condition(Number(daily.weather_code?.[index])),
+    temp_min: daily.temperature_2m_min?.[index] ?? null,
+    temp_max: daily.temperature_2m_max?.[index] ?? null,
+    precipitation_probability: daily.precipitation_probability_max?.[index] ?? null,
+  }));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
   try {
     const manifest = await requirePlayer(req);
     const configured = manifest.settings?.weather_location || manifest.organization?.settings?.weatherLocation || null;
-    if (!configured) return reply({ temperature: null, name: "Configure a cidade" });
+    if (!configured) return reply({ temperature: null, name: "Configure a cidade", forecast: [] });
 
     let latitude = Number(configured.latitude);
     let longitude = Number(configured.longitude);
     let name = String(configured.name || "").trim();
     if (!validLat(latitude) || !validLon(longitude)) {
       const resolved = await geocode(name);
-      if (!resolved) return reply({ temperature: null, name: name || "Cidade inválida", configurationRequired: true });
+      if (!resolved) return reply({ temperature: null, name: name || "Cidade inválida", configurationRequired: true, forecast: [] });
       latitude = resolved.latitude;
       longitude = resolved.longitude;
       name = resolved.name;
@@ -61,9 +74,9 @@ Deno.serve(async (req) => {
 
     const locationKey = key(latitude, longitude);
     const { data: cached } = await admin.from("weather_cache")
-      .select("temperature,apparent_temperature,humidity,wind_speed,weather_code,is_day,temp_min,temp_max,fetched_at")
+      .select("temperature,apparent_temperature,humidity,wind_speed,weather_code,is_day,temp_min,temp_max,forecast,fetched_at")
       .eq("location_key", locationKey).maybeSingle();
-    if (cached?.fetched_at && Date.now() - new Date(cached.fetched_at).getTime() < TTL) {
+    if (cached?.fetched_at && Date.now() - new Date(cached.fetched_at).getTime() < TTL && Array.isArray(cached.forecast) && cached.forecast.length) {
       return reply({ ...cached, name: name || "Clima", condition: condition(Number(cached.weather_code)), cached: true });
     }
 
@@ -71,15 +84,16 @@ Deno.serve(async (req) => {
     url.searchParams.set("latitude", String(latitude));
     url.searchParams.set("longitude", String(longitude));
     url.searchParams.set("current", "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,is_day,weather_code,wind_speed_10m");
-    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min");
+    url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max");
     url.searchParams.set("timezone", "auto");
-    url.searchParams.set("forecast_days", "1");
+    url.searchParams.set("forecast_days", "4");
     const response = await fetch(url);
     if (!response.ok) {
       if (cached) return reply({ ...cached, name: name || "Clima", condition: condition(Number(cached.weather_code)), cached: true, stale: true });
       return reply({ error: "WEATHER_PROVIDER_ERROR" }, 502);
     }
     const json = await response.json();
+    const forecast = buildForecast(json);
     const row = {
       location_key: locationKey, latitude, longitude, provider: "open_meteo",
       temperature: json.current?.temperature_2m ?? null,
@@ -90,6 +104,7 @@ Deno.serve(async (req) => {
       is_day: json.current?.is_day === 1,
       temp_min: json.daily?.temperature_2m_min?.[0] ?? null,
       temp_max: json.daily?.temperature_2m_max?.[0] ?? null,
+      forecast,
       source_time: json.current?.time ?? null,
       fetched_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
