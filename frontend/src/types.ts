@@ -64,7 +64,7 @@ export interface Screen {
   name: string;
   slug: string;
   orientation: "landscape" | "portrait";
-  rotation: ScreenRotation;
+  rotation?: ScreenRotation;
   default_playlist_id: string | null;
   is_active: boolean;
   settings_revision: number;
