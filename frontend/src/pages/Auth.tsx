@@ -2,14 +2,15 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
-  Check,
   KeyRound,
   LockKeyhole,
   Mail,
+  Monitor,
   UserRound,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { AsyncButton, FormMessage, formData } from "../components/ui";
+import "../auth-main.css";
 
 function AuthLayout({
   title,
@@ -20,48 +21,55 @@ function AuthLayout({
   text: string;
   children: React.ReactNode;
 }) {
+  const location = useLocation();
+  const showTabs = ["/login", "/cadastro"].includes(location.pathname);
+
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-main-style">
       <section className="auth-brand">
-        <div className="brand">
-          <b>P</b>
+        <div className="auth-main-brand">
+          <span className="auth-main-brandmark"><Monitor /></span>
           <span>
             <strong>PontoView</strong>
-            <small>Screens</small>
+            <small>Telas</small>
           </span>
         </div>
-        <div>
-          <small>MÍDIA INDOOR, DO SEU JEITO</small>
-          <h1>
-            Conteúdo certo.
-            <br />
-            Na tela certa.
-            <br />
-            Na hora certa.
-          </h1>
+
+        <div className="auth-main-pitch">
+          <span>MÍDIA INDOOR</span>
+          <h1>Sua comunicação, sempre em movimento.</h1>
           <p>
-            Gerencie mídias, playlists, programações e telas em um só lugar.
+            Organize conteúdos para TVs e combine mídias próprias com painéis
+            automáticos de clima, notícias, economia, cultura e muito mais.
           </p>
         </div>
-        <ul>
-          <li>
-            <Check />
-            Arquivos no seu Google Drive
-          </li>
-          <li>
-            <Check />
-            YouTube integrado às playlists
-          </li>
-          <li>
-            <Check />
-            Player com operação offline
-          </li>
-        </ul>
+
+        <small className="auth-main-foot">PontoView Telas</small>
       </section>
+
       <main className="auth-card">
-        <div>
+        <div className="auth-main-card">
+          <span className="auth-main-eyebrow">ÁREA DO CLIENTE</span>
           <h2>{title}</h2>
           <p>{text}</p>
+
+          {showTabs && (
+            <nav className="auth-main-tabs" aria-label="Acesso">
+              <Link
+                className={location.pathname === "/login" ? "active" : ""}
+                to="/login"
+              >
+                Entrar
+              </Link>
+              <Link
+                className={location.pathname === "/cadastro" ? "active" : ""}
+                to="/cadastro"
+              >
+                Criar conta
+              </Link>
+            </nav>
+          )}
+
           {children}
         </div>
       </main>
@@ -88,10 +96,7 @@ export function LoginPage() {
     else navigate((location.state as { from?: string })?.from || "/dashboard");
   };
   return (
-    <AuthLayout
-      title="Acesse sua conta"
-      text="Entre para gerenciar suas telas PontoView."
-    >
+    <AuthLayout title="Bem-vindo." text="Entre na sua conta para acessar o PontoView Telas.">
       <form onSubmit={submit} className="auth-form">
         <label>
           E-mail
@@ -119,17 +124,14 @@ export function LoginPage() {
             />
           </span>
         </label>
-        <Link className="forgot" to="/recuperar-senha">
-          Esqueci minha senha
-        </Link>
         <FormMessage error={error} />
         <AsyncButton busy={busy} className="btn primary full">
           Entrar
         </AsyncButton>
+        <Link className="forgot auth-main-forgot" to="/recuperar-senha">
+          Esqueci minha senha
+        </Link>
       </form>
-      <p className="auth-switch">
-        Ainda não tem conta? <Link to="/cadastro">Começar agora</Link>
-      </p>
     </AuthLayout>
   );
 }
@@ -166,13 +168,10 @@ export function SignupPage() {
   };
   if (sent)
     return (
-      <AuthLayout
-        title="Confirme seu e-mail"
-        text="Enviamos um link seguro para concluir seu cadastro."
-      >
+      <AuthLayout title="Confirme seu e-mail." text="Enviamos um link para concluir seu cadastro.">
         <div className="auth-success">
           <Mail />
-          <p>Abra o e-mail de confirmação e volte para a PontoView.</p>
+          <p>Abra o e-mail de confirmação para ativar sua conta.</p>
         </div>
         <Link className="btn secondary full" to="/login">
           Voltar ao login
@@ -180,10 +179,7 @@ export function SignupPage() {
       </AuthLayout>
     );
   return (
-    <AuthLayout
-      title="Crie sua conta"
-      text="Comece o período de avaliação da PontoView."
-    >
+    <AuthLayout title="Crie sua conta." text="Comece seu período de avaliação do PontoView Telas.">
       <form onSubmit={submit} className="auth-form">
         <label>
           Seu nome
@@ -224,9 +220,6 @@ export function SignupPage() {
           Criar conta
         </AsyncButton>
       </form>
-      <p className="auth-switch">
-        Já tem uma conta? <Link to="/login">Entrar</Link>
-      </p>
     </AuthLayout>
   );
 }
@@ -250,10 +243,7 @@ export function RecoveryPage() {
       );
   };
   return (
-    <AuthLayout
-      title="Recupere sua senha"
-      text="Informe seu e-mail para receber o link seguro."
-    >
+    <AuthLayout title="Recuperar senha." text="Informe seu e-mail para receber o link de acesso.">
       <form className="auth-form" onSubmit={submit}>
         <label>
           E-mail
@@ -293,10 +283,7 @@ export function ResetPasswordPage() {
     else navigate("/dashboard");
   };
   return (
-    <AuthLayout
-      title="Defina a nova senha"
-      text="Escolha uma senha segura para sua conta."
-    >
+    <AuthLayout title="Nova senha." text="Defina uma nova senha para sua conta.">
       <form className="auth-form" onSubmit={submit}>
         <label>
           Nova senha
@@ -333,7 +320,7 @@ export function AuthCallback() {
   return (
     <div className="loading-screen">
       <span className="player-mark">P</span>
-      <p>Concluindo acesso seguro…</p>
+      <p>Concluindo acesso…</p>
     </div>
   );
 }
