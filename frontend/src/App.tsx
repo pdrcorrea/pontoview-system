@@ -26,6 +26,8 @@ import "./system.css";
 import "./panels.css";
 import "./branding.css";
 import "./refinements.css";
+import "./brand-mobile-fixes.css";
+import "./panelThumbs";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 
