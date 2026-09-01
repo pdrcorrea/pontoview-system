@@ -11,7 +11,7 @@ import {
 } from "./pages/Auth";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentPage } from "./pages/Content";
-import { PlaylistsPage } from "./pages/Playlists";
+import { PlaylistsPage } from "./pages/PlaylistsV2";
 import { SchedulesPage } from "./pages/Schedules";
 import { MessagesPage } from "./pages/Messages";
 import { ScreensPage } from "./pages/Screens";
@@ -27,6 +27,7 @@ import "./panels.css";
 import "./branding.css";
 import "./refinements.css";
 import "./brand-mobile-fixes.css";
+import "./playlist-builder.css";
 import "./panelThumbs";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
