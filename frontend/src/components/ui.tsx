@@ -34,7 +34,9 @@ export function PageHead({
 export function LoadingScreen({ label = "Carregando" }: { label?: string }) {
   return (
     <div className="loading-screen">
-      <span className="player-mark">P</span>
+      <span className="player-mark loading-brand-mark">
+        <img src="/assets/icon.png" alt="PontoView" />
+      </span>
       <Loader2 className="spin" />
       <p>{label}</p>
     </div>
