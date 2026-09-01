@@ -436,7 +436,10 @@
 }
 
 .auth-main-brandmark {
-  background-image: none !important;
+  background-image: url('/assets/icon.png') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 72% 72% !important;
 }
 
 .auth-main-brandmark img {
