@@ -52,7 +52,7 @@ function decoratePanelThumbs() {
       badge.setAttribute("aria-hidden", "true");
       thumb.prepend(badge);
     }
-    badge.textContent = emoji;
+    if (badge.textContent !== emoji) badge.textContent = emoji;
   });
 }
 
