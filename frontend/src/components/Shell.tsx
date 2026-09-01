@@ -12,6 +12,7 @@ import {
   MessageSquareText,
   Monitor,
   Settings,
+  ShieldCheck,
   Sparkles,
   UserRound,
   X,
@@ -104,6 +105,9 @@ export function AppShell() {
         <div className="nav-label account-label">Conta</div>
         <nav>{links(account)}</nav>
         <NavLink className="settings" to="/configuracoes" onClick={() => setOpen(false)}><Settings size={18} /><span>Configurações</span></NavLink>
+        <a className="privacy-link" href="https://pontoview.com.br/politica-de-privacidade.html" target="_blank" rel="noreferrer">
+          <ShieldCheck size={18} /><span>Política de Privacidade</span>
+        </a>
         <div className="org-card">
           <span className="avatar">{initials}</span>
           <span><strong>{organization?.display_name || "Sua empresa"}</strong><small>{role === "owner" ? "Proprietário" : role}</small></span>
