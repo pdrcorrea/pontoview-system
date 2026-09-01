@@ -1,0 +1,87 @@
+/* PontoView Telas: correções de navegação mobile e identidade visual. */
+
+/* Loading: usa o ícone oficial em vez da letra P. */
+.loading-screen .player-mark {
+  color: transparent !important;
+  background: #fff url('/assets/icon.png') center / 78% 78% no-repeat !important;
+  overflow: hidden;
+}
+
+/* Login/cadastro: substitui o ícone genérico de monitor pelo ícone PontoView. */
+.auth-main-brandmark {
+  background-image: url('/assets/icon.png') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 72% 72% !important;
+}
+.auth-main-brandmark > svg {
+  display: none !important;
+}
+
+/* Atalho institucional sem competir visualmente com as ações principais. */
+.sidebar .privacy-link {
+  margin-top: 4px;
+  color: #829ab6;
+  font-size: 11px;
+}
+.sidebar .privacy-link:hover {
+  color: #fff;
+}
+
+/* O drawer precisa permanecer acima de qualquer contexto de empilhamento em portrait. */
+@media (max-width: 900px) {
+  .shell {
+    position: relative !important;
+    overflow: visible !important;
+  }
+  .shell > .sidebar {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 2147483001 !important;
+    width: min(86vw, 320px) !important;
+    max-width: 320px !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    opacity: 1;
+    transform: translate3d(-105%, 0, 0) !important;
+    will-change: transform;
+  }
+  .shell > .sidebar.open {
+    display: flex !important;
+    left: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+  .shell > .sidebar-scrim {
+    z-index: 2147483000 !important;
+  }
+}
+
+/* Emojis dos painéis automáticos na biblioteca. */
+.media-thumb.pv-panel-thumb {
+  background: linear-gradient(145deg, #eef4f8, #e3ebf1) !important;
+}
+.media-thumb.pv-panel-thumb > svg {
+  display: none !important;
+}
+.media-thumb > .pv-panel-emoji {
+  position: static !important;
+  z-index: 1 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  border-radius: 0 !important;
+  font-size: clamp(42px, 6vw, 66px) !important;
+  line-height: 1 !important;
+  filter: drop-shadow(0 6px 12px rgba(23, 58, 92, .10));
+}
