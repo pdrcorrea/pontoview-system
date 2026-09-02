@@ -30,6 +30,7 @@ import {
   PageHead,
   formData,
 } from "../components/ui";
+import { openGoogleDrivePicker } from "../lib/googlePicker";
 import { invokeFunction, supabase } from "../lib/supabase";
 import { extractYouTubeId, formatDuration } from "../lib/youtube";
 import type { Media, MediaType } from "../types";
@@ -54,9 +55,7 @@ export function ContentPage() {
   const [source, setSource] = useState<Source>("youtube");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [driveFiles, setDriveFiles] = useState<Array<Record<string, unknown>>>(
-    [],
-  );
+
   const load = useCallback(async () => {
     if (!organization) return;
     const result = await supabase
@@ -68,9 +67,11 @@ export function ContentPage() {
     if (result.error) setError(result.error.message);
     else setItems((result.data || []) as Media[]);
   }, [organization]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const shown = useMemo(
     () =>
       items.filter(
@@ -80,6 +81,7 @@ export function ContentPage() {
       ),
     [items, filter, search],
   );
+
   const save = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!organization || !user) return;
@@ -169,6 +171,7 @@ export function ContentPage() {
       setBusy(false);
     }
   };
+
   const archive = async (item: Media) => {
     if (!confirm(`Remover “${item.name}” da biblioteca?`)) return;
     const result = await supabase
@@ -178,6 +181,7 @@ export function ContentPage() {
     if (result.error) setError(result.error.message);
     else await load();
   };
+
   const saveEdit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editing) return;
@@ -209,6 +213,7 @@ export function ContentPage() {
       await load();
     }
   };
+
   const connectDrive = async () => {
     setBusy(true);
     setError(null);
@@ -227,54 +232,90 @@ export function ContentPage() {
       setBusy(false);
     }
   };
-  const listDrive = async () => {
+
+  const selectDriveFiles = async () => {
+    if (!organization || !user) return;
     setBusy(true);
     setError(null);
+
     try {
-      const result = await invokeFunction<{
-        files: Array<Record<string, unknown>>;
-      }>("drive-files", { mode: "list" });
-      setDriveFiles(result.files || []);
+      const apiKey = String(import.meta.env.VITE_GOOGLE_PICKER_API_KEY || "");
+      const appId = String(import.meta.env.VITE_GOOGLE_PICKER_APP_ID || "");
+      if (!apiKey || !appId) {
+        throw new Error("O Google Picker ainda não está configurado neste ambiente.");
+      }
+
+      const token = await invokeFunction<{
+        accessToken: string;
+        connectionId: string;
+      }>("drive-picker-token", {});
+
+      const selected = await openGoogleDrivePicker({
+        accessToken: token.accessToken,
+        apiKey,
+        appId,
+      });
+      if (!selected.length) return;
+
+      const uniqueFiles = Array.from(
+        new Map(selected.map((file) => [file.id, file])).values(),
+      );
+      const fileIds = uniqueFiles.map((file) => file.id);
+
+      const existingResult = await supabase
+        .from("media")
+        .select("drive_file_id")
+        .eq("organization_id", organization.id)
+        .neq("status", "archived")
+        .in("drive_file_id", fileIds);
+      if (existingResult.error) throw existingResult.error;
+
+      const existingIds = new Set(
+        (existingResult.data || [])
+          .map((row) => String(row.drive_file_id || ""))
+          .filter(Boolean),
+      );
+      const filesToAdd = uniqueFiles.filter((file) => !existingIds.has(file.id));
+
+      if (!filesToAdd.length) {
+        setError("Os arquivos selecionados já estão na biblioteca.");
+        return;
+      }
+
+      const result = await supabase.from("media").insert(
+        filesToAdd.map((file) => ({
+          organization_id: organization.id,
+          type: file.mimeType.startsWith("video/")
+            ? "drive_video"
+            : "drive_image",
+          name: file.name || "Arquivo do Drive",
+          drive_connection_id: token.connectionId,
+          drive_file_id: file.id,
+          drive_mime_type: file.mimeType,
+          drive_modified_time: null,
+          drive_checksum: null,
+          thumbnail_url: null,
+          duration_seconds: file.mimeType.startsWith("image/") ? 15 : null,
+          online_required: false,
+          created_by: user.id,
+          status: "ready",
+        })),
+      );
+      if (result.error) throw result.error;
+
+      setModal(false);
+      await load();
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
-          : "Conecte o Google Drive antes de selecionar arquivos.",
+          : "Não foi possível abrir o Google Drive.",
       );
     } finally {
       setBusy(false);
     }
   };
-  const addDriveFile = async (file: Record<string, unknown>) => {
-    if (!organization || !user) return;
-    setBusy(true);
-    const mime = String(file.mimeType || "");
-    const result = await supabase
-      .from("media")
-      .insert({
-        organization_id: organization.id,
-        type: mime.startsWith("video/") ? "drive_video" : "drive_image",
-        name: String(file.name || "Arquivo do Drive"),
-        drive_connection_id: file.connectionId,
-        drive_file_id: file.id,
-        drive_mime_type: mime,
-        drive_modified_time: file.modifiedTime || null,
-        drive_checksum: file.md5Checksum || null,
-        thumbnail_url: null,
-        duration_seconds: mime.startsWith("image/") ? 15 : null,
-        online_required: false,
-        created_by: user.id,
-      })
-      .select()
-      .single();
-    setBusy(false);
-    if (result.error) setError(result.error.message);
-    else {
-      setModal(false);
-      setDriveFiles([]);
-      await load();
-    }
-  };
+
   return (
     <>
       <PageHead
@@ -404,7 +445,6 @@ export function ContentPage() {
                 key={id}
                 onClick={() => {
                   setSource(id);
-                  setDriveFiles([]);
                   setError(null);
                 }}
               >
@@ -419,6 +459,7 @@ export function ContentPage() {
               <Cloud size={30} />
               <h3>Arquivos continuam no seu Drive</h3>
               <p>
+                Navegue pelas pastas do Google Drive e escolha imagens ou vídeos.
                 A PontoView armazena apenas a referência e mantém uma cópia
                 temporária no Player para operação offline.
               </p>
@@ -433,30 +474,11 @@ export function ContentPage() {
                 <AsyncButton
                   busy={busy}
                   className="btn primary"
-                  onClick={listDrive}
+                  onClick={selectDriveFiles}
                 >
                   Selecionar arquivos
                 </AsyncButton>
               </div>
-              {driveFiles.length > 0 && (
-                <div className="drive-file-list">
-                  {driveFiles.map((file) => (
-                    <button
-                      key={String(file.id)}
-                      onClick={() => void addDriveFile(file)}
-                    >
-                      <span>
-                        {String(file.mimeType).startsWith("video/") ? (
-                          <FileVideo />
-                        ) : (
-                          <FileImage />
-                        )}
-                      </span>
-                      <b>{String(file.name)}</b>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           ) : (
             <ContentForm
@@ -706,6 +728,7 @@ function ContentForm({
     </form>
   );
 }
+
 function thumbIcon(item: Media) {
   if (item.type === "youtube") return <Youtube size={34} />;
   if (item.type === "drive_video") return <FileVideo size={28} />;
@@ -714,6 +737,7 @@ function thumbIcon(item: Media) {
   if (item.type === "message") return <MessageSquareText size={28} />;
   return <Sparkles size={28} />;
 }
+
 function appName(key: string) {
   return (
     (
