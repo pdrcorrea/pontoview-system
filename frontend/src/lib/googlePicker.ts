@@ -91,6 +91,9 @@ export async function openGoogleDrivePicker({
       const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
       view.setIncludeFolders(true);
       view.setSelectFolderEnabled(false);
+      if (google.picker.DocsViewMode?.LIST) {
+        view.setMode(google.picker.DocsViewMode.LIST);
+      }
       view.setMimeTypes(
         [
           "image/jpeg",
@@ -103,7 +106,6 @@ export async function openGoogleDrivePicker({
           "video/x-matroska",
         ].join(","),
       );
-      if (typeof view.setEnableDrives === "function") view.setEnableDrives(true);
 
       const builder = new google.picker.PickerBuilder()
         .setOAuthToken(accessToken)
@@ -113,8 +115,7 @@ export async function openGoogleDrivePicker({
         .addView(view)
         .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
         .setCallback((data: Record<string, unknown>) => {
-          const action =
-            data[google.picker.Response.ACTION] ?? data.action;
+          const action = data[google.picker.Response.ACTION] ?? data.action;
 
           if (action === google.picker.Action.CANCEL) {
             resolve([]);
@@ -149,10 +150,6 @@ export async function openGoogleDrivePicker({
 
           resolve(files);
         });
-
-      if (google.picker.Feature.SUPPORT_DRIVES) {
-        builder.enableFeature(google.picker.Feature.SUPPORT_DRIVES);
-      }
 
       builder.build().setVisible(true);
     } catch (error) {
