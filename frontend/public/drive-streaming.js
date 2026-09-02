@@ -7,6 +7,7 @@
   const nativeRevokeObjectURL = URL.revokeObjectURL.bind(URL);
   const ticketUrls = new Map();
   const activeStreamUrls = new Set();
+  const autoplayTimers = new WeakMap();
 
   // PontoView reads Drive media on demand. Never retain a local media cache.
   if (window.caches?.delete) void window.caches.delete(MEDIA_CACHE).catch(() => {});
@@ -41,6 +42,76 @@
     new Headers(init?.headers || {}).forEach((value, key) => headers.set(key, value));
     return headers;
   }
+
+  function isDriveVideo(video) {
+    if (!(video instanceof HTMLVideoElement)) return false;
+    const src = String(video.currentSrc || video.src || "");
+    return /\/functions\/v1\/drive-media\?ticket=/.test(src);
+  }
+
+  async function ensureDriveVideoPlaying(video, allowMutedFallback = true) {
+    if (!isDriveVideo(video) || video.ended) return;
+
+    try {
+      await video.play();
+      return;
+    } catch {
+      if (!allowMutedFallback) return;
+    }
+
+    // Browsers and TV WebViews commonly block unattended autoplay with sound.
+    // Signage must keep moving, so retry muted only when the audible attempt fails.
+    video.muted = true;
+    video.defaultMuted = true;
+    try {
+      await video.play();
+    } catch {
+      // A later loadeddata/canplay/visibility event will retry.
+    }
+  }
+
+  function scheduleAutoplay(video, delay = 0, mutedFallback = true) {
+    const previous = autoplayTimers.get(video);
+    if (previous) window.clearTimeout(previous);
+
+    const timer = window.setTimeout(() => {
+      autoplayTimers.delete(video);
+      void ensureDriveVideoPlaying(video, mutedFallback);
+    }, delay);
+    autoplayTimers.set(video, timer);
+  }
+
+  function handleDriveVideoReady(event) {
+    const video = event.target;
+    if (!isDriveVideo(video)) return;
+    scheduleAutoplay(video, 0, true);
+    window.setTimeout(() => {
+      if (isDriveVideo(video) && video.paused && !video.ended) {
+        scheduleAutoplay(video, 0, true);
+      }
+    }, 900);
+  }
+
+  for (const eventName of ["loadedmetadata", "loadeddata", "canplay"]) {
+    document.addEventListener(eventName, handleDriveVideoReady, true);
+  }
+
+  // Some embedded Chromium/Android TV engines load the first frame and then
+  // leave the element paused without surfacing an error. Recover automatically.
+  document.addEventListener("pause", (event) => {
+    const video = event.target;
+    if (!isDriveVideo(video) || video.ended || video.readyState < 2) return;
+    scheduleAutoplay(video, 250, true);
+  }, true);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    for (const video of document.querySelectorAll("video")) {
+      if (isDriveVideo(video) && video.paused && !video.ended) {
+        scheduleAutoplay(video, 0, true);
+      }
+    }
+  });
 
   if (nativeOpen) {
     window.caches.open = async function patchedOpen(name) {
