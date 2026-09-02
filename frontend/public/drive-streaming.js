@@ -10,6 +10,8 @@
   const streamConfigs = new Map();
   let workerPromise = null;
 
+  if (window.caches?.delete) void window.caches.delete(MEDIA_CACHE).catch(() => {});
+
   function requestUrl(input) {
     if (typeof input === "string") return input;
     if (input instanceof URL) return input.toString();
