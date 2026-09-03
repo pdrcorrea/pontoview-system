@@ -305,7 +305,7 @@ export function HomePage() {
 
         <section className="pv-home-final">
           <div>
-            <span>PONTO VIEW TELAS</span>
+            <span>PONTOVIEW TELAS</span>
             <h2>Sua próxima atualização pode acontecer pela web, não por pendrive.</h2>
             <p>Crie sua Conta PontoView e comece a organizar suas telas em um só lugar.</p>
           </div>
