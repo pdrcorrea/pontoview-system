@@ -1,0 +1,43 @@
+.webpage-security-warning {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 8px 4px 2px;
+}
+
+.webpage-security-warning .security-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: #fff0f1;
+  color: #9c3d4a;
+  margin-bottom: 16px;
+}
+
+.webpage-security-warning .security-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.webpage-security-warning p {
+  margin: 0;
+  max-width: 440px;
+  color: #5f7082;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.webpage-security-warning p strong {
+  display: block;
+  color: #263b50;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.webpage-security-warning .modal-actions {
+  width: 100%;
+  justify-content: center;
+  margin-top: 22px;
+}
