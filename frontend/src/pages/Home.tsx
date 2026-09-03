@@ -11,12 +11,16 @@ import {
   MonitorPlay,
   Play,
   PanelsTopLeft,
+  RefreshCw,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
+  Unplug,
   Youtube,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import "../home.css";
+import "../home-refinements.css";
 
 const features = [
   {
@@ -199,16 +203,25 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="pv-home-strip" aria-label="Proposta PontoView Telas">
-          <span>Menos pendrive.</span>
-          <span>Mais controle.</span>
-          <span>Comunicação que acompanha sua rotina.</span>
+        <section className="pv-home-strip pv-home-value-strip" aria-label="Proposta PontoView Telas">
+          <article>
+            <span className="pv-home-value-icon"><Unplug /></span>
+            <div><small>ATUALIZAÇÃO</small><strong>Menos pendrive.</strong></div>
+          </article>
+          <article>
+            <span className="pv-home-value-icon"><SlidersHorizontal /></span>
+            <div><small>GESTÃO</small><strong>Mais controle.</strong></div>
+          </article>
+          <article>
+            <span className="pv-home-value-icon"><RefreshCw /></span>
+            <div><small>ROTINA</small><strong>Comunicação que acompanha sua rotina.</strong></div>
+          </article>
         </section>
 
         <section className="pv-home-section" id="como-funciona">
           <div className="pv-home-section-head">
             <span>COMO FUNCIONA</span>
-            <h2>Da sua biblioteca para a TV, sem complicação.</h2>
+            <h2>Da sua biblioteca para a TV, do seu jeito.</h2>
             <p>
               O PontoView Telas organiza a operação em três etapas claras. Você
               prepara a programação, conecta a tela e deixa o player fazer o resto.
