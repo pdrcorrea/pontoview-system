@@ -1,11 +1,11 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
+  CheckCircle2,
   KeyRound,
   LockKeyhole,
   Mail,
-  Monitor,
   UserRound,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -28,7 +28,13 @@ function AuthLayout({
     <div className="auth-page auth-main-style">
       <section className="auth-brand">
         <div className="auth-main-brand">
-          <span className="auth-main-brandmark"><Monitor /></span>
+          <span className="auth-main-brandmark">
+            <img
+              src="/assets/icon.png"
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </span>
           <span>
             <strong>PontoView</strong>
             <small>Telas</small>
@@ -36,20 +42,20 @@ function AuthLayout({
         </div>
 
         <div className="auth-main-pitch">
-          <span>MÍDIA INDOOR</span>
-          <h1>Sua comunicação, sempre em movimento.</h1>
+          <span>ECOSSISTEMA PONTOVIEW</span>
+          <h1>Transforme TVs em canais de comunicação.</h1>
           <p>
-            Organize conteúdos para TVs e combine mídias próprias com painéis
-            automáticos de clima, notícias, economia, cultura e muito mais.
+            Organize vídeos, imagens, YouTube, conteúdos integrados e painéis
+            automáticos em uma experiência feita para TVs da sua empresa.
           </p>
         </div>
 
-        <small className="auth-main-foot">PontoView Telas</small>
+        <small className="auth-main-foot">PontoView Telas · um produto PontoView</small>
       </section>
 
       <main className="auth-card">
         <div className="auth-main-card">
-          <span className="auth-main-eyebrow">ÁREA DO CLIENTE</span>
+          <span className="auth-main-eyebrow">CONTA PONTOVIEW</span>
           <h2>{title}</h2>
           <p>{text}</p>
 
@@ -96,7 +102,7 @@ export function LoginPage() {
     else navigate((location.state as { from?: string })?.from || "/dashboard");
   };
   return (
-    <AuthLayout title="Bem-vindo." text="Entre na sua conta para acessar o PontoView Telas.">
+    <AuthLayout title="Bem-vindo." text="Entre com sua Conta PontoView para acessar o PontoView Telas.">
       <form onSubmit={submit} className="auth-form">
         <label>
           E-mail
@@ -126,7 +132,7 @@ export function LoginPage() {
         </label>
         <FormMessage error={error} />
         <AsyncButton busy={busy} className="btn primary full">
-          Entrar
+          Entrar na Conta PontoView
         </AsyncButton>
         <Link className="forgot auth-main-forgot" to="/recuperar-senha">
           Esqueci minha senha
@@ -154,7 +160,7 @@ export function SignupPage() {
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/confirmado`,
         data: {
           full_name: data.name,
           organization_name: data.organization,
@@ -168,10 +174,10 @@ export function SignupPage() {
   };
   if (sent)
     return (
-      <AuthLayout title="Confirme seu e-mail." text="Enviamos um link para concluir seu cadastro.">
+      <AuthLayout title="Confirme seu e-mail." text="Só falta confirmar o endereço usado na sua Conta PontoView.">
         <div className="auth-success">
           <Mail />
-          <p>Abra o e-mail de confirmação para ativar sua conta.</p>
+          <p>Enviamos um link de confirmação. Ao abrir, você verá a confirmação e poderá continuar para o PontoView Telas.</p>
         </div>
         <Link className="btn secondary full" to="/login">
           Voltar ao login
@@ -179,7 +185,7 @@ export function SignupPage() {
       </AuthLayout>
     );
   return (
-    <AuthLayout title="Crie sua conta." text="Comece seu período de avaliação do PontoView Telas.">
+    <AuthLayout title="Crie sua Conta PontoView." text="Sua conta identifica você no ecossistema PontoView. Comece pelo PontoView Telas.">
       <form onSubmit={submit} className="auth-form">
         <label>
           Seu nome
@@ -217,7 +223,7 @@ export function SignupPage() {
         </label>
         <FormMessage error={error} />
         <AsyncButton busy={busy} className="btn primary full">
-          Criar conta
+          Criar Conta PontoView
         </AsyncButton>
       </form>
     </AuthLayout>
@@ -243,7 +249,7 @@ export function RecoveryPage() {
       );
   };
   return (
-    <AuthLayout title="Recuperar senha." text="Informe seu e-mail para receber o link de acesso.">
+    <AuthLayout title="Recuperar senha." text="Informe o e-mail da sua Conta PontoView para receber o link de acesso.">
       <form className="auth-form" onSubmit={submit}>
         <label>
           E-mail
@@ -283,7 +289,7 @@ export function ResetPasswordPage() {
     else navigate("/dashboard");
   };
   return (
-    <AuthLayout title="Nova senha." text="Defina uma nova senha para sua conta.">
+    <AuthLayout title="Nova senha." text="Defina uma nova senha para sua Conta PontoView.">
       <form className="auth-form" onSubmit={submit}>
         <label>
           Nova senha
@@ -309,18 +315,18 @@ export function ResetPasswordPage() {
 }
 
 export function AuthCallback() {
-  const navigate = useNavigate();
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => navigate("/dashboard", { replace: true }),
-      1000,
-    );
-    return () => window.clearTimeout(timer);
-  }, [navigate]);
   return (
-    <div className="loading-screen">
-      <span className="player-mark">P</span>
-      <p>Concluindo acesso…</p>
-    </div>
+    <AuthLayout title="E-mail confirmado." text="Sua Conta PontoView está ativa e pronta para uso.">
+      <div className="auth-success">
+        <CheckCircle2 />
+        <p>Confirmação concluída. Você já pode continuar para o PontoView Telas.</p>
+      </div>
+      <Link className="btn primary full" to="/dashboard">
+        Continuar para o PontoView Telas
+      </Link>
+      <a className="btn secondary full" href="https://pontoview.com.br">
+        Conhecer o ecossistema PontoView
+      </a>
+    </AuthLayout>
   );
 }
