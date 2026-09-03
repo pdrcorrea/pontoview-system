@@ -71,6 +71,7 @@ export default function App() {
       <Routes>
         <Route path="/player" element={<PlayerPage />} />
         <Route path="/player/:screenId" element={<PlayerPage />} />
+        <Route path="/auth/confirmado" element={<AuthCallback />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route
           path="/login"
