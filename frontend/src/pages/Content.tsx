@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   AppWindow,
+  Ban,
   Cloud,
   FileImage,
   FileVideo,
@@ -34,6 +35,7 @@ import { openGoogleDrivePicker } from "../lib/googlePicker";
 import { invokeFunction, supabase } from "../lib/supabase";
 import { extractYouTubeId, formatDuration } from "../lib/youtube";
 import type { Media, MediaType } from "../types";
+import "../webpage-security.css";
 
 type Source = "youtube" | "drive" | "webpage" | "app" | "message";
 const typeLabel: Record<MediaType, string> = {
@@ -55,6 +57,7 @@ export function ContentPage() {
   const [source, setSource] = useState<Source>("youtube");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [webpageSecurityWarning, setWebpageSecurityWarning] = useState(false);
 
   const load = useCallback(async () => {
     if (!organization) return;
@@ -127,14 +130,20 @@ export function ContentPage() {
           },
         };
       }
-      if (source === "webpage")
+      if (source === "webpage") {
+        const pageUrl = new URL(data.url);
+        if (pageUrl.protocol !== "https:") {
+          setWebpageSecurityWarning(true);
+          return;
+        }
         payload = {
           ...payload,
           type: "webpage",
-          page_url: new URL(data.url).toString(),
+          page_url: pageUrl.toString(),
           duration_seconds: Number(data.duration || 30),
           online_required: true,
         };
+      }
       if (source === "app")
         payload = {
           ...payload,
@@ -583,6 +592,34 @@ export function ContentPage() {
               </AsyncButton>
             </div>
           </form>
+        </Modal>
+      )}
+      {webpageSecurityWarning && (
+        <Modal
+          eyebrow="PÁGINA NÃO COMPATÍVEL"
+          title="Não foi possível adicionar esta página"
+          onClose={() => setWebpageSecurityWarning(false)}
+        >
+          <div className="webpage-security-warning">
+            <span className="security-icon" aria-hidden="true">
+              <Ban />
+            </span>
+            <p>
+              <strong>
+                Esta página não é compatível com os requisitos de segurança do PontoView.
+              </strong>
+              Para proteger a exibição do conteúdo e manter o Player funcionando corretamente, utilize uma página com conexão segura.
+            </p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => setWebpageSecurityWarning(false)}
+              >
+                Voltar e corrigir
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </>
