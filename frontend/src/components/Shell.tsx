@@ -4,6 +4,7 @@ import {
   BadgeDollarSign,
   CalendarClock,
   CircleHelp,
+  Globe2,
   Headphones,
   LayoutDashboard,
   ListVideo,
@@ -31,7 +32,7 @@ const primary = [
   ["/apps", "Painéis PontoView", Sparkles],
 ] as const;
 const account = [
-  ["/conta", "Minha conta", UserRound],
+  ["/conta", "Conta PontoView", UserRound],
   ["/financeiro", "Financeiro", BadgeDollarSign],
   ["/ajuda", "Ajuda", CircleHelp],
   ["/suporte", "Contato e suporte", Headphones],
@@ -100,13 +101,16 @@ export function AppShell() {
           )}
           <button className="mobile-close" aria-label="Fechar menu" onClick={() => setOpen(false)}><X size={18} /></button>
         </div>
-        <div className="nav-label">Workspace</div>
+        <div className="nav-label">PontoView Telas</div>
         <nav>{links(primary)}</nav>
-        <div className="nav-label account-label">Conta</div>
+        <div className="nav-label account-label">Sua conta</div>
         <nav>{links(account)}</nav>
         <NavLink className="settings" to="/configuracoes" onClick={() => setOpen(false)}><Settings size={18} /><span>Configurações</span></NavLink>
-        <a className="privacy-link" href="https://pontoview.com.br/politica-de-privacidade.html" target="_blank" rel="noreferrer">
-          <ShieldCheck size={18} /><span>Política de Privacidade</span>
+        <a className="privacy-link" href="https://pontoview.com.br" target="_blank" rel="noreferrer">
+          <Globe2 size={18} /><span>Ecossistema PontoView</span>
+        </a>
+        <a className="privacy-link" href="https://pontoview.com.br/privacidade" target="_blank" rel="noreferrer">
+          <ShieldCheck size={18} /><span>Central de Privacidade</span>
         </a>
         <div className="org-card">
           <span className="avatar">{initials}</span>
