@@ -9,6 +9,7 @@ import {
   ResetPasswordPage,
   SignupPage,
 } from "./pages/Auth";
+import { HomePage } from "./pages/Home";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentPage } from "./pages/Content";
 import { PlaylistsPage } from "./pages/PlaylistsV2";
@@ -69,6 +70,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<HomePage />} />
         <Route path="/player" element={<PlayerPage />} />
         <Route path="/player/:screenId" element={<PlayerPage />} />
         <Route path="/auth/confirmado" element={<AuthCallback />} />
@@ -98,23 +100,24 @@ export default function App() {
           }
         />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-        <Route path="/" element={<Protected />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="onboarding" element={<OnboardingPage />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="conteudo" element={<ContentPage />} />
-          <Route path="playlists" element={<PlaylistsPage />} />
-          <Route path="programacoes" element={<SchedulesPage />} />
-          <Route path="mensagens" element={<MessagesPage />} />
-          <Route path="telas" element={<ScreensPage />} />
-          <Route path="apps" element={<AppsPage />} />
-          <Route path="conta" element={<AccountPage />} />
-          <Route path="financeiro" element={<BillingPage />} />
-          <Route path="ajuda" element={<HelpPage />} />
-          <Route path="suporte" element={<SupportPage />} />
-          <Route path="configuracoes" element={<SettingsPage />} />
+
+        <Route element={<Protected />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/conteudo" element={<ContentPage />} />
+          <Route path="/playlists" element={<PlaylistsPage />} />
+          <Route path="/programacoes" element={<SchedulesPage />} />
+          <Route path="/mensagens" element={<MessagesPage />} />
+          <Route path="/telas" element={<ScreensPage />} />
+          <Route path="/apps" element={<AppsPage />} />
+          <Route path="/conta" element={<AccountPage />} />
+          <Route path="/financeiro" element={<BillingPage />} />
+          <Route path="/ajuda" element={<HelpPage />} />
+          <Route path="/suporte" element={<SupportPage />} />
+          <Route path="/configuracoes" element={<SettingsPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );
