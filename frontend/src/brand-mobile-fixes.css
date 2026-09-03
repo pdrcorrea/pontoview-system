@@ -28,6 +28,52 @@
   color: #fff;
 }
 
+/* O bloco da conta permanece visualmente dentro do menu, mesmo em telas baixas. */
+.sidebar {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.sidebar .org-card {
+  flex: 0 0 auto;
+  min-height: 58px;
+  background: #0b1f3a;
+  color: #fff;
+  position: relative;
+  z-index: 2;
+}
+.sidebar .org-card > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+}
+.sidebar .org-card strong {
+  color: #fff;
+  opacity: 1;
+}
+.sidebar .org-card small {
+  color: #91a7c2;
+}
+.sidebar .org-card .avatar {
+  flex: 0 0 34px;
+}
+.sidebar .org-card .icon-button {
+  flex: 0 0 auto;
+  color: #91a7c2;
+}
+.sidebar .org-card .icon-button:hover {
+  color: #fff;
+}
+
+/* A TV usa o endereço curto dedicado ao Player. */
+.pairing-form .pair-help b {
+  font-size: 0 !important;
+}
+.pairing-form .pair-help b::after {
+  content: "Abra tv.pontoview.com.br na TV";
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 /* O drawer precisa permanecer acima de qualquer contexto de empilhamento em portrait. */
 @media (max-width: 900px) {
   .shell {
@@ -47,6 +93,9 @@
     height: 100dvh !important;
     margin: 0 !important;
     opacity: 1;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
     transform: translate3d(-105%, 0, 0) !important;
     will-change: transform;
   }
@@ -60,6 +109,10 @@
   }
   .shell > .sidebar-scrim {
     z-index: 2147483000 !important;
+  }
+  .sidebar .org-card {
+    margin-bottom: 2px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
   }
 }
 
