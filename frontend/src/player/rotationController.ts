@@ -73,32 +73,57 @@ async function refreshRotation(device: Device) {
     p_screen_id: device.screenId,
     p_token: device.token,
   });
-  if (result.error || !result.data) return;
+  if (result.error || !result.data) return null;
   const rotation = normalizeRotation((result.data as any)?.screen?.rotation);
   cacheRotation(device.screenId, rotation);
   applyRotation(rotation);
+  return rotation;
 }
 
 function startRotationController() {
   if (!isPlayerSurface()) return;
-  const device = readDevice();
-  if (!device) return;
 
-  let rotation = readCachedRotation(device.screenId);
-  applyRotation(rotation);
+  let device: Device | null = null;
+  let rotation: ScreenRotation = "standard";
+  let refreshing = false;
 
-  const applyTimer = window.setInterval(() => {
-    const next = readCachedRotation(device.screenId);
-    if (next !== rotation) rotation = next;
+  const syncDevice = () => {
+    const nextDevice = readDevice();
+    if (!nextDevice) {
+      device = null;
+      rotation = "standard";
+      return;
+    }
+
+    const changedDevice = !device || device.screenId !== nextDevice.screenId || device.token !== nextDevice.token;
+    device = nextDevice;
+
+    if (changedDevice) {
+      rotation = readCachedRotation(device.screenId);
+      applyRotation(rotation);
+      void refresh();
+      return;
+    }
+
+    const cached = readCachedRotation(device.screenId);
+    if (cached !== rotation) rotation = cached;
     applyRotation(rotation);
-  }, 1000);
+  };
 
-  const refresh = () => void refreshRotation(device).then(() => {
-    rotation = readCachedRotation(device.screenId);
-    applyRotation(rotation);
-  });
-  refresh();
-  const syncTimer = window.setInterval(refresh, 15000);
+  const refresh = async () => {
+    if (!device || refreshing) return;
+    refreshing = true;
+    try {
+      const next = await refreshRotation(device);
+      if (next) rotation = next;
+    } finally {
+      refreshing = false;
+    }
+  };
+
+  syncDevice();
+  const applyTimer = window.setInterval(syncDevice, 1000);
+  const syncTimer = window.setInterval(() => void refresh(), 15000);
   const onResize = () => applyRotation(rotation);
   window.addEventListener("resize", onResize);
   window.addEventListener("orientationchange", onResize);
