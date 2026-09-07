@@ -3,8 +3,14 @@ import type { ScreenRotation } from "../types";
 
 const DEVICE_KEY = "pontoview_player_device_v1";
 const ROTATION_KEY = "pontoview_player_rotation_v1";
+const PLAYER_PATH = "/player";
+const DEDICATED_PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 
 type Device = { screenId: string; token: string };
+
+function isPlayerSurface() {
+  return location.pathname.startsWith(PLAYER_PATH) || DEDICATED_PLAYER_HOSTS.has(location.hostname.toLowerCase());
+}
 
 function readDevice(): Device | null {
   try {
@@ -74,7 +80,7 @@ async function refreshRotation(device: Device) {
 }
 
 function startRotationController() {
-  if (!location.pathname.startsWith("/player")) return;
+  if (!isPlayerSurface()) return;
   const device = readDevice();
   if (!device) return;
 
@@ -93,11 +99,15 @@ function startRotationController() {
   });
   refresh();
   const syncTimer = window.setInterval(refresh, 15000);
-  window.addEventListener("resize", () => applyRotation(rotation));
+  const onResize = () => applyRotation(rotation);
+  window.addEventListener("resize", onResize);
+  window.addEventListener("orientationchange", onResize);
 
   window.addEventListener("beforeunload", () => {
     window.clearInterval(applyTimer);
     window.clearInterval(syncTimer);
+    window.removeEventListener("resize", onResize);
+    window.removeEventListener("orientationchange", onResize);
   }, { once: true });
 }
 
