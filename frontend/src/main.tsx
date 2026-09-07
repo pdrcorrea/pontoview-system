@@ -7,6 +7,7 @@ import "./player/rotationController";
 import "./player/orientationController";
 import "./player-readability.css";
 import "./message-experience.css";
+import "./player-critical-fixes.css";
 
 const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
