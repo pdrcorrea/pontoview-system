@@ -1,26 +1,64 @@
 /* Critical player presentation fixes kept outside the dashboard styles. */
 
-/* The logical canvas is always centered inside the player runtime. Orientation
-   changes the aspect ratio only. Physical rotation is handled independently. */
+/*
+ * ORIENTATION CONTRACT
+ * --------------------
+ * `orientation` only defines the logical aspect ratio of the content.
+ * It must NEVER rotate the canvas. A portrait screen is always a 9:16 canvas
+ * and a landscape screen is always a 16:9 canvas. Physical rotation is a
+ * separate setting and is applied to the outer runtime by rotationController.
+ *
+ * These rules use !important deliberately because older Player builds still
+ * calculate swapped viewport sizes/rotation inline. Keeping the contract here
+ * prevents a cached or intermediate render from turning portrait content 90°.
+ */
 .pv-player-runtime {
   background: #071a2d;
 }
 
 .pv-player-runtime .pv-orientation-canvas {
-  max-width: 100%;
-  max-height: 100%;
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  transform-origin: center center !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* 9:16 fitted inside whatever physical viewport the browser exposes. */
+.pv-player-runtime .pv-orientation-canvas.logical-portrait {
+  width: min(100vw, 56.25vh) !important;
+  height: min(100vh, 177.7778vw) !important;
+  aspect-ratio: 9 / 16 !important;
+}
+
+/* 16:9 fitted inside the physical viewport. */
+.pv-player-runtime .pv-orientation-canvas.logical-landscape {
+  width: min(100vw, 177.7778vh) !important;
+  height: min(100vh, 56.25vw) !important;
+  aspect-ratio: 16 / 9 !important;
+}
+
+/* Explicitly neutralise the legacy class used by the old automatic rotator. */
+.pv-player-runtime .pv-orientation-canvas.rotated {
+  transform: translate(-50%, -50%) !important;
 }
 
 /* Loading state: give the official icon breathing room instead of clipping it
    inside the generic dashboard badge rules. */
 .player-boot .player-mark {
-  width: 72px !important;
-  height: 72px !important;
-  padding: 10px !important;
-  border-radius: 18px !important;
+  width: 76px !important;
+  height: 76px !important;
+  padding: 8px !important;
+  border-radius: 20px !important;
   background: #ffffff !important;
   overflow: visible !important;
   box-sizing: border-box !important;
+  display: grid !important;
+  place-items: center !important;
 }
 
 .player-boot .player-mark .pv-brand-official {
@@ -31,6 +69,8 @@
   max-height: 100% !important;
   object-fit: contain !important;
   object-position: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .player-boot {
