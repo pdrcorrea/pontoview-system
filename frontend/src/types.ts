@@ -1,5 +1,6 @@
 export type OrganizationRole = "owner" | "admin" | "editor" | "viewer";
 export type ScreenRotation = "standard" | "right" | "left" | "180";
+export type MessageDisplayLocation = "footer" | "sidebar";
 export type MediaType =
   | "drive_image"
   | "drive_video"
@@ -165,7 +166,12 @@ export interface PlayerManifest {
       metadata: Record<string, unknown>;
     };
   }>;
-  messages: Array<{ id: string; title: string | null; body: string }>;
+  messages: Array<{
+    id: string;
+    title: string | null;
+    body: string;
+    displayLocation?: MessageDisplayLocation;
+  }>;
   news: Array<{
     id: string;
     source?: string;
