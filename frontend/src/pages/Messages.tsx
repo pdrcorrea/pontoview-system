@@ -10,7 +10,7 @@ import {
   formData,
 } from "../components/ui";
 import { supabase } from "../lib/supabase";
-import type { Screen } from "../types";
+import type { MessageDisplayLocation, Screen } from "../types";
 
 type MessageRow = {
   id: string;
@@ -22,6 +22,7 @@ type MessageRow = {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  display_location: MessageDisplayLocation;
   message_screens: Array<{ screen_id: string }>;
 };
 const weekdays = [
@@ -47,7 +48,7 @@ export function MessagesPage() {
       supabase
         .from("messages")
         .select(
-          "id,title,body,starts_at,ends_at,weekdays,start_time,end_time,is_active,message_screens(screen_id)",
+          "id,title,body,starts_at,ends_at,weekdays,start_time,end_time,is_active,display_location,message_screens(screen_id)",
         )
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false }),
@@ -91,6 +92,7 @@ export function MessagesPage() {
       weekdays: days.length ? days : weekdays.map(([day]) => day),
       start_time: values.start_time || "00:00",
       end_time: values.end_time || "23:59",
+      display_location: (values.display_location || "footer") as MessageDisplayLocation,
       is_active: true,
       created_by: user.id,
     };
@@ -206,7 +208,7 @@ export function MessagesPage() {
                 {message.end_time.slice(0, 5)}
               </strong>
               <small>
-                {formatDays(message.weekdays)} · {targetLabel(message, screens)}
+                {formatDays(message.weekdays)} · {targetLabel(message, screens)} · {locationLabel(message.display_location)}
               </small>
             </article>
           ))}
@@ -215,7 +217,7 @@ export function MessagesPage() {
         <EmptyState
           icon={<MessageSquareText />}
           title="Nenhuma mensagem programada"
-          text="Crie avisos que aparecem automaticamente na Moldura em L."
+          text="Crie avisos programados para a barra inferior ou para a área lateral de destaque."
           action="Criar primeira mensagem"
           onAction={() => setEditing(null)}
         />
@@ -271,6 +273,16 @@ function MessageModal({
             required
             defaultValue={message?.body || ""}
           />
+        </label>
+        <label>
+          Local de exibição
+          <select name="display_location" defaultValue={message?.display_location || "footer"}>
+            <option value="footer">Barra inferior</option>
+            <option value="sidebar">Área lateral de destaque</option>
+          </select>
+          <small>
+            Na área lateral, a mensagem ocupa o espaço do clima e alterna automaticamente quando os dois estiverem ativos.
+          </small>
         </label>
         <div className="weekday-picker">
           {weekdays.map(([day, label]) => (
@@ -368,6 +380,9 @@ function targetLabel(message: MessageRow, screens: Screen[]) {
     .map((row) => screens.find((screen) => screen.id === row.screen_id)?.name)
     .filter(Boolean);
   return targets.length ? targets.join(", ") : "Todas as telas";
+}
+function locationLabel(location: MessageDisplayLocation) {
+  return location === "sidebar" ? "Área lateral" : "Barra inferior";
 }
 function toLocalInput(value?: string | null) {
   if (!value) return "";
