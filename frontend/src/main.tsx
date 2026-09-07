@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./player/rotationController";
+import "./player/orientationController";
 import "./player-readability.css";
 import "./message-experience.css";
 
