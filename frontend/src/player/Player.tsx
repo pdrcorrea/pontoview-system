@@ -8,6 +8,7 @@ import {
   CloudRain,
   CloudSun,
   Loader2,
+  MessageSquareText,
   Monitor,
   Newspaper,
   RefreshCw,
@@ -20,7 +21,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.3.0";
+const PLAYER_VERSION = "1.4.0";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -49,9 +50,18 @@ const PLAYER_RUNTIME_STYLE = `
   }
   .pv-stage-transition.cut { animation: none; }
   @keyframes pv-stage-in { from { opacity: 0; transform: scale(1.006); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pv-side-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .pv-player-power-off { position: fixed; inset: 0; z-index: 99999; width: 100vw; height: 100vh; background: #000; cursor: none; }
   .pv-brand-official { width: 100%; height: 100%; object-fit: contain; display: block; }
   .pv-brand-fallback { width: 100%; height: 100%; display: grid; place-items: center; font-weight: 800; font-size: .7em; letter-spacing: -.04em; }
+  .side-rotation-slot { min-height: 0; width: 100%; flex: 1 1 auto; display: flex; align-items: stretch; }
+  .side-panel-slide { width: 100%; min-height: 0; animation: pv-side-in 420ms ease both; }
+  .side-panel-slide[hidden] { display: none !important; }
+  .side-message { height: 100%; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.5vh; }
+  .side-message-label { display: inline-flex; width: fit-content; align-items: center; gap: .55em; font-size: clamp(9px,.75vw,13px); font-weight: 800; letter-spacing: .12em; color: #244f7e; }
+  .side-message-label svg { width: 1.2em; height: 1.2em; }
+  .side-message h2 { margin: 0; font-size: clamp(20px,2vw,38px); line-height: 1.08; color: #17344f; overflow-wrap: anywhere; }
+  .side-message p { margin: 0; font-size: clamp(14px,1.28vw,24px); line-height: 1.34; color: #40586d; overflow-wrap: anywhere; }
   .live-weather { display: block; }
   .weather-current { display: flex; align-items: center; gap: 1vw; }
   .weather-current > svg { width: clamp(30px,3vw,58px); height: auto; flex: 0 0 auto; }
@@ -82,12 +92,16 @@ const PLAYER_RUNTIME_STYLE = `
     padding: 4vh 2vw;
     gap: 3vh;
   }
+  .pv-orientation-canvas.logical-portrait .side-message h2 { font-size: clamp(18px,2.6vw,34px); }
+  .pv-orientation-canvas.logical-portrait .side-message p { font-size: clamp(13px,1.8vw,21px); }
   @media (orientation: portrait) {
     .weather-forecast { gap: .75vh; }
     .weather-day { grid-template-columns: minmax(36px,.8fr) 22px 1fr; }
     .news-source strong { max-width: 8em; }
   }
-  @media (prefers-reduced-motion: reduce) { .pv-stage-transition { animation-duration: 1ms; } }
+  @media (prefers-reduced-motion: reduce) {
+    .pv-stage-transition, .side-panel-slide { animation-duration: 1ms; }
+  }
 `;
 
 type Device = { screenId: string; token: string };
@@ -191,6 +205,14 @@ export function PlayerPage() {
       reloadUrl.searchParams.set("pv_reload", String(reloadRevision));
       window.location.replace(reloadUrl.toString());
       return;
+    }
+
+    const messageResult = await supabase.rpc("get_player_messages", {
+      p_screen_id: activeDevice.screenId,
+      p_token: activeDevice.token,
+    });
+    if (!messageResult.error && Array.isArray(messageResult.data)) {
+      next.messages = messageResult.data as PlayerManifest["messages"];
     }
 
     if (next.settings?.widgets?.news) {
@@ -363,7 +385,17 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
   const settings = manifest.settings;
   const [clock, setClock] = useState(new Date());
   const [infoIndex, setInfoIndex] = useState(0);
+  const [sideIndex, setSideIndex] = useState(0);
   useEffect(() => { const timer = window.setInterval(() => setClock(new Date()), 1000); return () => window.clearInterval(timer); }, []);
+
+  const footerMessages = useMemo(
+    () => manifest.messages.filter((message) => (message.displayLocation || "footer") === "footer"),
+    [manifest.messages],
+  );
+  const sideMessages = useMemo(
+    () => manifest.messages.filter((message) => message.displayLocation === "sidebar"),
+    [manifest.messages],
+  );
 
   const info = useMemo(() => [
     ...(settings.widgets?.news ? manifest.news.map((news) => ({
@@ -372,13 +404,18 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
       source: news.source || sourceName(news.url),
       url: news.url,
     })) : []),
-    ...(settings.widgets?.messages ? manifest.messages.map((message) => ({
+    ...(settings.widgets?.messages ? footerMessages.map((message) => ({
       kind: "message" as const,
       text: message.body,
       source: "",
       url: "",
     })) : []),
-  ].filter((entry) => entry.text), [settings.widgets, manifest.news, manifest.messages]);
+  ].filter((entry) => entry.text), [settings.widgets, manifest.news, footerMessages]);
+
+  const sideSlides = useMemo(() => [
+    ...(settings.widgets?.weather ? [{ kind: "weather" as const, key: "weather" }] : []),
+    ...(settings.widgets?.messages ? sideMessages.map((message) => ({ kind: "message" as const, key: message.id, message })) : []),
+  ], [settings.widgets?.weather, settings.widgets?.messages, sideMessages]);
 
   useEffect(() => {
     setInfoIndex(0);
@@ -386,6 +423,18 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
     const timer = window.setInterval(() => setInfoIndex((i) => (i + 1) % info.length), 8000);
     return () => window.clearInterval(timer);
   }, [info.length]);
+
+  useEffect(() => {
+    setSideIndex(0);
+  }, [sideSlides.length]);
+
+  useEffect(() => {
+    if (sideSlides.length <= 1) return;
+    const slide = sideSlides[sideIndex % sideSlides.length];
+    const delay = slide.kind === "message" ? messageReadingMs(slide.message.body, slide.message.title) : 10_000;
+    const timer = window.setTimeout(() => setSideIndex((current) => (current + 1) % sideSlides.length), delay);
+    return () => window.clearTimeout(timer);
+  }, [sideIndex, sideSlides]);
 
   const stage = (
     <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={item?.itemId || "standby"}>
@@ -402,6 +451,7 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
 
   if (settings.layout_mode !== "lframe") return <main className="player-fullscreen">{stage}</main>;
   const currentInfo = info.length ? info[infoIndex % info.length] : null;
+  const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
   return (
     <main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position}`}>
@@ -413,7 +463,20 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
             {settings.widgets?.date && <small>{clock.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase()}</small>}
           </div>
         )}
-        {settings.widgets?.weather && <WeatherWidget screenId={device.screenId} token={device.token} location={settings.weather_location} />}
+        {sideSlides.length > 0 && (
+          <div className="side-rotation-slot">
+            {settings.widgets?.weather && (
+              <div className="side-panel-slide" hidden={currentSide?.kind !== "weather"}>
+                <WeatherWidget screenId={device.screenId} token={device.token} location={settings.weather_location} />
+              </div>
+            )}
+            {currentSide?.kind === "message" && (
+              <div className="side-panel-slide" key={`side-message-${currentSide.message.id}`}>
+                <SideMessage message={currentSide.message} />
+              </div>
+            )}
+          </div>
+        )}
         {settings.widgets?.business && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} />}
       </aside>
       <footer>
@@ -430,6 +493,23 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: {
       </footer>
     </main>
   );
+}
+
+function SideMessage({ message }: { message: PlayerManifest["messages"][number] }) {
+  return (
+    <div className="side-message">
+      <span className="side-message-label"><MessageSquareText /> MENSAGEM</span>
+      {message.title && <h2>{message.title}</h2>}
+      <p>{message.body}</p>
+    </div>
+  );
+}
+
+function messageReadingMs(body: string, title?: string | null) {
+  const text = `${title || ""} ${body}`.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  const readingSeconds = 4 + words / 3;
+  return Math.round(Math.min(24, Math.max(8, readingSeconds)) * 1000);
 }
 
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: {
