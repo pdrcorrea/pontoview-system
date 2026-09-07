@@ -1,6 +1,9 @@
 export type OrganizationRole = "owner" | "admin" | "editor" | "viewer";
 export type ScreenRotation = "standard" | "right" | "left" | "180";
 export type MessageDisplayLocation = "footer" | "sidebar";
+export type MessagePriority = "normal" | "important" | "urgent";
+export type MessageDurationMode = "auto" | "manual";
+export type MessageStyleVariant = "standard" | "attention" | "info" | "success";
 export type MediaType =
   | "drive_image"
   | "drive_video"
@@ -171,6 +174,11 @@ export interface PlayerManifest {
     title: string | null;
     body: string;
     displayLocation?: MessageDisplayLocation;
+    priority?: MessagePriority;
+    durationMode?: MessageDurationMode;
+    durationSeconds?: number | null;
+    styleVariant?: MessageStyleVariant;
+    isExclusive?: boolean;
   }>;
   news: Array<{
     id: string;
