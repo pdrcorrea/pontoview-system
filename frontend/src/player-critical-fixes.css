@@ -3,48 +3,33 @@
 /*
  * ORIENTATION CONTRACT
  * --------------------
- * `orientation` only defines the logical aspect ratio of the content.
- * It must NEVER rotate the canvas. A portrait screen is always a 9:16 canvas
- * and a landscape screen is always a 16:9 canvas. Physical rotation is a
- * separate setting and is applied to the outer runtime by rotationController.
+ * The Player must use the entire drawing surface exposed by the TV/browser.
+ * Orientation no longer locks the canvas to 16:9 or 9:16. When the selected
+ * orientation differs from the current surface, orientationController swaps
+ * the dimensions and rotates the canvas so the content remains correct after
+ * the display is physically mounted in the chosen position.
  *
- * These rules use !important deliberately because older Player builds still
- * calculate swapped viewport sizes/rotation inline. Keeping the contract here
- * prevents a cached or intermediate render from turning portrait content 90°.
+ * Physical rotation configured by the user is still applied independently to
+ * the outer runtime by rotationController.
  */
 .pv-player-runtime {
   background: #071a2d;
+  overflow: hidden;
 }
 
 .pv-player-runtime .pv-orientation-canvas {
-  position: fixed !important;
-  left: 50% !important;
-  top: 50% !important;
   right: auto !important;
   bottom: auto !important;
-  transform: translate(-50%, -50%) !important;
-  transform-origin: center center !important;
   max-width: none !important;
   max-height: none !important;
+  aspect-ratio: auto !important;
 }
 
-/* 9:16 fitted inside whatever physical viewport the browser exposes. */
-.pv-player-runtime .pv-orientation-canvas.logical-portrait {
-  width: min(100vw, 56.25vh) !important;
-  height: min(100vh, 177.7778vw) !important;
-  aspect-ratio: 9 / 16 !important;
-}
-
-/* 16:9 fitted inside the physical viewport. */
+.pv-player-runtime .pv-orientation-canvas.logical-portrait,
 .pv-player-runtime .pv-orientation-canvas.logical-landscape {
-  width: min(100vw, 177.7778vh) !important;
-  height: min(100vh, 56.25vw) !important;
-  aspect-ratio: 16 / 9 !important;
-}
-
-/* Explicitly neutralise the legacy class used by the old automatic rotator. */
-.pv-player-runtime .pv-orientation-canvas.rotated {
-  transform: translate(-50%, -50%) !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
 }
 
 /* Loading state: give the official icon breathing room instead of clipping it
