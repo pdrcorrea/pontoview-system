@@ -24,7 +24,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.5.0";
+const PLAYER_VERSION = "1.6.0";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -76,8 +76,10 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-company img { max-height: 100%; max-width: min(28vw,320px); object-fit: contain; }
   .footer-company svg { width: 1.25em; height: 1.25em; color: #244f7e; }
   .footer-company strong { font-size: .85em; color: #244f7e; }
-  .pv-orientation-canvas.logical-portrait .player-lframe.side-left, .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: 1fr 30%; }
-  .pv-orientation-canvas.logical-portrait .player-lframe > aside { padding: 4vh 2vw; gap: 3vh; }
+  /* Em retrato, 15% para a coluna + 15% para a faixa preservam uma área principal de pelo menos 9:16. */
+  .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: minmax(0, 1fr) 15%; }
+  .pv-orientation-canvas.logical-portrait .player-lframe.side-left { grid-template-columns: 15% minmax(0, 1fr); }
+  .pv-orientation-canvas.logical-portrait .player-lframe > aside { padding: 3vh 1vw; gap: 2vh; }
   .pv-orientation-canvas.logical-portrait .side-message h2 { font-size: clamp(18px,2.6vw,34px); }
   .pv-orientation-canvas.logical-portrait .side-message p { font-size: clamp(13px,1.8vw,21px); }
   @media (orientation: portrait) { .weather-forecast { gap: .75vh; } .weather-day { grid-template-columns: minmax(36px,.8fr) 22px 1fr; } .news-source strong { max-width: 8em; } }
@@ -94,6 +96,7 @@ export function PlayerPage() {
   const [activation, setActivation] = useState<{ id: string; code: string; expiresAt: string } | null>(null);
   const [manifest, setManifest] = useState<PlayerManifest | null>(null);
   const [index, setIndex] = useState(0);
+  const [playbackCycle, setPlaybackCycle] = useState(0);
   const [connected, setConnected] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
   const [runtimeNow, setRuntimeNow] = useState(new Date());
@@ -201,7 +204,9 @@ export function PlayerPage() {
   const advance = useCallback((failed = false, detail?: string) => {
     const current = playbackRef.current; if (!current.manifest || !activeDevice || !current.item) return;
     void supabase.rpc("player_event", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_event_type: failed ? "media_error" : "content_ended", p_media_id: current.item.media.id, p_playlist_id: current.manifest.playlist?.id || null, p_payload: failed ? { detail: detail || "playback_error" } : { position: current.index } });
-    const itemCount = Math.max(1, current.manifest.items.length); setIndex((position) => (position + 1) % itemCount);
+    const itemCount = Math.max(1, current.manifest.items.length);
+    setPlaybackCycle((cycle) => cycle + 1);
+    setIndex((position) => (position + 1) % itemCount);
   }, [activeDevice]);
   const handleEnd = useCallback(() => advance(false), [advance]);
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
@@ -215,14 +220,14 @@ export function PlayerPage() {
   const viewportPortrait = viewport.height >= viewport.width;
   const rotateCanvas = configuredPortrait !== viewportPortrait;
   const canvasStyle = rotateCanvas ? { width: `${viewport.height}px`, height: `${viewport.width}px`, transform: "translate(-50%, -50%) rotate(90deg)" } : { width: `${viewport.width}px`, height: `${viewport.height}px`, transform: "translate(-50%, -50%)" };
-  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${rotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} onEnd={handleEnd} onError={handleError} /></div></div>;
+  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${rotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} onEnd={handleEnd} onError={handleError} /></div></div>;
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
   return <div className="activation-screen"><div className="activation-brand"><span className="player-mark"><BrandMark /></span><b>PontoView Player</b></div><section><Monitor /><small>CONECTAR ESTA TELA</small><h1>{activation?.code || "••••••"}</h1><p>No painel PontoView, acesse <b>Telas → Conectar tela</b> e informe este código.</p>{activation && <em>O código é temporário e será renovado automaticamente.</em>}{error && <div className="activation-error">{error}<button onClick={onRetry}><RefreshCw />Tentar novamente</button></div>}</section><footer>pontoview.com.br</footer></div>;
 }
 
-function PlayerLayout({ manifest, item, device, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
+function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; onEnd: () => void; onError: (detail: string) => void; }) {
   const settings = manifest.settings;
   const [clock, setClock] = useState(new Date());
   const [infoIndex, setInfoIndex] = useState(0);
@@ -263,7 +268,7 @@ function PlayerLayout({ manifest, item, device, onEnd, onError }: { manifest: Pl
     return () => window.clearTimeout(timer);
   }, [sideIndex, sideSlides]);
 
-  const stage = <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={item?.itemId || "standby"}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div>;
+  const stage = <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div>;
   if (settings.layout_mode !== "lframe") return <main className="player-fullscreen">{stage}</main>;
   const currentInfo = info.length ? info[infoIndex % info.length] : null;
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
@@ -320,9 +325,40 @@ function TimedStage({ seconds, onEnd, children }: { seconds: number; onEnd: () =
 
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const [url, setUrl] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
   useEffect(() => { let active = true; let objectUrl: string | null = null; void loadDriveAsset(media, device).then((value) => { objectUrl = value; if (active) setUrl(value); }).catch(() => active && onError("drive_fetch_error")); return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); }; }, [media.id, media.driveChecksum, device.screenId, device.token, onError]);
+  useEffect(() => {
+    if (media.type !== "drive_video" || !url) return;
+    let lastTime = -1;
+    let lastProgressAt = Date.now();
+    let recoveryAttempted = false;
+    let failed = false;
+    const watchdog = window.setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.ended || failed) return;
+      const currentTime = Number(video.currentTime || 0);
+      if (currentTime > lastTime + 0.25) {
+        lastTime = currentTime;
+        lastProgressAt = Date.now();
+        recoveryAttempted = false;
+        return;
+      }
+      const stalledFor = Date.now() - lastProgressAt;
+      if (stalledFor >= 25_000 && !recoveryAttempted) {
+        recoveryAttempted = true;
+        void video.play().catch(() => {});
+      }
+      if (stalledFor >= 45_000) {
+        failed = true;
+        onErrorRef.current("drive_video_stalled");
+      }
+    }, 5_000);
+    return () => window.clearInterval(watchdog);
+  }, [media.type, url]);
   if (!url) return <div className="player-loading"><Loader2 className="spin" /><small>Preparando {media.name}</small></div>;
-  if (media.type === "drive_video") return <video src={url} autoPlay playsInline onEnded={onEnd} onError={() => onError("drive_video_error")} />;
+  if (media.type === "drive_video") return <video ref={videoRef} src={url} autoPlay playsInline onEnded={onEnd} onError={() => onError("drive_video_error")} />;
   return <TimedStage seconds={duration} onEnd={onEnd}><img src={url} alt="" onError={() => onError("drive_image_error")} /></TimedStage>;
 }
 
@@ -336,9 +372,66 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
   const host = useRef<HTMLDivElement>(null); const player = useRef<YTPlayer | null>(null); const onEndRef = useRef(onEnd); const onErrorRef = useRef(onError);
   useEffect(() => { onEndRef.current = onEnd; }, [onEnd]); useEffect(() => { onErrorRef.current = onError; }, [onError]);
   const controls = Boolean(options?.controls); const mute = Boolean(options?.mute); const volume = Number(options?.volume ?? 100); const start = Number(options?.start || 0); const rawEnd = Number(options?.end || 0); const end = rawEnd > 0 ? rawEnd : undefined;
-  useEffect(() => { let active = true; loadYouTubeApi().then(() => { if (!active || !host.current) return; player.current = new window.YT.Player(host.current, { videoId, playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: mute ? 1 : 0, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin }, events: { onReady: (event: any) => { event.target.setVolume(volume); if (mute) event.target.mute(); event.target.playVideo(); }, onStateChange: (event: any) => { if (event.data === 0) onEndRef.current(); }, onError: (event: any) => onErrorRef.current(`youtube_${event.data}`) } }); }).catch(() => onErrorRef.current("youtube_api_error")); return () => { active = false; const current = player.current; player.current = null; current?.destroy?.(); }; }, [videoId, controls, mute, volume, start, end]);
+  useEffect(() => {
+    let active = true;
+    let watchdog = 0;
+    let lastTime = -1;
+    let lastProgressAt = Date.now();
+    let lastRecoveryAt = 0;
+    let failed = false;
+    loadYouTubeApi().then(() => {
+      if (!active || !host.current) return;
+      player.current = new window.YT.Player(host.current, {
+        videoId,
+        playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: mute ? 1 : 0, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin },
+        events: {
+          onReady: (event: any) => {
+            event.target.setVolume(volume);
+            if (mute) event.target.mute();
+            event.target.playVideo();
+            lastProgressAt = Date.now();
+            watchdog = window.setInterval(() => {
+              const current = player.current;
+              if (!current || failed) return;
+              const state = Number(current.getPlayerState?.() ?? -1);
+              if (state === 0) return;
+              const currentTime = Number(current.getCurrentTime?.() ?? 0);
+              if (currentTime > lastTime + 0.25) {
+                lastTime = currentTime;
+                lastProgressAt = Date.now();
+                return;
+              }
+              const stalledFor = Date.now() - lastProgressAt;
+              if (stalledFor >= 20_000 && Date.now() - lastRecoveryAt >= 10_000) {
+                lastRecoveryAt = Date.now();
+                current.playVideo?.();
+              }
+              if (stalledFor >= 45_000) {
+                failed = true;
+                onErrorRef.current("youtube_stalled");
+              }
+            }, 5_000);
+          },
+          onStateChange: (event: any) => {
+            if (event.data === 0) onEndRef.current();
+            if (event.data === 1) lastProgressAt = Date.now();
+            if (event.data === 2) window.setTimeout(() => player.current?.playVideo?.(), 750);
+          },
+          onError: (event: any) => onErrorRef.current(`youtube_${event.data}`),
+        },
+      });
+    }).catch(() => onErrorRef.current("youtube_api_error"));
+    return () => {
+      active = false;
+      if (watchdog) window.clearInterval(watchdog);
+      const current = player.current;
+      player.current = null;
+      current?.destroy?.();
+    };
+  }, [videoId, controls, mute, volume, start, end]);
   return <div className="youtube-stage" ref={host} />;
 }
+
 let youtubePromise: Promise<void> | null = null;
 function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if (youtubePromise) return youtubePromise; youtubePromise = new Promise((resolve, reject) => { const previous = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(); }; const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => reject(new Error("youtube")); document.head.appendChild(script); }); return youtubePromise; }
 
@@ -365,5 +458,5 @@ function sourceName(url: string) { try { return new URL(url).hostname.replace(/^
 function faviconUrl(url: string) { try { const host = new URL(url).hostname; return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`; } catch { return ""; } }
 function readDevice(): Device | null { try { const value = JSON.parse(localStorage.getItem(DEVICE_KEY) || "null"); return value?.screenId && value?.token ? value : null; } catch { return null; } }
 function readManifest(id: string): PlayerManifest | null { try { return JSON.parse(localStorage.getItem(`pv_manifest_${id}`) || "null"); } catch { return null; } }
-interface YTPlayer { destroy?: () => void; }
+interface YTPlayer { destroy?: () => void; playVideo?: () => void; getCurrentTime?: () => number; getPlayerState?: () => number; }
 declare global { interface Window { YT: { Player: new (element: HTMLElement, options: Record<string, unknown>) => YTPlayer }; onYouTubeIframeAPIReady?: () => void; } }
