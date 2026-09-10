@@ -439,3 +439,16 @@
     max-width: 100%;
   }
 }
+
+
+/* Mantém a escolha de orientação rápida mesmo no painel móvel. */
+@media (max-width: 760px) {
+  .layout-choice.orientation-choice {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 390px) {
+  .layout-choice.orientation-choice {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

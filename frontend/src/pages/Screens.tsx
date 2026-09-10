@@ -12,6 +12,8 @@ import {
   Play,
   Power,
   RefreshCw,
+  RotateCcw,
+  RotateCw,
   Save,
   ShieldCheck,
   Trash2,
@@ -404,29 +406,37 @@ function ScreenEditor({
             </select>
           </label>
 
-          <h3>Orientação da tela</h3>
-          <div className="layout-choice">
+          <h3>Orientação e giro</h3>
+          <p className="config-hint">Primeiro escolha como a TV está instalada. O Player adapta o conteúdo automaticamente para usar toda a área disponível.</p>
+          <div className="layout-choice orientation-choice">
             <button className={orientation === "landscape" ? "layout-option active-option" : "layout-option"} onClick={() => setOrientation("landscape")}>
-              <Monitor /><b>Horizontal</b><small>Formato 16:9 para TVs convencionais.</small>
+              <Monitor /><b>Horizontal</b><small>TV instalada deitada.</small>
             </button>
             <button className={orientation === "portrait" ? "layout-option active-option" : "layout-option"} onClick={() => setOrientation("portrait")}>
-              <Monitor style={{ transform: "rotate(90deg)" }} /><b>Vertical</b><small>Formato 9:16 para telas em retrato.</small>
+              <Monitor style={{ transform: "rotate(90deg)" }} /><b>Vertical</b><small>TV instalada em pé.</small>
             </button>
           </div>
 
-          <h3>Rotação da imagem</h3>
-          <label>
-            Rotação
-            <select value={rotation} onChange={(event) => setRotation(event.target.value as ScreenRotation)}>
-              <option value="standard">Padrão</option>
-              <option value="right">Girar 90° à direita</option>
-              <option value="left">Girar 90° à esquerda</option>
-              <option value="180">Girar 180°</option>
-            </select>
-            <small style={{ display: "block", marginTop: 7, lineHeight: 1.5 }}>
-              Use esta opção quando a TV estiver instalada fisicamente girada. A orientação define o formato do conteúdo; a rotação define como ele é virado no display.
-            </small>
-          </label>
+          <div className="rotation-control">
+            <div className="rotation-copy">
+              <b>Ajustar giro da imagem</b>
+              <small>Use somente se o conteúdo aparecer virado depois de instalar a TV.</small>
+            </div>
+            <div className="rotation-choice" role="group" aria-label="Ajustar giro da imagem">
+              <button className={rotation === "standard" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("standard")} title="Sem giro adicional">
+                <Monitor /><span>Sem giro</span>
+              </button>
+              <button className={rotation === "left" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("left")} title="Girar 90 graus à esquerda">
+                <RotateCcw /><span>Esquerda</span>
+              </button>
+              <button className={rotation === "right" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("right")} title="Girar 90 graus à direita">
+                <RotateCw /><span>Direita</span>
+              </button>
+              <button className={rotation === "180" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("180")} title="Inverter a imagem em 180 graus">
+                <RefreshCw /><span>Inverter</span>
+              </button>
+            </div>
+          </div>
 
           <h3>Modo de exibição</h3>
           <div className="layout-choice">
@@ -440,10 +450,10 @@ function ScreenEditor({
 
           {settings.layout_mode === "lframe" && (
             <>
-              <h3>Posição</h3>
+              <h3>Posição das informações</h3>
               <div className="segmented">
-                <button className={settings.side_position === "left" ? "selected" : ""} onClick={() => setSettings((s) => ({ ...s, side_position: "left" }))}>Coluna esquerda</button>
-                <button className={settings.side_position === "right" ? "selected" : ""} onClick={() => setSettings((s) => ({ ...s, side_position: "right" }))}>Coluna direita</button>
+                <button className={settings.side_position === "left" ? "selected" : ""} onClick={() => setSettings((s) => ({ ...s, side_position: "left" }))}><PanelRight style={{ transform: "scaleX(-1)" }} /> Coluna esquerda</button>
+                <button className={settings.side_position === "right" ? "selected" : ""} onClick={() => setSettings((s) => ({ ...s, side_position: "right" }))}><PanelRight /> Coluna direita</button>
               </div>
               <div className="segmented">
                 <button className={settings.bar_position === "top" ? "selected" : ""} onClick={() => setSettings((s) => ({ ...s, bar_position: "top" }))}><PanelTop /> Faixa superior</button>
@@ -499,8 +509,9 @@ function ScreenEditor({
 
           <h3>Manutenção do Player</h3>
           <div className="widget-config">
+            <div className="player-continuity"><RefreshCw /><span><b>Reprodução contínua</b><small>A playlist reinicia automaticamente. Se um vídeo parar de avançar, o Player tenta retomá-lo e pula para o próximo conteúdo se necessário.</small></span></div>
             <small style={{ display: "block", marginBottom: 10, lineHeight: 1.5 }}>
-              Use esta opção se uma TV mantiver conteúdo ou configurações antigas. O comando preserva o pareamento da tela.
+              Se a TV mantiver conteúdo ou configurações antigas, limpe o cache sem perder o pareamento.
             </small>
             <AsyncButton busy={reloadBusy} className="btn secondary full" onClick={() => void requestReload()}>
               <RefreshCw /> Limpar cache e recarregar Player
@@ -512,11 +523,11 @@ function ScreenEditor({
 
         <section className="panel preview-config">
           <div className="preview-label">
-            <span>PRÉ-VISUALIZAÇÃO · {orientation === "portrait" ? "9:16" : "16:9"}</span>
+            <span>PRÉ-VISUALIZAÇÃO · {orientation === "portrait" ? "VERTICAL" : "HORIZONTAL"}</span>
             <small>{rotationLabels[rotation]} · {playlists.find((p) => p.id === playlist)?.name || "Sem playlist"}</small>
           </div>
           <ScreenPreview settings={settings} orientation={orientation} />
-          <div className="preview-note"><ShieldCheck /><span>A orientação define o formato lógico e a rotação corrige a montagem física da TV. A playlist continua sendo exibida integralmente.</span></div>
+          <div className="preview-note"><ShieldCheck /><span>{orientation === "portrait" && settings.layout_mode === "lframe" ? "No modo vertical, a área principal de imagens e painéis mantém no mínimo a proporção 9:16; a coluna informativa usa apenas o espaço restante." : "A orientação e o giro são aplicados sem limitar o Player a uma proporção fixa de tela."}</span></div>
         </section>
       </div>
     </div>
@@ -538,12 +549,12 @@ function ScreenPreview({ settings, orientation }: { settings: ScreenSettings; or
     marginInline: "auto",
   } as const;
   if (settings.layout_mode === "fullscreen") return (
-    <div className="frame-preview fullscreen-preview" style={style}>
+    <div className={`frame-preview fullscreen-preview orientation-${orientation}`} style={style}>
       <div className="main-media"><Play /><b>Conteúdo da playlist</b><small>Vídeos · Imagens · Apps · YouTube</small></div>
     </div>
   );
   return (
-    <div className={`frame-preview l-preview side-${settings.side_position} bar-${settings.bar_position}`} style={style}>
+    <div className={`frame-preview l-preview orientation-${orientation} side-${settings.side_position} bar-${settings.bar_position}`} style={style}>
       <div className="main-media"><Play /><b>Conteúdo principal</b><small>Playlist PontoView</small></div>
       <aside className="frame-side">
         {settings.widgets.clock && <div className="clock-widget"><b>13:06</b><small>SEX · 28 AGO</small></div>}
