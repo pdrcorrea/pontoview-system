@@ -20,34 +20,39 @@ function fitLogicalCanvas() {
   const canvas = document.querySelector<HTMLElement>(".pv-orientation-canvas");
   if (!runtime || !canvas) return;
 
-  const portrait = canvas.classList.contains("logical-portrait");
-  const logicalAspect = portrait ? 9 / 16 : 16 / 9;
-
-  // The runtime may itself have been rotated to compensate for a TV mounted
-  // physically on its side. clientWidth/clientHeight give us its logical,
-  // pre-transform drawing area, which is exactly what the canvas must fit.
+  // The runtime may itself be rotated by rotationController when the TV is
+  // physically mounted on its side. clientWidth/clientHeight expose the
+  // pre-transform drawing area, which is the correct surface for the canvas.
   const availableWidth = runtime.clientWidth || window.innerWidth;
   const availableHeight = runtime.clientHeight || window.innerHeight;
   if (!availableWidth || !availableHeight) return;
 
-  let width = availableWidth;
-  let height = width / logicalAspect;
+  const logicalPortrait = canvas.classList.contains("logical-portrait");
+  const runtimePortrait = availableHeight >= availableWidth;
+  const shouldRotate = logicalPortrait !== runtimePortrait;
 
-  if (height > availableHeight) {
-    height = availableHeight;
-    width = height * logicalAspect;
-  }
+  // Orientation is no longer a fixed 16:9 / 9:16 box. The canvas always uses
+  // the entire available area. When the configured orientation differs from
+  // the current drawing surface, swap the dimensions and rotate the canvas so
+  // portrait content lies sideways on a landscape display (and vice versa).
+  const width = shouldRotate ? availableHeight : availableWidth;
+  const height = shouldRotate ? availableWidth : availableHeight;
 
   setImportant(canvas, "position", "absolute");
   setImportant(canvas, "width", `${Math.round(width)}px`);
   setImportant(canvas, "height", `${Math.round(height)}px`);
   setImportant(canvas, "left", "50%");
   setImportant(canvas, "top", "50%");
-
-  // Orientation defines only the logical aspect ratio. It must never rotate
-  // the content. Physical rotation is handled independently by the screen's
-  // rotation setting.
-  setImportant(canvas, "transform", "translate(-50%, -50%)");
+  setImportant(canvas, "right", "auto");
+  setImportant(canvas, "bottom", "auto");
+  setImportant(canvas, "max-width", "none");
+  setImportant(canvas, "max-height", "none");
+  setImportant(canvas, "aspect-ratio", "auto");
+  setImportant(
+    canvas,
+    "transform",
+    shouldRotate ? "translate(-50%, -50%) rotate(90deg)" : "translate(-50%, -50%)",
+  );
   setImportant(canvas, "transform-origin", "center center");
 }
 
@@ -72,8 +77,8 @@ function startOrientationController() {
     attributeFilter: ["class"],
   });
 
-  // Some TV browsers report the final viewport a moment after boot. Keep a
-  // lightweight safety pass so the player settles correctly on those devices.
+  // Some TV browsers report their final viewport a moment after boot. Keep a
+  // lightweight safety pass so the Player settles correctly on those devices.
   const timer = window.setInterval(scheduleFit, 1000);
 
   window.addEventListener("beforeunload", () => {
