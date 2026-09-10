@@ -527,7 +527,7 @@ function ScreenEditor({
             <small>{rotationLabels[rotation]} · {playlists.find((p) => p.id === playlist)?.name || "Sem playlist"}</small>
           </div>
           <ScreenPreview settings={settings} orientation={orientation} />
-          <div className="preview-note"><ShieldCheck /><span>{orientation === "portrait" && settings.layout_mode === "lframe" ? "No modo vertical, a área principal de imagens e painéis mantém no mínimo a proporção 9:16; a coluna informativa usa apenas o espaço restante." : "A orientação e o giro são aplicados sem limitar o Player a uma proporção fixa de tela."}</span></div>
+          <div className="preview-note"><ShieldCheck /><span>{orientation === "portrait" && settings.layout_mode === "lframe" ? "No modo vertical, a coluna informativa mantém uma largura mínima para não cortar relógio, clima e mensagens; todo o espaço restante fica livre para as mídias." : "A orientação e o giro são aplicados sem limitar o Player a uma proporção fixa de tela."}</span></div>
         </section>
       </div>
     </div>

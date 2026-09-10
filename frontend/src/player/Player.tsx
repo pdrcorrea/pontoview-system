@@ -76,10 +76,10 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-company img { max-height: 100%; max-width: min(28vw,320px); object-fit: contain; }
   .footer-company svg { width: 1.25em; height: 1.25em; color: #244f7e; }
   .footer-company strong { font-size: .85em; color: #244f7e; }
-  /* Em retrato, 15% para a coluna + 15% para a faixa preservam uma área principal de pelo menos 9:16. */
-  .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: minmax(0, 1fr) 15%; }
-  .pv-orientation-canvas.logical-portrait .player-lframe.side-left { grid-template-columns: 15% minmax(0, 1fr); }
-  .pv-orientation-canvas.logical-portrait .player-lframe > aside { padding: 3vh 1vw; gap: 2vh; }
+  /* Em retrato, a coluna informativa tem largura mínima legível e o restante fica livre para a mídia. */
+  .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: minmax(0, 1fr) clamp(190px, 20%, 280px); }
+  .pv-orientation-canvas.logical-portrait .player-lframe.side-left { grid-template-columns: clamp(190px, 20%, 280px) minmax(0, 1fr); }
+  .pv-orientation-canvas.logical-portrait .player-lframe > aside { min-width: 190px; padding: 3vh clamp(10px, 1vw, 18px); gap: 2vh; }
   .pv-orientation-canvas.logical-portrait .side-message h2 { font-size: clamp(18px,2.6vw,34px); }
   .pv-orientation-canvas.logical-portrait .side-message p { font-size: clamp(13px,1.8vw,21px); }
   @media (orientation: portrait) { .weather-forecast { gap: .75vh; } .weather-day { grid-template-columns: minmax(36px,.8fr) 22px 1fr; } .news-source strong { max-width: 8em; } }
