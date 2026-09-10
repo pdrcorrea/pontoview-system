@@ -99,10 +99,10 @@
 
 /* Prévia do retrato: reserva uma coluna informativa legível e deixa o restante para a mídia. */
 .l-preview.orientation-portrait.side-right {
-  grid-template-columns: minmax(0, 1fr) minmax(72px, 22%);
+  grid-template-columns: minmax(0, 1fr) minmax(82px, 24%);
 }
 .l-preview.orientation-portrait.side-left {
-  grid-template-columns: minmax(72px, 22%) minmax(0, 1fr);
+  grid-template-columns: minmax(82px, 24%) minmax(0, 1fr);
 }
 .l-preview.orientation-portrait .frame-side {
   padding: 10px 7px;
