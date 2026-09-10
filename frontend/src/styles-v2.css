@@ -97,13 +97,12 @@
   color: #5f786c;
 }
 
-/* Prévia fiel ao Player: em retrato a coluna cai para 15%.
-   Com a faixa também em 15%, o palco principal preserva pelo menos 9:16. */
+/* Prévia do retrato: reserva uma coluna informativa legível e deixa o restante para a mídia. */
 .l-preview.orientation-portrait.side-right {
-  grid-template-columns: minmax(0, 1fr) 15%;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 22%);
 }
 .l-preview.orientation-portrait.side-left {
-  grid-template-columns: 15% minmax(0, 1fr);
+  grid-template-columns: minmax(72px, 22%) minmax(0, 1fr);
 }
 .l-preview.orientation-portrait .frame-side {
   padding: 10px 7px;
