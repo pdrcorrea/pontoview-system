@@ -24,7 +24,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.7.5";
+const PLAYER_VERSION = "1.8.0";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -579,7 +579,7 @@ function CompanySide({ logoUrl, name }: { logoUrl: string; name: string }) { con
 function CompanyFooter({ logoUrl, name }: { logoUrl: string; name: string }) { const [imageFailed, setImageFailed] = useState(false); if (logoUrl && !imageFailed) return <span className="footer-company"><img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /></span>; return <span className="footer-company"><Building2 /><strong>{name}</strong></span>; }
 function BrandMark() { const [imageFailed, setImageFailed] = useState(false); return imageFailed ? <span className="pv-brand-fallback">PV</span> : <img className="pv-brand-official" src="/assets/icon.png" alt="" onError={() => setImageFailed(true)} />; }
 async function clearPlayerCache(screenId: string) { localStorage.removeItem(`pv_manifest_${screenId}`); for (const key of Object.keys(localStorage)) if (key.startsWith("pv-cache:") || key.startsWith("pv-last:")) localStorage.removeItem(key); if ("caches" in window) { const names = await caches.keys(); await Promise.all(names.filter((name) => name.startsWith("pontoview-")).map((name) => caches.delete(name))); } }
-function cacheBustedUrl(rawUrl: string, revision: number) { try { const url = new URL(rawUrl, window.location.origin); if (revision > 0) url.searchParams.set("pv_reload", String(revision)); if (url.origin === window.location.origin && url.pathname.startsWith("/paineis/")) url.searchParams.set("pv_panel_version", "7"); return url.toString(); } catch { return rawUrl; } }
+function cacheBustedUrl(rawUrl: string, revision: number) { try { const url = new URL(rawUrl, window.location.origin); if (revision > 0) url.searchParams.set("pv_reload", String(revision)); if (url.origin === window.location.origin && url.pathname.startsWith("/paineis/")) url.searchParams.set("pv_panel_version", "8"); return url.toString(); } catch { return rawUrl; } }
 function sourceName(url: string) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "Fonte"; } }
 function faviconUrl(url: string) { try { const host = new URL(url).hostname; return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`; } catch { return ""; } }
 function readDevice(): Device | null { try { const value = JSON.parse(localStorage.getItem(DEVICE_KEY) || "null"); return value?.screenId && value?.token ? value : null; } catch { return null; } }
