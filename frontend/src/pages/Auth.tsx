@@ -225,6 +225,9 @@ export function SignupPage() {
         <AsyncButton busy={busy} className="btn primary full">
           Criar Conta PontoView
         </AsyncButton>
+        <small className="auth-privacy-note">
+          Consulte nossa <a href="https://pontoview.com.br/privacidade" target="_blank" rel="noreferrer">Política de Privacidade</a>.
+        </small>
       </form>
     </AuthLayout>
   );
