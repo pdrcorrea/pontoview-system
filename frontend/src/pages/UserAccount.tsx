@@ -199,7 +199,7 @@ export function UserAccountPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "pontoview-meus-dados.json";
+    link.download = "pontoview-dados-da-conta.json";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -265,10 +265,10 @@ export function UserAccountPage() {
 
         <div className="privacy-actions">
           <button className="privacy-action" onClick={() => void exportData()}>
-            <Download /><span><b>Baixar meus dados</b><small>Gera uma cópia em JSON.</small></span>
+            <Download /><span><b>Baixar dados da conta</b><small>Cópia imediata do seu perfil e acesso.</small></span>
           </button>
           <button className="privacy-action" onClick={() => setRequestModal(true)}>
-            <ShieldCheck /><span><b>Exercer um direito</b><small>Acesso, correção, portabilidade ou exclusão.</small></span>
+            <ShieldCheck /><span><b>Exercer um direito</b><small>Pedidos formais sobre seus dados pessoais.</small></span>
           </button>
         </div>
 
