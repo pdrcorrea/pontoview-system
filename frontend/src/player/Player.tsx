@@ -337,7 +337,70 @@ const drivePreloads = new Map<string, DrivePreloadEntry>();
 const DRIVE_PRELOAD_TTL_MS = 2 * 60_000;
 
 function driveAssetKey(media: ManifestItem["media"], device: Device) {
-  return `${device.screenId}:${media.id}:${media.driveChecksum || "latest"}`;
+  return \`\${device.screenId}:\${media.id}:\${media.driveChecksum || "latest"}\`;
+}
+
+type NativeBridgeContext = {
+  bridge: NonNullable<Window["PontoViewNative"]>;
+  session: string;
+};
+
+function nativeBridgeContext(): NativeBridgeContext | null {
+  const bridge = window.PontoViewNative;
+  const session = window.__PV_NATIVE_SESSION;
+  return bridge && session ? { bridge, session } : null;
+}
+
+function useNativeBridgeContext() {
+  const [, setGeneration] = useState(0);
+  useEffect(() => {
+    const handleReady = () => setGeneration((value) => value + 1);
+    window.addEventListener("pontoview-native-ready", handleReady);
+    return () => window.removeEventListener("pontoview-native-ready", handleReady);
+  }, []);
+  return nativeBridgeContext();
+}
+
+function nativeBounds(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  let rotation = 0;
+  let node: HTMLElement | null = element;
+  while (node) {
+    const transform = window.getComputedStyle(node).transform;
+    if (transform && transform !== "none") {
+      const match = /^matrix\\(([^,]+),\\s*([^,]+),/.exec(transform);
+      if (match) rotation += Math.atan2(Number(match[2]), Number(match[1])) * 180 / Math.PI;
+    }
+    node = node.parentElement;
+  }
+  const snapped = ((Math.round(rotation / 90) * 90) % 360 + 360) % 360;
+  return {
+    x: rect.left,
+    y: rect.top,
+    width: rect.width,
+    height: rect.height,
+    rotation: snapped,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+  };
+}
+
+async function requestDriveStream(media: ManifestItem["media"], device: Device) {
+  if (!navigator.onLine) throw new Error("offline");
+  const response = await fetch(\`\${functionsUrl}/drive-media\`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabasePublishableKey || "",
+      "x-screen-id": device.screenId,
+      "x-screen-token": device.token,
+    },
+    body: JSON.stringify({ mediaId: media.id, action: "ticket" }),
+  });
+  if (!response.ok) throw new Error("drive_stream_ticket_error");
+  const payload = await response.json();
+  if (!payload?.streamUrl) throw new Error("drive_stream_url_missing");
+  return payload as { streamUrl: string; mimeType?: string; expiresAt?: string };
 }
 
 function preloadDriveAsset(media: ManifestItem["media"], device: Device) {
@@ -369,8 +432,25 @@ function consumeDriveAsset(media: ManifestItem["media"], device: Device) {
 }
 
 function DrivePreloader({ media, device }: { media: ManifestItem["media"]; device: Device }) {
+  const native = useNativeBridgeContext();
   useEffect(() => {
     let active = true;
+    if (native) {
+      const key = driveAssetKey(media, device);
+      try {
+        const alreadyCached = media.type === "drive_video"
+          ? native.bridge.hasCachedVideo(native.session, key)
+          : native.bridge.hasCachedImage(native.session, key);
+        if (alreadyCached) return () => { active = false; };
+      } catch {}
+      void requestDriveStream(media, device).then(({ streamUrl }) => {
+        if (!active) return;
+        if (media.type === "drive_video") native.bridge.preloadVideo(native.session, streamUrl, key);
+        else native.bridge.preloadImage(native.session, streamUrl, key);
+      }).catch(() => {});
+      return () => { active = false; };
+    }
+
     let warmVideo: HTMLVideoElement | null = null;
     let warmImage: HTMLImageElement | null = null;
     void preloadDriveAsset(media, device).then((url) => {
@@ -401,11 +481,112 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
       }
       if (warmImage) warmImage.src = "";
     };
-  }, [media.id, media.driveChecksum, media.type, device.screenId, device.token]);
+  }, [media.id, media.driveChecksum, media.type, device.screenId, device.token, native?.session]);
   return null;
 }
 
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
+  const native = useNativeBridgeContext();
+  if (native) return <NativeDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} native={native} />;
+  return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
+}
+
+function NativeDriveStage({ media, duration, device, onEnd, onError, native }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; native: NativeBridgeContext; }) {
+  const host = useRef<HTMLDivElement>(null);
+  const playbackId = useRef(\`pv-\${media.id}-\${Date.now()}-\${Math.random().toString(36).slice(2)}\`).current;
+  const onEndRef = useRef(onEnd);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
+  useEffect(() => {
+    const previousEnded = window.__pvNativeOnEnded;
+    const previousError = window.__pvNativeOnError;
+    const ended = (id: string) => {
+      if (id === playbackId) onEndRef.current();
+      else previousEnded?.(id);
+    };
+    const failed = (id: string, detail?: string) => {
+      if (id === playbackId) onErrorRef.current(detail || "native_media_error");
+      else previousError?.(id, detail);
+    };
+    window.__pvNativeOnEnded = ended;
+    window.__pvNativeOnError = failed;
+    return () => {
+      if (window.__pvNativeOnEnded === ended) window.__pvNativeOnEnded = previousEnded;
+      if (window.__pvNativeOnError === failed) window.__pvNativeOnError = previousError;
+    };
+  }, [playbackId]);
+
+  useEffect(() => {
+    let active = true;
+    const key = driveAssetKey(media, device);
+
+    const apply = (streamUrl: string) => {
+      if (!active || !host.current) return;
+      const bounds = nativeBounds(host.current);
+      if (media.type === "drive_video") {
+        native.bridge.playVideo(
+          native.session, streamUrl, key, playbackId,
+          bounds.x, bounds.y, bounds.width, bounds.height, bounds.rotation,
+          bounds.viewportWidth, bounds.viewportHeight, false, 1,
+        );
+      } else {
+        native.bridge.showImage(
+          native.session, streamUrl, key, playbackId,
+          bounds.x, bounds.y, bounds.width, bounds.height, bounds.rotation,
+          bounds.viewportWidth, bounds.viewportHeight,
+        );
+      }
+    };
+
+    try {
+      const cached = media.type === "drive_video"
+        ? native.bridge.hasCachedVideo(native.session, key)
+        : native.bridge.hasCachedImage(native.session, key);
+      if (cached) {
+        apply("");
+      } else {
+        void requestDriveStream(media, device).then(({ streamUrl }) => apply(streamUrl)).catch(() => {
+          if (active) onErrorRef.current(navigator.onLine ? "native_stream_prepare_error" : "offline_content_not_cached");
+        });
+      }
+    } catch {
+      void requestDriveStream(media, device).then(({ streamUrl }) => apply(streamUrl)).catch(() => {
+        if (active) onErrorRef.current("native_stream_prepare_error");
+      });
+    }
+
+    const updateBounds = () => {
+      if (!active || !host.current) return;
+      const bounds = nativeBounds(host.current);
+      native.bridge.updateBounds(
+        native.session, playbackId,
+        bounds.x, bounds.y, bounds.width, bounds.height, bounds.rotation,
+        bounds.viewportWidth, bounds.viewportHeight,
+      );
+    };
+    const timer = window.setInterval(updateBounds, 750);
+    window.addEventListener("resize", updateBounds);
+    window.addEventListener("orientationchange", updateBounds);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("resize", updateBounds);
+      window.removeEventListener("orientationchange", updateBounds);
+      if (media.type === "drive_video") native.bridge.stopVideo(native.session, playbackId);
+      else native.bridge.stopImage(native.session, playbackId);
+    };
+  }, [media.id, media.driveChecksum, media.type, device.screenId, device.token, native.session, playbackId]);
+
+  const placeholder = <div ref={host} className="drive-stage player-loading"><Loader2 className="spin" /><small>Preparando {media.name}</small></div>;
+  return media.type === "drive_image"
+    ? <TimedStage seconds={duration} onEnd={onEnd}>{placeholder}</TimedStage>
+    : placeholder;
+}
+
+function WebDriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const [url, setUrl] = useState<string | null>(null);
   const [autoplayMuted, setAutoplayMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -490,8 +671,8 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
 }
 
 async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
-  const cache = await caches.open("pontoview-media-v1"); const key = new Request(`${location.origin}/__pv_cache/${device.screenId}/${media.id}/${media.driveChecksum || "latest"}`); const cached = await cache.match(key); if (cached) return URL.createObjectURL(await cached.blob()); if (!navigator.onLine) throw new Error("offline");
-  const response = await fetch(`${functionsUrl}/drive-media`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": device.screenId, "x-screen-token": device.token }, body: JSON.stringify({ mediaId: media.id }) });
+  const cache = await caches.open("pontoview-media-v1"); const key = new Request(\`\${location.origin}/__pv_cache/\${device.screenId}/\${media.id}/\${media.driveChecksum || "latest"}\`); const cached = await cache.match(key); if (cached) return URL.createObjectURL(await cached.blob()); if (!navigator.onLine) throw new Error("offline");
+  const response = await fetch(\`\${functionsUrl}/drive-media\`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": device.screenId, "x-screen-token": device.token }, body: JSON.stringify({ mediaId: media.id }) });
   if (!response.ok) throw new Error("drive_media_error"); await cache.put(key, response.clone()); return URL.createObjectURL(await response.blob());
 }
 
@@ -586,4 +767,28 @@ function faviconUrl(url: string) { try { const host = new URL(url).hostname; ret
 function readDevice(): Device | null { try { const value = JSON.parse(localStorage.getItem(DEVICE_KEY) || "null"); return value?.screenId && value?.token ? value : null; } catch { return null; } }
 function readManifest(id: string): PlayerManifest | null { try { return JSON.parse(localStorage.getItem(`pv_manifest_${id}`) || "null"); } catch { return null; } }
 interface YTPlayer { destroy?: () => void; playVideo?: () => void; getCurrentTime?: () => number; getPlayerState?: () => number; }
-declare global { interface Window { YT: { Player: new (element: HTMLElement, options: Record<string, unknown>) => YTPlayer }; onYouTubeIframeAPIReady?: () => void; } }
+declare global {
+  interface Window {
+    YT: { Player: new (element: HTMLElement, options: Record<string, unknown>) => YTPlayer };
+    onYouTubeIframeAPIReady?: () => void;
+    __PV_NATIVE_SESSION?: string;
+    __PV_NATIVE_APP_VERSION?: string;
+    __pvNativeOnEnded?: (playbackId: string) => void;
+    __pvNativeOnError?: (playbackId: string, detail?: string) => void;
+    __pvNativeOnDiagnostics?: (playbackId: string, payload: string) => void;
+    PontoViewNative?: {
+      getVersion: () => string;
+      hasCachedVideo: (session: string, cacheKey: string) => boolean;
+      hasCachedImage: (session: string, cacheKey: string) => boolean;
+      preloadVideo: (session: string, streamUrl: string, cacheKey: string) => void;
+      preloadImage: (session: string, streamUrl: string, cacheKey: string) => void;
+      playVideo: (session: string, streamUrl: string, cacheKey: string, playbackId: string, x: number, y: number, width: number, height: number, rotation: number, viewportWidth: number, viewportHeight: number, muted: boolean, volume: number) => void;
+      showImage: (session: string, streamUrl: string, cacheKey: string, playbackId: string, x: number, y: number, width: number, height: number, rotation: number, viewportWidth: number, viewportHeight: number) => void;
+      updateBounds: (session: string, playbackId: string, x: number, y: number, width: number, height: number, rotation: number, viewportWidth: number, viewportHeight: number) => void;
+      stopVideo: (session: string, playbackId: string) => void;
+      stopImage: (session: string, playbackId: string) => void;
+      getCacheStatus: (session: string) => string;
+      setAutoStart: (session: string, enabled: boolean) => void;
+    };
+  }
+}
