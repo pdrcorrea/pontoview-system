@@ -325,8 +325,8 @@ export function SettingsPage() {
           <div className="setting-row">
             <ShieldCheck />
             <span>
-              <b>Isolamento por organização</b>
-              <small>Políticas RLS e vínculos compostos ativos</small>
+              <b>Dados separados por empresa</b>
+              <small>Cada organização acessa somente seus próprios dados.</small>
             </span>
             <span className="status active">Ativo</span>
           </div>
@@ -334,7 +334,7 @@ export function SettingsPage() {
             <Cloud />
             <span>
               <b>Google Drive</b>
-              <small>Credenciais mantidas fora do frontend</small>
+              <small>Credenciais protegidas no servidor.</small>
             </span>
             <span className="status active">Protegido</span>
           </div>
