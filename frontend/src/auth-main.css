@@ -252,3 +252,19 @@
     font-size: 29px;
   }
 }
+
+
+.auth-privacy-note {
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  color: #7a8998;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.auth-privacy-note a {
+  color: #365f82;
+  font-weight: 700;
+  text-decoration: none;
+}
