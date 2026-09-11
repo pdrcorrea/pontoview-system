@@ -5,7 +5,6 @@ import {
   Check,
   Clock3,
   CloudSun,
-  Info,
   MessageSquareText,
   Monitor,
   Newspaper,
@@ -28,7 +27,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import {
   AsyncButton,
@@ -279,7 +278,10 @@ export function ScreensSimplePage() {
           <div className="screen-groups-body">
             <div className="screen-groups-head">
               <p>Os grupos ficam fora do caminho principal para manter a configuração simples.</p>
-              <button className="btn secondary" onClick={() => setGroupModal(true)}><Plus /> Novo grupo</button>
+              <div className="screen-groups-actions">
+                <Link className="btn secondary" to="/programacoes"><CalendarClock /> Programar grupos</Link>
+                <button className="btn secondary" onClick={() => setGroupModal(true)}><Plus /> Novo grupo</button>
+              </div>
             </div>
             {groups.length ? (
               <div className="group-list">
