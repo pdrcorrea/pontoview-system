@@ -18,54 +18,33 @@ body.pv-panel .pv-shell{
 }
 body.pv-panel .pv-shell>*{min-width:0;min-height:0}
 
-/* Centralização óptica
-   Em telas horizontais o conteúdo não deve se esticar só porque há altura
-   disponível. O palco assume a altura natural do conteúdo e é centralizado
-   verticalmente dentro da área útil. Isso mantém painéis mais leves, como
-   Cultura e Tempo, visualmente equilibrados sem alterar a escala 720p/4K. */
+/* Palco centralizado
+   Todos os painéis nativos recebem .pv-stage-centered no próprio HTML.
+   Em horizontal o palco conserva a altura natural da composição e fica
+   centralizado na área útil. Em vertical ele ocupa a área disponível, mas
+   mantém cada bloco centralizado dentro de sua faixa. */
+body.pv-panel .pv-stage-centered{
+  width:100%;
+  min-width:0;
+  min-height:0;
+  justify-self:stretch;
+}
 @media (orientation:landscape){
-  body.pv-panel .pv-shell>main{
-    width:100%;
-    height:auto;
+  body.pv-panel .pv-stage-centered{
+    height:auto!important;
     max-height:100%;
-    align-self:center;
-    justify-self:stretch;
-  }
-  .panel-hoje .pv-stage,
-  .panel-saudacoes .greeting,
-  .panel-tempo .weather-stage,
-  .panel-noticias .news-stage,
-  .panel-saude .health,
-  .panel-orientacoes .orientation,
-  .panel-curiosidades .discovery,
-  .panel-cultura .culture-stage,
-  .panel-economia .market,
-  .panel-sustentabilidade .eco-stage{
+    align-self:center!important;
+    align-content:center;
     align-items:center;
   }
 }
-
-/* Em retrato, a composição usa toda a altura disponível, mas cada bloco
-   permanece centralizado na sua faixa para preservar a mesma simetria. */
 @media (orientation:portrait){
-  body.pv-panel .pv-shell>main{
-    width:100%;
-    height:100%;
-    align-self:stretch;
-    justify-self:stretch;
-  }
-  .panel-hoje .pv-stage,
-  .panel-saudacoes .greeting,
-  .panel-tempo .weather-stage,
-  .panel-noticias .news-stage,
-  .panel-saude .health,
-  .panel-orientacoes .orientation,
-  .panel-curiosidades .discovery,
-  .panel-cultura .culture-stage,
-  .panel-economia .market,
-  .panel-sustentabilidade .eco-stage{
-    align-items:center;
+  body.pv-panel .pv-stage-centered{
+    height:100%!important;
+    max-height:100%;
+    align-self:stretch!important;
     align-content:center;
+    align-items:center;
   }
 }
 body.pv-panel .pv-header,
@@ -162,6 +141,16 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
 .panel-tempo .forecast-card-temps{font-size:3.25vmin;margin-top:.65vmin;gap:1.2vmin}
 
 /* Notícias */
+@media (orientation:landscape){
+  .panel-noticias .media{aspect-ratio:4/3;align-self:center}
+  .panel-curiosidades .discovery-card{aspect-ratio:4/3;align-self:center}
+  .panel-cultura .culture-visual{aspect-ratio:4/3;align-self:center}
+}
+@media (orientation:portrait){
+  .panel-noticias .media,
+  .panel-curiosidades .discovery-card,
+  .panel-cultura .culture-visual{aspect-ratio:auto;height:100%}
+}
 .panel-noticias .news-stage{min-height:0;display:grid;grid-template-columns:minmax(0,58%) minmax(0,42%);gap:2.8vmin;overflow:hidden}
 .panel-noticias .copy,.panel-noticias .media{min-width:0;min-height:0}
 .panel-noticias .copy{padding:.6vmin 0}
