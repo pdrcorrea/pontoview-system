@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   AppWindow,
   BadgeDollarSign,
+  Building2,
   CircleHelp,
   Globe2,
   Headphones,
@@ -30,7 +31,8 @@ const primary = [
   ["/apps", "Painéis PontoView", Sparkles],
 ] as const;
 const account = [
-  ["/conta", "Conta PontoView", UserRound],
+  ["/conta", "Minha conta", UserRound],
+  ["/empresa", "Empresa", Building2],
   ["/financeiro", "Financeiro", BadgeDollarSign],
   ["/ajuda", "Ajuda", CircleHelp],
   ["/suporte", "Contato e suporte", Headphones],
