@@ -9,3 +9,7 @@
 
 /player*
   Cache-Control: no-store
+
+
+/paineis/*
+  Cache-Control: no-cache, max-age=0, must-revalidate
