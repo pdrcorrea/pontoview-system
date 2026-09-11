@@ -24,7 +24,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.8.1";
+const PLAYER_VERSION = "1.8.2";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -297,19 +297,20 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       {settings.widgets?.business && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} />}
     </aside>
     <footer>
-      {currentInfo?.kind === "news" ? <><SourceBadge source={currentInfo.source} url={currentInfo.url} /><ScrollingHeadline text={currentInfo.text} animationKey={`news-${infoIndex}`} /></>
+      {currentInfo?.kind === "news" ? <><SourceBadge source={currentInfo.source} url={currentInfo.url} /><ScrollingHeadline key={`news-${infoIndex}-${currentInfo.text}`} text={currentInfo.text} /></>
       : currentInfo?.kind === "message" && currentInfo.message ? <><b className={`footer-message-label ${currentInfo.message.priority || "normal"}`}>{currentInfo.message.priority === "urgent" ? "URGENTE" : currentInfo.message.priority === "important" ? "IMPORTANTE" : "AVISO"}</b><span className="footer-headline" key={`message-${infoIndex}`}>{currentInfo.text}</span></>
       : <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />}
     </footer>
   </main></>;
 }
 
-function ScrollingHeadline({ text, animationKey }: { text: string; animationKey: string }) {
+function ScrollingHeadline({ text }: { text: string }) {
   const viewportRef = useRef<HTMLSpanElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [motion, setMotion] = useState({ scrolling: false, distance: 0, duration: 0, gap: 0 });
 
   useEffect(() => {
+    setMotion({ scrolling: false, distance: 0, duration: 0, gap: 0 });
     const viewport = viewportRef.current;
     const textNode = textRef.current;
     if (!viewport || !textNode) return;
@@ -323,7 +324,7 @@ function ScrollingHeadline({ text, animationKey }: { text: string; animationKey:
         const scrolling = textWidth > available + 4;
         const gap = Math.max(48, Math.round(available * 0.07));
         const distance = scrolling ? textWidth + gap : 0;
-        const duration = scrolling ? Math.max(12, Math.min(28, distance / 58)) : 0;
+        const duration = scrolling ? Math.max(16, Math.min(36, distance / 40)) : 0;
         setMotion((current) =>
           current.scrolling === scrolling &&
           Math.abs(current.distance - distance) < 1 &&
@@ -357,8 +358,8 @@ function ScrollingHeadline({ text, animationKey }: { text: string; animationKey:
     "--pv-headline-gap": `${motion.gap}px`,
   } as React.CSSProperties) : undefined;
 
-  return <span ref={viewportRef} className={`footer-headline ${motion.scrolling ? "is-scrolling" : ""}`} key={animationKey}>
-    <span className="footer-headline-track" style={style}>
+  return <span ref={viewportRef} className={`footer-headline ${motion.scrolling ? "is-scrolling" : ""}`}>
+    <span key={text} className="footer-headline-track" style={style}>
       <span ref={textRef} className="footer-headline-copy">{text}</span>
       {motion.scrolling && <span className="footer-headline-copy" aria-hidden="true">{text}</span>}
     </span>
@@ -367,7 +368,9 @@ function ScrollingHeadline({ text, animationKey }: { text: string; animationKey:
 
 function newsDisplayMs(text: string) {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.round(Math.min(20, Math.max(10, 8 + words * 0.42)) * 1000);
+  const chars = text.trim().length;
+  const readingSeconds = 10 + words * 0.5 + chars / 42;
+  return Math.round(Math.min(30, Math.max(14, readingSeconds)) * 1000);
 }
 
 function SideMessage({ message }: { message: PlayerMessage }) {
