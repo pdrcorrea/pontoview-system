@@ -546,6 +546,7 @@ function ScreenEditor({
     }
 
     setRevision(nextRevision);
+    setName(name.trim());
     setSavedFingerprint(screenConfigFingerprint({ name, playlist, orientation, rotation, settings }));
     setSuccess("Salvo. A TV recebe as alterações automaticamente.");
     await onRefresh();
@@ -607,7 +608,7 @@ function ScreenEditor({
           <h1>{name || screen.name}</h1>
           <span>{orientation === "portrait" ? "Vertical" : "Horizontal"} · {playlists.find((item) => item.id === playlist)?.name || "Sem playlist padrão"}</span>
         </div>
-        <AsyncButton busy={busy} className={`btn primary screen-save-top ${dirty ? "has-changes" : ""}`} onClick={() => void save()}>
+        <AsyncButton busy={busy} disabled={!dirty} className={`btn primary screen-save-top ${dirty ? "has-changes" : ""}`} onClick={() => void save()}>
           <Save /> {dirty ? "Salvar alterações •" : "Salvo"}
         </AsyncButton>
       </div>
@@ -699,7 +700,7 @@ function ScreenEditor({
 
       <div className={`screen-mobile-save ${dirty ? "pending" : ""}`}>
         <span>{dirty ? "Alterações pendentes" : "Tudo salvo"}</span>
-        <AsyncButton busy={busy} className="btn primary" onClick={() => void save()}><Save /> {dirty ? "Salvar" : "Salvo"}</AsyncButton>
+        <AsyncButton busy={busy} disabled={!dirty} className="btn primary" onClick={() => void save()}><Save /> {dirty ? "Salvar" : "Salvo"}</AsyncButton>
       </div>
 
       {copyModal && (
