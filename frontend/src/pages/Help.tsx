@@ -45,7 +45,7 @@ const guides: HelpGuide[] = [
       "Em Conteúdo, adicione arquivos do Drive, vídeos do YouTube ou Painéis PontoView.",
       "Em Playlists, crie uma sequência e adicione os conteúdos na ordem desejada.",
       "Em Telas, conecte o Player usando o código mostrado na TV e escolha a playlist padrão.",
-      "Depois, use Programação apenas quando precisar trocar a playlist automaticamente em determinados horários.",
+      "Se quiser automatizar horários, abra Telas → Configurar esta tela → Programação.",
     ],
     icon: BookOpen,
   },
@@ -111,12 +111,12 @@ const guides: HelpGuide[] = [
   },
   {
     title: "Programação de conteúdo",
-    summary: "Troque playlists automaticamente por dia, horário, tela ou grupo.",
-    intro: "A programação sobrepõe temporariamente a playlist padrão da tela.",
+    summary: "Troque a playlist de uma tela automaticamente por dia e horário.",
+    intro: "A programação fica dentro da própria tela para deixar o fluxo mais simples.",
     steps: [
-      "Crie uma programação e selecione a playlist que deverá entrar no ar.",
-      "Escolha os dias da semana e o intervalo de horário.",
-      "Aponte a regra para uma tela específica ou para um grupo de telas.",
+      "Abra Telas e clique em Configurar esta tela.",
+      "Entre na aba Programação e clique em Nova programação.",
+      "Escolha a playlist, os dias e o intervalo de horário.",
       "Ao fim do período, o Player volta automaticamente para a playlist padrão.",
     ],
     icon: CalendarClock,
@@ -126,7 +126,7 @@ const guides: HelpGuide[] = [
     summary: "Faça a tela entrar em repouso fora do período de operação.",
     intro: "O horário de funcionamento é diferente da programação de conteúdo.",
     steps: [
-      "Abra Telas → Gerenciar tela.",
+      "Abra Telas → Configurar esta tela → Programação.",
       "Ative o horário de funcionamento e selecione os dias em que a tela deve operar.",
       "Defina início e fim; intervalos que atravessam a meia-noite também são aceitos.",
       "Fora desse período o Player exibe preto total e volta sozinho no próximo horário configurado.",
@@ -138,7 +138,7 @@ const guides: HelpGuide[] = [
     summary: "O Player da TV é pareado por código e não precisa de login da conta.",
     intro: "Cada dispositivo recebe uma identificação própria depois do pareamento.",
     steps: [
-      "Abra a rota /player no navegador da TV ou mini PC.",
+      "Abra tv.pontoview.com.br no navegador da TV ou mini PC.",
       "Na página Telas, clique em Conectar tela.",
       "Digite o código de 6 dígitos mostrado pelo Player e dê um nome ao dispositivo.",
       "Depois de conectado, o card deve ficar Online e atualizar a última comunicação periodicamente.",
@@ -146,13 +146,13 @@ const guides: HelpGuide[] = [
     icon: Monitor,
   },
   {
-    title: "Moldura em L",
+    title: "Visual com informações",
     summary: "Exiba conteúdo principal com relógio, clima, notícias, mensagens e identidade da empresa.",
-    intro: "A Moldura em L pertence à configuração da tela, não à playlist.",
+    intro: "Esse visual pertence à configuração da tela, não à playlist.",
     steps: [
-      "Em Telas → Gerenciar tela, selecione Moldura em L.",
-      "Escolha se a coluna ficará à esquerda ou à direita e se a faixa ficará em cima ou embaixo.",
-      "Ative apenas os widgets úteis para aquele ambiente.",
+      "Abra Telas → Configurar esta tela → Visual.",
+      "Selecione Com informações.",
+      "Escolha a posição da coluna e da faixa e ative apenas o que for útil.",
       "Use a pré-visualização para conferir a composição antes de salvar.",
     ],
     icon: PanelRight,
@@ -162,7 +162,7 @@ const guides: HelpGuide[] = [
     summary: "Informe a cidade uma vez e deixe a PontoView resolver localização e previsão.",
     intro: "O widget usa a cidade configurada na tela e consulta dados meteorológicos com cache.",
     steps: [
-      "Ative Clima nas configurações da Moldura em L.",
+      "Abra Telas → Configurar esta tela → Visual, escolha Com informações e ative Clima.",
       "Informe a cidade no formato Cidade, UF, por exemplo: Colatina, ES.",
       "O Player mostra condição atual e previsão dos próximos dias.",
       "Os ícones mudam automaticamente conforme sol, nuvens, chuva, neblina ou tempestade.",
@@ -243,14 +243,14 @@ export function HelpPage() {
         <div className="section-head">
           <small>FLUXO PRINCIPAL</small>
           <h2>Conteúdo → playlist → tela.</h2>
-          <p>Depois disso, programação e widgets entram apenas quando você precisar automatizar ou enriquecer a exibição.</p>
+          <p>Depois disso, cada TV concentra visual, horários e automações em uma única configuração.</p>
         </div>
         <div className="flow">
           <article><Cloud /><h3>Conecte</h3><p>Escolha suas fontes.</p></article>
           <ChevronRight />
           <article><ListVideo /><h3>Organize</h3><p>Monte playlists.</p></article>
           <ChevronRight />
-          <article><CalendarClock /><h3>Programe</h3><p>Defina horários.</p></article>
+          <article><CalendarClock /><h3>Automatize</h3><p>Defina horários na própria tela.</p></article>
           <ChevronRight />
           <article><Monitor /><h3>Exiba</h3><p>Pareie o Player.</p></article>
         </div>
