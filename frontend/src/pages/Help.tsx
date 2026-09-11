@@ -174,7 +174,7 @@ const guides: HelpGuide[] = [
     summary: "Mostre manchetes com fonte identificada e atualização automática.",
     intro: "As notícias usam a central PontoView e respeitam as categorias escolhidas para a tela.",
     steps: [
-      "Ative Notícias na Moldura em L.",
+      "Abra Telas → Configurar esta tela → Visual, escolha Com informações e ative Notícias.",
       "Selecione uma ou mais categorias, como Geral, Economia, Esportes, Tecnologia, Saúde ou Local.",
       "O rodapé alterna as manchetes e identifica a fonte com nome e ícone quando disponível.",
       "O cache reduz consultas repetidas e mantém conteúdo recente quando a fonte oscila.",
