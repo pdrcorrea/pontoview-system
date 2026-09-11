@@ -1,0 +1,442 @@
+.user-account-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.account-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e1e7ed;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.account-card-title {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.account-card-title > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #edf3f8;
+  color: #315f86;
+}
+
+.account-card-title > span svg {
+  width: 19px;
+}
+
+.account-card-title h2,
+.account-card-title p {
+  margin: 0;
+}
+
+.account-card-title h2 {
+  font-size: 14px;
+  color: #263d52;
+}
+
+.account-card-title p {
+  margin-top: 3px;
+  color: #748596;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.account-profile-card {
+  display: grid;
+  gap: 12px;
+}
+
+.account-profile-card > label,
+.privacy-request-form > label {
+  display: grid;
+  gap: 6px;
+  color: #53687b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.account-profile-card input,
+.privacy-request-form select,
+.privacy-request-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 42px;
+  border: 1px solid #dce4eb;
+  border-radius: 10px;
+  padding: 10px 11px;
+  background: #fff;
+  color: #263d52;
+  font: inherit;
+}
+
+.account-profile-card input:disabled {
+  background: #f4f6f8;
+  color: #708193;
+}
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 11px;
+  background: #f7f9fb;
+}
+
+.account-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #173a5c;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.account-identity div,
+.account-identity b,
+.account-identity small,
+.account-identity em {
+  display: block;
+  min-width: 0;
+}
+
+.account-identity b {
+  color: #2e4559;
+  font-size: 11px;
+}
+
+.account-identity small {
+  margin-top: 2px;
+  color: #65788a;
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-identity em {
+  margin-top: 5px;
+  color: #8492a0;
+  font-size: 8px;
+  font-style: normal;
+}
+
+.account-setting-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid #edf1f4;
+}
+
+.account-setting-row:first-of-type {
+  border-top: 0;
+}
+
+.account-setting-row > svg {
+  width: 18px;
+  color: #4e6c86;
+}
+
+.account-setting-row span,
+.account-setting-row b,
+.account-setting-row small {
+  display: block;
+}
+
+.account-setting-row b {
+  color: #344b60;
+  font-size: 10px;
+}
+
+.account-setting-row small {
+  margin-top: 3px;
+  color: #7a8a99;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.privacy-account-card {
+  margin-top: 14px;
+}
+
+.privacy-title {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.privacy-title .btn {
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.privacy-title .btn svg {
+  width: 14px;
+}
+
+.privacy-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.privacy-action {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid #dfe6ec;
+  border-radius: 11px;
+  background: #fff;
+  color: #40576d;
+  text-align: left;
+  cursor: pointer;
+}
+
+.privacy-action:hover {
+  border-color: #b8c8d6;
+  background: #fafcfd;
+}
+
+.privacy-action > svg {
+  width: 19px;
+  color: #315f86;
+}
+
+.privacy-action span,
+.privacy-action b,
+.privacy-action small {
+  display: block;
+}
+
+.privacy-action b {
+  font-size: 10px;
+  color: #2e4559;
+}
+
+.privacy-action small {
+  margin-top: 3px;
+  color: #7b8a99;
+  font-size: 8px;
+}
+
+.privacy-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 13px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: #f5f9f7;
+}
+
+.privacy-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #436b58;
+}
+
+.privacy-summary svg {
+  width: 14px;
+}
+
+.privacy-summary b {
+  font-size: 8px;
+}
+
+.privacy-request-list {
+  margin-top: 16px;
+  border-top: 1px solid #edf1f4;
+  padding-top: 13px;
+}
+
+.privacy-request-list h3 {
+  margin: 0 0 8px;
+  color: #40566b;
+  font-size: 10px;
+}
+
+.privacy-request-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid #f0f3f5;
+}
+
+.privacy-request-list article:first-of-type {
+  border-top: 0;
+}
+
+.privacy-request-list article div,
+.privacy-request-list article b,
+.privacy-request-list article small {
+  display: block;
+}
+
+.privacy-request-list article b {
+  font-size: 9px;
+  color: #3b5267;
+}
+
+.privacy-request-list article small {
+  margin-top: 2px;
+  color: #84919e;
+  font-size: 7px;
+}
+
+.privacy-status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef2f5;
+  color: #64788a;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.privacy-status.completed {
+  background: #e8f5ee;
+  color: #2d6e4d;
+}
+
+.privacy-status.in_review {
+  background: #fff6e8;
+  color: #8b6830;
+}
+
+.privacy-request-form {
+  display: grid;
+  gap: 12px;
+}
+
+.privacy-request-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.privacy-request-form label > span {
+  color: #8996a2;
+  font-weight: 500;
+}
+
+.privacy-request-note {
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: #f5f7f9;
+  color: #6d7e8f;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.company-account-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.company-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e1e7ed;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.company-card .panel-title {
+  margin-bottom: 14px;
+}
+
+.company-card.form-card {
+  display: grid;
+  gap: 12px;
+}
+
+.company-card.form-card > label {
+  display: grid;
+  gap: 6px;
+  color: #53687b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.company-card.form-card input {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  border: 1px solid #dce4eb;
+  border-radius: 10px;
+  padding: 10px 11px;
+  background: #fff;
+  font: inherit;
+}
+
+.company-integrations {
+  display: grid;
+  gap: 12px;
+}
+
+.company-integrations .integration-title {
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .user-account-grid,
+  .company-account-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .account-card,
+  .company-card {
+    padding: 14px;
+    border-radius: 13px;
+  }
+
+  .privacy-title {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .privacy-title .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .privacy-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .account-setting-row {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .account-setting-row .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .privacy-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
