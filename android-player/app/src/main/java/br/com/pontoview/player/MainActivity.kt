@@ -206,7 +206,7 @@ class MainActivity : Activity() {
         }
 
         val logo = ImageView(this).apply {
-            setImageResource(R.drawable.pv_logo)
+            setImageResource(R.drawable.pontoview_icon)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
         }
         container.addView(logo, LinearLayout.LayoutParams(dp(132), dp(132)))
@@ -246,7 +246,7 @@ class MainActivity : Activity() {
         }
 
         val logo = ImageView(this).apply {
-            setImageResource(R.drawable.pv_logo)
+            setImageResource(R.drawable.pontoview_icon)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
         }
         container.addView(logo, LinearLayout.LayoutParams(dp(96), dp(96)))
