@@ -24,7 +24,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.8.2";
+const PLAYER_VERSION = "1.8.3";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -254,11 +254,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   useEffect(() => {
     if (info.length <= 1) return;
     const current = info[infoIndex % info.length];
-    const delay = current.kind === "message" && current.message
-      ? messageDisplayMs(current.message)
-      : current.kind === "news"
-        ? newsDisplayMs(current.text)
-        : 8000;
+    const delay = current.kind === "message" && current.message ? messageDisplayMs(current.message) : 8000;
     const timer = window.setTimeout(() => setInfoIndex((i) => (i + 1) % info.length), delay);
     return () => window.clearTimeout(timer);
   }, [infoIndex, info]);
@@ -297,80 +293,11 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       {settings.widgets?.business && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} />}
     </aside>
     <footer>
-      {currentInfo?.kind === "news" ? <><SourceBadge source={currentInfo.source} url={currentInfo.url} /><ScrollingHeadline key={`news-${infoIndex}-${currentInfo.text}`} text={currentInfo.text} /></>
+      {currentInfo?.kind === "news" ? <><SourceBadge source={currentInfo.source} url={currentInfo.url} /><span className="footer-headline" key={`news-${infoIndex}`}>{currentInfo.text}</span></>
       : currentInfo?.kind === "message" && currentInfo.message ? <><b className={`footer-message-label ${currentInfo.message.priority || "normal"}`}>{currentInfo.message.priority === "urgent" ? "URGENTE" : currentInfo.message.priority === "important" ? "IMPORTANTE" : "AVISO"}</b><span className="footer-headline" key={`message-${infoIndex}`}>{currentInfo.text}</span></>
       : <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />}
     </footer>
   </main></>;
-}
-
-function ScrollingHeadline({ text }: { text: string }) {
-  const viewportRef = useRef<HTMLSpanElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [motion, setMotion] = useState({ scrolling: false, distance: 0, duration: 0, gap: 0 });
-
-  useEffect(() => {
-    setMotion({ scrolling: false, distance: 0, duration: 0, gap: 0 });
-    const viewport = viewportRef.current;
-    const textNode = textRef.current;
-    if (!viewport || !textNode) return;
-
-    let frame = 0;
-    const measure = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const available = viewport.clientWidth;
-        const textWidth = textNode.scrollWidth;
-        const scrolling = textWidth > available + 4;
-        const gap = Math.max(48, Math.round(available * 0.07));
-        const distance = scrolling ? textWidth + gap : 0;
-        const duration = scrolling ? Math.max(16, Math.min(36, distance / 40)) : 0;
-        setMotion((current) =>
-          current.scrolling === scrolling &&
-          Math.abs(current.distance - distance) < 1 &&
-          Math.abs(current.duration - duration) < 0.05 &&
-          current.gap === gap
-            ? current
-            : { scrolling, distance, duration, gap },
-        );
-      });
-    };
-
-    measure();
-    window.addEventListener("resize", measure);
-
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    observer?.observe(viewport);
-    observer?.observe(textNode);
-
-    if (document.fonts?.ready) void document.fonts.ready.then(measure);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", measure);
-      observer?.disconnect();
-    };
-  }, [text]);
-
-  const style = motion.scrolling ? ({
-    "--pv-headline-distance": `${motion.distance}px`,
-    "--pv-headline-duration": `${motion.duration}s`,
-    "--pv-headline-gap": `${motion.gap}px`,
-  } as React.CSSProperties) : undefined;
-
-  return <span ref={viewportRef} className={`footer-headline ${motion.scrolling ? "is-scrolling" : ""}`}>
-    <span key={text} className="footer-headline-track" style={style}>
-      <span ref={textRef} className="footer-headline-copy">{text}</span>
-      {motion.scrolling && <span className="footer-headline-copy" aria-hidden="true">{text}</span>}
-    </span>
-  </span>;
-}
-
-function newsDisplayMs(text: string) {
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  const chars = text.trim().length;
-  const readingSeconds = 10 + words * 0.5 + chars / 42;
-  return Math.round(Math.min(30, Math.max(14, readingSeconds)) * 1000);
 }
 
 function SideMessage({ message }: { message: PlayerMessage }) {
