@@ -6,15 +6,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24..48,300..700,0,0" rel="stylesheet">
-<link rel="stylesheet" href="../shared/pontoview.css">
+<link rel="stylesheet" href="../shared/pontoview.css"><link rel="stylesheet" href="../shared/responsive.css">
 </head>
-<body>
+<body class="pv-panel panel-hoje">
 <div class="pv-ambient" aria-hidden="true"></div>
 <div class="pv-shell">
-  <header class="pv-header">
-    <div class="pv-brand"><div class="pv-badge"><span class="material-symbols-outlined">calendar_today</span></div><div class="pv-title">Hoje</div></div>
-    <div class="pv-source"><span class="material-symbols-outlined">schedule</span><span id="clock">--:--</span></div>
-  </header>
+  <div class="pv-source pv-source-floating"><span class="material-symbols-outlined">schedule</span><span id="clock">--:--</span></div>
   <main class="pv-stage">
     <section class="pv-copy">
       <div class="pv-kicker" id="weekday">Hoje</div>
