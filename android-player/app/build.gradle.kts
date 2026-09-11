@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace = "br.com.pontoview.player"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "br.com.pontoview.player"
         minSdk = 23
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
     }
