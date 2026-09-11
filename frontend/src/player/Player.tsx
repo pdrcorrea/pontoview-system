@@ -24,7 +24,7 @@ import { isWithinOperatingHours } from "../lib/operatingHours";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.6.0";
+const PLAYER_VERSION = "1.7.0";
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
@@ -268,13 +268,21 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
     return () => window.clearTimeout(timer);
   }, [sideIndex, sideSlides]);
 
+  const nextDriveMedia = useMemo(() => {
+    if (!item || manifest.items.length < 2) return null;
+    const currentPosition = manifest.items.findIndex((candidate) => candidate.itemId === item.itemId);
+    if (currentPosition < 0) return null;
+    const next = manifest.items[(currentPosition + 1) % manifest.items.length];
+    return next && (next.media.type === "drive_image" || next.media.type === "drive_video") ? next.media : null;
+  }, [manifest.items, item?.itemId]);
+  const preloader = nextDriveMedia ? <DrivePreloader media={nextDriveMedia} device={device} /> : null;
   const stage = <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div>;
-  if (settings.layout_mode !== "lframe") return <main className="player-fullscreen">{stage}</main>;
+  if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen">{stage}</main></>;
   const currentInfo = info.length ? info[infoIndex % info.length] : null;
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
-  return <main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position}`}>
+  return <>{preloader}<main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position}`}>
     <div className="player-main">{stage}</div>
     <aside>
       {settings.widgets?.clock && <div className="live-clock"><b>{clock.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b>{settings.widgets?.date && <small>{clock.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase()}</small>}</div>}
@@ -289,7 +297,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       : currentInfo?.kind === "message" && currentInfo.message ? <><b className={`footer-message-label ${currentInfo.message.priority || "normal"}`}>{currentInfo.message.priority === "urgent" ? "URGENTE" : currentInfo.message.priority === "important" ? "IMPORTANTE" : "AVISO"}</b><span className="footer-headline" key={`message-${infoIndex}`}>{currentInfo.text}</span></>
       : <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />}
     </footer>
-  </main>;
+  </main></>;
 }
 
 function SideMessage({ message }: { message: PlayerMessage }) {
@@ -323,12 +331,100 @@ function MediaStage({ item, device, organization, cacheRevision, onEnd, onError 
 
 function TimedStage({ seconds, onEnd, children }: { seconds: number; onEnd: () => void; children: React.ReactNode }) { useEffect(() => { const timer = window.setTimeout(onEnd, Math.max(1, seconds) * 1000); return () => window.clearTimeout(timer); }, [seconds, onEnd]); return <div className="timed-stage">{children}</div>; }
 
+type DrivePreloadEntry = { promise: Promise<string>; createdAt: number };
+const drivePreloads = new Map<string, DrivePreloadEntry>();
+const DRIVE_PRELOAD_TTL_MS = 2 * 60_000;
+
+function driveAssetKey(media: ManifestItem["media"], device: Device) {
+  return `${device.screenId}:${media.id}:${media.driveChecksum || "latest"}`;
+}
+
+function preloadDriveAsset(media: ManifestItem["media"], device: Device) {
+  const key = driveAssetKey(media, device);
+  const now = Date.now();
+  for (const [entryKey, entry] of drivePreloads) {
+    if (now - entry.createdAt > DRIVE_PRELOAD_TTL_MS) drivePreloads.delete(entryKey);
+  }
+  const existing = drivePreloads.get(key);
+  if (existing) return existing.promise;
+  const promise = fetchDriveAsset(media, device).catch((error) => {
+    const current = drivePreloads.get(key);
+    if (current?.promise === promise) drivePreloads.delete(key);
+    throw error;
+  });
+  drivePreloads.set(key, { promise, createdAt: now });
+  return promise;
+}
+
+function consumeDriveAsset(media: ManifestItem["media"], device: Device) {
+  const key = driveAssetKey(media, device);
+  const existing = drivePreloads.get(key);
+  if (existing && Date.now() - existing.createdAt <= DRIVE_PRELOAD_TTL_MS) {
+    drivePreloads.delete(key);
+    return existing.promise;
+  }
+  drivePreloads.delete(key);
+  return fetchDriveAsset(media, device);
+}
+
+function DrivePreloader({ media, device }: { media: ManifestItem["media"]; device: Device }) {
+  useEffect(() => {
+    let active = true;
+    let warmVideo: HTMLVideoElement | null = null;
+    let warmImage: HTMLImageElement | null = null;
+    void preloadDriveAsset(media, device).then((url) => {
+      if (!active) return;
+      if (media.type === "drive_video") {
+        warmVideo = document.createElement("video");
+        warmVideo.preload = "auto";
+        warmVideo.muted = true;
+        warmVideo.playsInline = true;
+        warmVideo.setAttribute("aria-hidden", "true");
+        warmVideo.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10000px;top:-10000px";
+        warmVideo.src = url;
+        document.body.appendChild(warmVideo);
+        warmVideo.load();
+      } else {
+        warmImage = new Image();
+        warmImage.decoding = "async";
+        warmImage.src = url;
+      }
+    }).catch(() => {});
+    return () => {
+      active = false;
+      if (warmVideo) {
+        warmVideo.pause();
+        warmVideo.removeAttribute("src");
+        warmVideo.load();
+        warmVideo.remove();
+      }
+      if (warmImage) warmImage.src = "";
+    };
+  }, [media.id, media.driveChecksum, media.type, device.screenId, device.token]);
+  return null;
+}
+
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [autoplayMuted, setAutoplayMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const soundAttemptedRef = useRef(false);
   const onErrorRef = useRef(onError);
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
-  useEffect(() => { let active = true; let objectUrl: string | null = null; void loadDriveAsset(media, device).then((value) => { objectUrl = value; if (active) setUrl(value); }).catch(() => active && onError("drive_fetch_error")); return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); }; }, [media.id, media.driveChecksum, device.screenId, device.token, onError]);
+  useEffect(() => {
+    setAutoplayMuted(true);
+    soundAttemptedRef.current = false;
+    let active = true;
+    let objectUrl: string | null = null;
+    void consumeDriveAsset(media, device).then((value) => {
+      objectUrl = value;
+      if (active) setUrl(value);
+    }).catch(() => active && onError("drive_fetch_error"));
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [media.id, media.driveChecksum, device.screenId, device.token, onError]);
   useEffect(() => {
     if (media.type !== "drive_video" || !url) return;
     let lastTime = -1;
@@ -357,12 +453,42 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
     }, 5_000);
     return () => window.clearInterval(watchdog);
   }, [media.type, url]);
+  const startVideo = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = true;
+    setAutoplayMuted(true);
+    void video.play().catch(() => {});
+  };
+  const handlePlaying = () => {
+    const video = videoRef.current;
+    if (!video || soundAttemptedRef.current) return;
+    soundAttemptedRef.current = true;
+    window.setTimeout(() => {
+      const current = videoRef.current;
+      if (!current || current.ended) return;
+      current.muted = false;
+      setAutoplayMuted(false);
+      void current.play().catch(() => {
+        current.muted = true;
+        setAutoplayMuted(true);
+        void current.play().catch(() => {});
+      });
+      window.setTimeout(() => {
+        if (current.paused && !current.ended) {
+          current.muted = true;
+          setAutoplayMuted(true);
+          void current.play().catch(() => {});
+        }
+      }, 350);
+    }, 250);
+  };
   if (!url) return <div className="player-loading"><Loader2 className="spin" /><small>Preparando {media.name}</small></div>;
-  if (media.type === "drive_video") return <video ref={videoRef} src={url} autoPlay playsInline onEnded={onEnd} onError={() => onError("drive_video_error")} />;
-  return <TimedStage seconds={duration} onEnd={onEnd}><img src={url} alt="" onError={() => onError("drive_image_error")} /></TimedStage>;
+  if (media.type === "drive_video") return <video ref={videoRef} src={url} autoPlay muted={autoplayMuted} playsInline preload="auto" controls={false} disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen" onLoadedData={startVideo} onCanPlay={startVideo} onPlaying={handlePlaying} onEnded={onEnd} onError={() => onError("drive_video_error")} />;
+  return <TimedStage seconds={duration} onEnd={onEnd}><img src={url} alt="" decoding="async" onError={() => onError("drive_image_error")} /></TimedStage>;
 }
 
-async function loadDriveAsset(media: ManifestItem["media"], device: Device) {
+async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
   const cache = await caches.open("pontoview-media-v1"); const key = new Request(`${location.origin}/__pv_cache/${device.screenId}/${media.id}/${media.driveChecksum || "latest"}`); const cached = await cache.match(key); if (cached) return URL.createObjectURL(await cached.blob()); if (!navigator.onLine) throw new Error("offline");
   const response = await fetch(`${functionsUrl}/drive-media`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": device.screenId, "x-screen-token": device.token }, body: JSON.stringify({ mediaId: media.id }) });
   if (!response.ok) throw new Error("drive_media_error"); await cache.put(key, response.clone()); return URL.createObjectURL(await response.blob());
