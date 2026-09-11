@@ -330,7 +330,12 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
    Painéis editoriais/visuais com menos conteúdo devem flutuar no centro real
    da tela. O footer fica fora do fluxo para não empurrar a composição para cima. */
 @media (orientation:landscape){
-  body.pv-panel:has(.pv-balanced-stage) .pv-shell{
+  body.panel-tempo .pv-shell,
+  body.panel-cultura .pv-shell,
+  body.panel-curiosidades .pv-shell,
+  body.panel-saude .pv-shell,
+  body.panel-orientacoes .pv-shell,
+  body.panel-saudacoes .pv-shell{
     display:flex!important;
     flex-direction:column;
     justify-content:center;
@@ -350,7 +355,12 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
     align-content:center;
     align-items:center;
   }
-  body.pv-panel:has(.pv-balanced-stage) .pv-footer{
+  body.panel-tempo .pv-footer,
+  body.panel-cultura .pv-footer,
+  body.panel-curiosidades .pv-footer,
+  body.panel-saude .pv-footer,
+  body.panel-orientacoes .pv-footer,
+  body.panel-saudacoes .pv-footer{
     position:absolute;
     left:3.4vmin;
     right:3.4vmin;
