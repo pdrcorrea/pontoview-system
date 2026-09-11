@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">PontoView Player</string>
+    <string name="loading">Preparando sua tela…</string>
+    <string name="offline_title">Sem conexão com a internet</string>
+    <string name="offline_message">O PontoView tentará reconectar automaticamente.</string>
+    <string name="retry">Tentar novamente</string>
+</resources>
