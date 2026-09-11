@@ -1,6 +1,7 @@
-/* PontoView Responsive Panels 2.0
+/* PontoView Responsive Panels 2.1
    Resolution-independent sizing: the same composition scales proportionally
-   from 720p to 4K. Layout changes only by orientation/aspect ratio. */
+   from 720p to 4K. Layout changes only by orientation/aspect ratio.
+   Category headers are intentionally removed to give editorial content priority. */
 
 :root{
   --pv-u:1vmin;
@@ -15,30 +16,46 @@ html,body{width:100%;height:100%;overflow:hidden}
   min-width:0;
   min-height:0;
   padding:2.8vmin 3.2vmin 2.2vmin;
-  gap:2vmin;
+  gap:1.45vmin;
   overflow:hidden;
+  grid-template-rows:minmax(0,1fr) auto !important;
 }
 .pv-shell>*{min-width:0;min-height:0}
-.pv-header{gap:1.8vmin;min-width:0;min-height:0}
-.pv-brand{gap:1.5vmin;min-width:0}
-.pv-badge{
-  width:6.2vmin;
-  height:6.2vmin;
-  border-radius:1.8vmin;
+
+/* The old category header consumed valuable TV space and repeated information
+   already expressed by each panel. Keep only contextual metadata as a small
+   floating chip when the panel provides it. */
+.pv-header{
+  position:absolute !important;
+  z-index:12;
+  top:2.1vmin;
+  right:3.2vmin;
+  left:auto;
+  width:auto;
+  height:auto;
+  min-width:0;
+  min-height:0;
+  margin:0;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  pointer-events:none;
 }
-.pv-badge .material-symbols-outlined{font-size:3.6vmin}
-.pv-title{
-  font-size:4.15vmin;
-  line-height:1;
-  white-space:nowrap;
-}
+.pv-brand{display:none !important}
+.pv-badge,.pv-title{display:none !important}
 .pv-source{
-  max-width:38%;
-  padding:1vmin 1.5vmin;
-  gap:.8vmin;
-  font-size:1.45vmin;
+  max-width:34vw;
+  padding:.75vmin 1.15vmin;
+  gap:.65vmin;
+  border-radius:999px;
+  font-size:1.25vmin;
+  line-height:1;
+  background:rgba(3,42,97,.44);
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(7px);
 }
-.pv-source .material-symbols-outlined{font-size:2.2vmin}
+.pv-source .material-symbols-outlined{font-size:1.9vmin}
 .pv-footer{min-height:2.4vmin}
 .pv-footer img{height:2.9vmin}
 .pv-footer-brand{font-size:2.5vmin}
@@ -191,11 +208,9 @@ html,body{width:100%;height:100%;overflow:hidden}
 /* Portrait is a composition change, not a resolution change. */
 @media (orientation:portrait),(max-aspect-ratio:4/5){
   :root{--pv-safe:4vmin;--pv-radius:3vmin}
-  .pv-shell{padding:4vmin 4.2vmin 3.2vmin;gap:2.3vmin}
-  .pv-badge{width:7vmin;height:7vmin;border-radius:2vmin}
-  .pv-badge .material-symbols-outlined{font-size:4vmin}
-  .pv-title{font-size:4.2vmin}
-  .pv-source{max-width:43%;font-size:1.6vmin;padding:1.1vmin 1.4vmin}
+  .pv-shell{padding:4vmin 4.2vmin 3.2vmin;gap:1.8vmin}
+  .pv-header{top:2.8vmin;right:4.2vmin}
+  .pv-source{max-width:40vw;font-size:1.45vmin;padding:.9vmin 1.2vmin}
   .pv-footer img{height:3.2vmin}
   .pv-footer-brand{font-size:2.8vmin}
 
