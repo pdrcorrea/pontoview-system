@@ -326,9 +326,9 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
 }
 
 
-/* Balanced stage 3.0
-   Painéis editoriais/visuais com menos conteúdo devem flutuar no centro real
-   da tela. O footer fica fora do fluxo para não empurrar a composição para cima. */
+/* Balanced stage 4.0
+   Painéis de baixa densidade são centralizados de verdade no eixo vertical.
+   O rodapé sai do fluxo para não deslocar a composição para cima. */
 @media (orientation:landscape){
   body.panel-tempo .pv-shell,
   body.panel-cultura .pv-shell,
@@ -336,25 +336,16 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
   body.panel-saude .pv-shell,
   body.panel-orientacoes .pv-shell,
   body.panel-saudacoes .pv-shell{
+    position:relative;
     display:flex!important;
     flex-direction:column;
-    justify-content:center;
+    justify-content:center!important;
     align-items:stretch;
-    position:relative;
+    min-height:100vh;
     padding:3vmin 3.4vmin!important;
     gap:0!important;
   }
-  body.pv-panel .pv-balanced-stage{
-    flex:0 0 auto;
-    width:100%;
-    height:auto!important;
-    min-height:0;
-    max-height:calc(100vh - 8vmin);
-    margin:auto 0!important;
-    align-self:auto!important;
-    align-content:center;
-    align-items:center;
-  }
+
   body.panel-tempo .pv-footer,
   body.panel-cultura .pv-footer,
   body.panel-curiosidades .pv-footer,
@@ -364,59 +355,126 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
     position:absolute;
     left:3.4vmin;
     right:3.4vmin;
-    bottom:1.25vmin;
+    bottom:1.3vmin;
     margin:0;
-    min-height:2.2vmin;
+    min-height:0;
     pointer-events:none;
   }
 
-  /* Tempo: os cards não podem criar uma altura artificial no flex interno. */
-  .panel-tempo .forecast-panel{align-self:center;justify-content:center}
+  body.panel-tempo main,
+  body.panel-cultura main,
+  body.panel-curiosidades main,
+  body.panel-saude main,
+  body.panel-orientacoes main,
+  body.panel-saudacoes main{
+    flex:0 0 auto;
+    width:100%;
+    height:auto!important;
+    min-height:0;
+    max-height:calc(100vh - 9vmin);
+    margin:auto 0!important;
+    align-self:stretch!important;
+    justify-self:stretch!important;
+  }
+
+  .panel-tempo .weather-stage{
+    align-items:center;
+    align-content:center;
+  }
+  .panel-tempo .weather-hero,
+  .panel-tempo .forecast-panel{
+    align-self:center;
+  }
+  .panel-tempo .forecast-panel{
+    justify-content:center;
+  }
   .panel-tempo .forecast-grid{
     flex:none!important;
     grid-template-rows:repeat(2,auto)!important;
     align-content:center;
   }
-  .panel-tempo .forecast-card{height:auto!important}
-  .panel-tempo .weather-hero{align-self:center}
+  .panel-tempo .forecast-card{
+    height:auto!important;
+  }
 
-  /* Cultura e curiosidades: mídia com proporção estável e texto centralizado
-     pelo mesmo eixo visual. */
-  .panel-cultura .culture-visual,
+  .panel-cultura .culture-stage{
+    align-items:center;
+    align-content:center;
+  }
+  .panel-cultura .culture-visual{
+    aspect-ratio:4/3;
+    height:auto!important;
+    align-self:center;
+  }
+  .panel-cultura .story{
+    align-self:center;
+  }
+
+  .panel-curiosidades .discovery{
+    align-items:center;
+    align-content:center;
+  }
   .panel-curiosidades .discovery-card{
     aspect-ratio:4/3;
     height:auto!important;
     align-self:center;
   }
-  .panel-cultura .story,
-  .panel-curiosidades .fact{align-self:center}
+  .panel-curiosidades .fact{
+    align-self:center;
+  }
 
-  /* Saúde e orientações: ícone e card funcionam como uma única faixa central. */
+  .panel-saude .health{
+    align-items:center;
+    align-content:center;
+  }
   .panel-saude .visual,
-  .panel-saude .tip,
-  .panel-orientacoes .visual,
-  .panel-orientacoes .message{align-self:center}
-  .panel-saude .tip,
-  .panel-orientacoes .message{height:auto!important}
+  .panel-saude .tip{
+    align-self:center;
+  }
+  .panel-saude .tip{
+    height:auto!important;
+  }
 
-  /* Saudações: a cena mantém proporção de TV e acompanha a altura do texto. */
+  .panel-orientacoes .orientation{
+    align-items:center;
+    align-content:center;
+  }
+  .panel-orientacoes .visual,
+  .panel-orientacoes .message{
+    align-self:center;
+  }
+  .panel-orientacoes .message{
+    height:auto!important;
+  }
+
+  .panel-saudacoes .greeting{
+    align-items:center;
+    align-content:center;
+  }
+  .panel-saudacoes .copy,
+  .panel-saudacoes .scene{
+    align-self:center;
+  }
   .panel-saudacoes .scene{
     aspect-ratio:5/3;
     height:auto!important;
-    align-self:center;
   }
-  .panel-saudacoes .copy{align-self:center}
 }
 
 @media (orientation:portrait){
-  body.pv-panel .pv-balanced-stage{
+  body.panel-tempo main,
+  body.panel-cultura main,
+  body.panel-curiosidades main,
+  body.panel-saude main,
+  body.panel-orientacoes main,
+  body.panel-saudacoes main{
     width:100%;
     height:100%!important;
+    max-height:none;
     margin:0!important;
     align-self:stretch!important;
-    align-content:center;
-    align-items:center;
   }
+
   .panel-cultura .culture-visual,
   .panel-curiosidades .discovery-card,
   .panel-saudacoes .scene{
