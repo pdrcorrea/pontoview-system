@@ -1008,7 +1008,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .maintenance-action {
-    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-columns: 30px minmax(0, 1fr) 18px;
   }
   .maintenance-action .btn {
     grid-column: 1 / -1;
@@ -1158,6 +1158,14 @@
 .visual-presets button:hover {
   border-color: #afc0cf;
   background: #f9fbfc;
+}
+.visual-presets button.active {
+  border-color: #6888a5;
+  background: #f2f7fa;
+}
+.visual-presets button > svg:last-child {
+  width: 16px;
+  color: #2e7858;
 }
 .visual-presets button > svg {
   width: 22px;
