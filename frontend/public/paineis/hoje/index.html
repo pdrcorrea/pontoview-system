@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24..48,300..700,0,0" rel="stylesheet">
-<link rel="stylesheet" href="../shared/pontoview.css"><link rel="stylesheet" href="../shared/responsive.css">
+<link rel="stylesheet" href="../shared/pontoview.css?v=8"><link rel="stylesheet" href="../shared/responsive.css?v=8">
 </head>
 <body class="pv-panel panel-hoje">
 <div class="pv-ambient" aria-hidden="true"></div>
@@ -27,7 +27,7 @@
   </main>
   <footer class="pv-footer"><div class="pv-footer-brand">PontoView</div></footer>
 </div>
-<script src="../shared/pv.js"></script>
+<script src="../shared/pv.js?v=8"></script>
 <script>
 const els={clock:document.getElementById('clock'),weekday:document.getElementById('weekday'),dateTitle:document.getElementById('dateTitle'),todayNote:document.getElementById('todayNote'),holiday:document.getElementById('holiday'),holidayNote:document.getElementById('holidayNote'),season:document.getElementById('season'),dayOfYear:document.getElementById('dayOfYear'),daysLeft:document.getElementById('daysLeft'),nextHolidayDate:document.getElementById('nextHolidayDate'),nextHolidayName:document.getElementById('nextHolidayName')};
 function localYMD(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
