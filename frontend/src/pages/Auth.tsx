@@ -151,8 +151,8 @@ export function SignupPage() {
     setBusy(true);
     setError(null);
     const data = formData(e);
-    if (data.password.length < 8) {
-      setError("Use pelo menos 8 caracteres na senha.");
+    if (data.password.length < 10) {
+      setError("Use pelo menos 10 caracteres na senha.");
       setBusy(false);
       return;
     }
@@ -215,7 +215,7 @@ export function SignupPage() {
             <input
               name="password"
               type="password"
-              minLength={8}
+              minLength={10}
               required
               autoComplete="new-password"
             />
@@ -295,14 +295,14 @@ export function ResetPasswordPage() {
           Nova senha
           <span>
             <KeyRound />
-            <input name="password" type="password" minLength={8} required />
+            <input name="password" type="password" minLength={10} required />
           </span>
         </label>
         <label>
           Confirmar senha
           <span>
             <LockKeyhole />
-            <input name="confirm" type="password" minLength={8} required />
+            <input name="confirm" type="password" minLength={10} required />
           </span>
         </label>
         <FormMessage error={error} />
