@@ -70,8 +70,33 @@
   min-width: 0;
   line-height: 1.18;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
+}
+
+.player-lframe > footer .footer-headline-track {
+  display: inline-flex;
+  width: max-content;
+  max-width: none;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.player-lframe > footer .footer-headline-copy {
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.player-lframe > footer .footer-headline.is-scrolling .footer-headline-track {
+  gap: var(--pv-headline-gap, 56px);
+  animation: pv-headline-marquee var(--pv-headline-duration, 16s) linear infinite;
+}
+
+@keyframes pv-headline-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(calc(-1 * var(--pv-headline-distance)), 0, 0); }
 }
 
 .player-lframe > footer .news-source {
@@ -212,4 +237,14 @@
   .live-weather .weather-detail { font-size: clamp(10px, .78vw, 14px) !important; }
   .weather-day > small { font-size: clamp(10px, .76vw, 14px) !important; }
   .weather-day > span { font-size: clamp(11px, .84vw, 15px) !important; }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .player-lframe > footer .footer-headline.is-scrolling .footer-headline-track {
+    animation: none !important;
+  }
+  .player-lframe > footer .footer-headline.is-scrolling .footer-headline-copy[aria-hidden="true"] {
+    display: none;
+  }
 }
