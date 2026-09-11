@@ -43,7 +43,7 @@ export function AppShell() {
   const [brandIconFailed, setBrandIconFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const title = [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
+  const title = location.pathname.startsWith("/programacoes") ? "Programação de grupos" : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
   const initials = (profile?.full_name || profile?.email || "PV").split(/\s+/).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
 
   useEffect(() => {
