@@ -33,7 +33,7 @@ const BRANDING_BUCKET = "organization-branding";
 const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export function AccountPage() {
-  const { organization, profile, user, refresh } = useAuth();
+  const { organization, user, refresh } = useAuth();
   const [members, setMembers] = useState<Membership[]>([]);
   const [drives, setDrives] = useState<DriveConnection[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -41,9 +41,10 @@ export function AccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const logoUrl = String(organization?.settings?.logoUrl || "");
+
   const load = useCallback(async () => {
     if (!organization) return;
-    const [m, d] = await Promise.all([
+    const [membersResult, drivesResult] = await Promise.all([
       supabase
         .from("organization_users")
         .select("user_id,role,profiles(email,full_name)")
@@ -55,25 +56,27 @@ export function AccountPage() {
         .eq("organization_id", organization.id)
         .order("created_at"),
     ]);
-    if (m.data) setMembers(m.data as unknown as Membership[]);
-    if (d.data) setDrives(d.data as DriveConnection[]);
+
+    if (membersResult.data) setMembers(membersResult.data as unknown as Membership[]);
+    if (drivesResult.data) setDrives(drivesResult.data as DriveConnection[]);
   }, [organization]);
-  useEffect(() => {
-    void load();
-  }, [load]);
-  const save = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+
+  useEffect(() => { void load(); }, [load]);
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!organization || !user) return;
+
     setBusy(true);
     setError(null);
     setSuccess(null);
-    const data = formData(e);
+    const data = formData(event);
     let nextLogoUrl = logoUrl;
 
     if (logoFile) {
       if (!LOGO_TYPES.includes(logoFile.type)) {
         setBusy(false);
-        setError("Use uma logo em PNG, JPG ou WebP.");
+        setError("Use PNG, JPG ou WebP.");
         return;
       }
       if (logoFile.size > 2 * 1024 * 1024) {
@@ -81,6 +84,7 @@ export function AccountPage() {
         setError("A logo deve ter no máximo 2 MB.");
         return;
       }
+
       const extension = logoFile.type === "image/png" ? "png" : logoFile.type === "image/webp" ? "webp" : "jpg";
       const path = `${organization.id}/logo.${extension}`;
       const upload = await supabase.storage.from(BRANDING_BUCKET).upload(path, logoFile, {
@@ -88,114 +92,96 @@ export function AccountPage() {
         cacheControl: "3600",
         upsert: true,
       });
+
       if (upload.error) {
         setBusy(false);
         setError(upload.error.message || "Não foi possível enviar a logo.");
         return;
       }
+
       const publicAsset = supabase.storage.from(BRANDING_BUCKET).getPublicUrl(path);
       nextLogoUrl = `${publicAsset.data.publicUrl}?v=${Date.now()}`;
     }
 
-    const organizationPatch: Record<string, unknown> = {
-      name: data.organization_name,
-      display_name: data.display_name,
-      document: data.document || null,
-    };
-    if (logoFile) {
-      organizationPatch.settings = {
-        ...organization.settings,
-        logoUrl: nextLogoUrl,
-      };
+    const result = await supabase
+      .from("organizations")
+      .update({
+        name: data.organization_name.trim(),
+        display_name: data.display_name.trim(),
+        settings: logoFile
+          ? { ...organization.settings, logoUrl: nextLogoUrl }
+          : organization.settings,
+      })
+      .eq("id", organization.id);
+
+    setBusy(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
     }
 
-    const [o, p] = await Promise.all([
-      supabase.from("organizations").update(organizationPatch).eq("id", organization.id),
-      supabase
-        .from("profiles")
-        .update({ full_name: data.full_name, phone: data.phone || null })
-        .eq("id", user.id),
-    ]);
-    setBusy(false);
-    if (o.error || p.error)
-      setError(
-        o.error?.message || p.error?.message || "Não foi possível salvar.",
-      );
-    else {
-      setLogoFile(null);
-      setSuccess(logoFile ? "Dados e identidade visual atualizados." : "Dados atualizados.");
-      await refresh();
-    }
+    setLogoFile(null);
+    setSuccess("Empresa atualizada.");
+    await refresh();
   };
+
   const removeLogo = async () => {
     if (!organization || !logoUrl) return;
     setBusy(true);
     setError(null);
-    setSuccess(null);
     const result = await supabase
       .from("organizations")
       .update({ settings: { ...organization.settings, logoUrl: null } })
       .eq("id", organization.id);
+
     setBusy(false);
     if (result.error) setError(result.error.message);
     else {
       setLogoFile(null);
-      setSuccess("Logo removida do Player.");
+      setSuccess("Logo removida.");
       await refresh();
     }
   };
+
   const connect = async () => {
     setBusy(true);
     setError(null);
     try {
-      const result = await invokeFunction<{ url: string }>(
-        "drive-oauth-start",
-        { returnTo: window.location.href },
-      );
+      const result = await invokeFunction<{ url: string }>("drive-oauth-start", {
+        returnTo: window.location.href,
+      });
       window.location.assign(result.url);
     } catch (cause) {
       setBusy(false);
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Não foi possível iniciar a conexão.",
-      );
+      setError(cause instanceof Error ? cause.message : "Não foi possível iniciar a conexão.");
     }
   };
+
   return (
     <>
       <PageHead
-        eyebrow="Conta"
-        title="Minha conta"
-        text="Gerencie os dados da empresa, usuários e integrações."
+        eyebrow="Organização"
+        title="Empresa"
+        text="Identidade, equipe e integrações da sua organização."
       />
       <FormMessage error={error} success={success} />
-      <div className="settings-grid">
-        <form className="panel form-card" onSubmit={save}>
+
+      <div className="company-account-grid">
+        <form className="company-card form-card" onSubmit={save}>
           <div className="panel-title">
-            <div>
-              <h2>Dados da empresa</h2>
-              <p>Informações usadas na conta e nos widgets.</p>
-            </div>
+            <div><h2>Identidade da empresa</h2><p>Dados usados no sistema e nas telas.</p></div>
           </div>
-          <label>
-            Nome da empresa
-            <input name="organization_name" defaultValue={organization?.name} />
-          </label>
-          <label>
-            Nome de exibição
-            <input
-              name="display_name"
-              defaultValue={organization?.display_name}
-            />
-          </label>
+
+          <label>Nome da empresa<input name="organization_name" defaultValue={organization?.name || ""} required /></label>
+          <label>Nome de exibição<input name="display_name" defaultValue={organization?.display_name || ""} required /></label>
+
           <div className="branding-upload">
             <div className="branding-preview">
               {logoUrl ? <img src={logoUrl} alt="Logo atual da empresa" /> : <Building2 />}
             </div>
             <div className="branding-copy">
-              <b>Logo exibida nas telas</b>
-              <small>PNG, JPG ou WebP · máximo 2 MB. Prefira fundo transparente e formato horizontal.</small>
+              <b>Logo nas telas</b>
+              <small>PNG, JPG ou WebP · até 2 MB.</small>
               <label className="branding-file">
                 <ImageUp />
                 {logoFile ? logoFile.name : "Escolher logo"}
@@ -205,83 +191,48 @@ export function AccountPage() {
                   onChange={(event) => setLogoFile(event.target.files?.[0] || null)}
                 />
               </label>
-              {logoUrl && (
-                <button type="button" className="branding-remove" onClick={() => void removeLogo()}>
-                  Remover logo do Player
-                </button>
-              )}
+              {logoUrl && <button type="button" className="branding-remove" onClick={() => void removeLogo()}>Remover logo</button>}
             </div>
           </div>
-          <label>
-            Documento
-            <input name="document" placeholder="CNPJ ou CPF" />
-          </label>
-          <label>
-            Seu nome
-            <input name="full_name" defaultValue={profile?.full_name || ""} />
-          </label>
-          <label>
-            Telefone
-            <input name="phone" />
-          </label>
-          <AsyncButton busy={busy} className="btn primary">
-            Salvar alterações
-          </AsyncButton>
+
+          <AsyncButton busy={busy} className="btn primary">Salvar</AsyncButton>
         </form>
-        <section className="panel">
+
+        <section className="company-card company-integrations">
           <div className="panel-title">
-            <div>
-              <h2>Usuários</h2>
-              <p>Pessoas com acesso a esta organização</p>
-            </div>
+            <div><h2>Equipe</h2><p>Pessoas com acesso à organização.</p></div>
           </div>
+
           {members.map((member) => (
             <div className="user-row" key={member.user_id}>
-              <span className="avatar">
-                {(member.profiles?.full_name ||
-                  member.profiles?.email ||
-                  "U")[0].toUpperCase()}
-              </span>
+              <span className="avatar">{(member.profiles?.full_name || member.profiles?.email || "U")[0].toUpperCase()}</span>
               <span className="grow">
                 <b>{member.profiles?.full_name || member.profiles?.email}</b>
                 <small>{roleName(member.role)}</small>
               </span>
-              {member.user_id === user?.id && (
-                <span className="pill">Você</span>
-              )}
+              {member.user_id === user?.id && <span className="pill">Você</span>}
             </div>
           ))}
+
           <div className="panel-title integration-title">
-            <div>
-              <h2>Google Drive</h2>
-              <p>Tokens protegidos no backend</p>
-            </div>
+            <div><h2>Google Drive</h2><p>Arquivos conectados à PontoView.</p></div>
           </div>
+
           {drives.map((drive) => (
             <div className="integration" key={drive.id}>
               <Cloud />
               <span>
                 <b>{drive.google_email}</b>
-                <small>
-                  {drive.status === "active"
-                    ? "Conectado"
-                    : "Atenção necessária"}
-                </small>
+                <small>{drive.status === "active" ? "Conectado" : "Atenção necessária"}</small>
               </span>
-              <span
-                className={drive.status === "active" ? "status active" : "pill"}
-              >
-                {drive.status}
+              <span className={drive.status === "active" ? "status active" : "pill"}>
+                {drive.status === "active" ? "Ativo" : "Revisar"}
               </span>
             </div>
           ))}
-          <AsyncButton
-            busy={busy}
-            className="btn secondary full"
-            onClick={connect}
-          >
-            <Cloud />
-            Conectar Google Drive
+
+          <AsyncButton busy={busy} className="btn secondary full" onClick={connect}>
+            <Cloud /> {drives.length ? "Conectar outra conta" : "Conectar Google Drive"}
           </AsyncButton>
         </section>
       </div>
@@ -457,7 +408,7 @@ export function OnboardingPage() {
       steps.drive,
       Cloud,
       "Use seus próprios arquivos sem reenviar tudo.",
-      "/conta",
+      "/empresa",
     ],
     [
       "Adicionar conteúdo",
