@@ -565,6 +565,10 @@ function ScreenEditor({
 
   const copyConfiguration = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (dirty) {
+      setCopyError("Salve esta tela antes de copiar.");
+      return;
+    }
     const raw = new FormData(event.currentTarget);
     const targets = otherScreens.filter((item) => raw.has(`target_${item.id}`));
     if (!targets.length) {
@@ -674,7 +678,14 @@ function ScreenEditor({
               reloadBusy={reloadBusy}
               requestReload={requestReload}
               onDeactivate={onDeactivate}
-              onCopy={() => { setCopyError(null); setCopyModal(true); }}
+              onCopy={() => {
+                if (dirty) {
+                  setError("Salve as alterações antes de copiar a configuração.");
+                  return;
+                }
+                setCopyError(null);
+                setCopyModal(true);
+              }}
               canCopy={otherScreens.length > 0}
               status={status}
               online={online}
@@ -810,6 +821,13 @@ function VisualSettings({
   toggleNewsCategory: (category: string) => void;
 }) {
   const weatherInputRef = useRef<HTMLInputElement>(null);
+  const activePreset = settings.layout_mode === "fullscreen"
+    ? "clean"
+    : settings.widgets.clock && settings.widgets.news && settings.widgets.business && !settings.widgets.weather && !settings.widgets.messages
+      ? "info"
+      : settings.widgets.clock && settings.widgets.weather && settings.widgets.news && settings.widgets.messages && settings.widgets.business
+        ? "full"
+        : "";
 
   useEffect(() => {
     if (!settings.widgets.weather) return;
@@ -867,9 +885,9 @@ function VisualSettings({
           <div><h2>Modelos rápidos</h2><p>Um toque já deixa a tela pronta para os usos mais comuns.</p></div>
         </div>
         <div className="visual-presets">
-          <button onClick={() => applyPreset("clean")}><Monitor /><span><b>Essencial</b><small>Somente conteúdo</small></span></button>
-          <button onClick={() => applyPreset("info")}><Newspaper /><span><b>Informativo</b><small>Relógio e notícias</small></span></button>
-          <button onClick={() => applyPreset("full")}><PanelRight /><span><b>Completo</b><small>Todas as informações</small></span></button>
+          <button className={activePreset === "clean" ? "active" : ""} onClick={() => applyPreset("clean")}><Monitor /><span><b>Essencial</b><small>Somente conteúdo</small></span>{activePreset === "clean" && <Check />}</button>
+          <button className={activePreset === "info" ? "active" : ""} onClick={() => applyPreset("info")}><Newspaper /><span><b>Informativo</b><small>Relógio e notícias</small></span>{activePreset === "info" && <Check />}</button>
+          <button className={activePreset === "full" ? "active" : ""} onClick={() => applyPreset("full")}><PanelRight /><span><b>Completo</b><small>Todas as informações</small></span>{activePreset === "full" && <Check />}</button>
         </div>
       </div>
 
