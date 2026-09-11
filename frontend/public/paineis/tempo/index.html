@@ -50,29 +50,14 @@
     @keyframes weatherFloat{50%{transform:translateY(-8px) rotate(-2deg)}}
     .weather-stage{animation:weatherEnter .7s var(--pv-ease) both}@keyframes weatherEnter{from{opacity:0;transform:translateY(10px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
     @media (orientation:portrait),(max-aspect-ratio:4/5){.weather-stage{grid-template-columns:1fr;grid-template-rows:minmax(0,42%) minmax(0,58%);gap:20px}.weather-orbit{width:min(42vw,310px)}.weather-now{margin-top:14px}.current-metrics{margin-top:14px}.forecast-panel{justify-content:flex-start}.forecast-title{font-size:clamp(34px,6.3vw,54px);margin-bottom:18px}.forecast-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.forecast-card{padding:15px}.forecast-card-icon{font-size:clamp(58px,9vw,82px)}}
-    @media (orientation:landscape) and (max-height:800px){.weather-stage{grid-template-columns:minmax(0,41%) minmax(0,59%);gap:30px}.weather-orbit{width:min(22vw,260px)}.weather-glyph{font-size:82px}.weather-now{margin-top:12px}.temperature{font-size:clamp(52px,5.2vw,78px)}.condition{font-size:18px}.range{font-size:12px;margin-top:6px}.current-metrics{margin-top:12px}.current-metric{padding:10px}.current-metric small{font-size:8px}.current-metric b{font-size:18px}.forecast-kicker{margin-bottom:8px}.forecast-title{font-size:clamp(32px,3.5vw,50px);margin-bottom:14px}.forecast-grid{gap:10px}.forecast-card{padding:13px;border-radius:18px}.forecast-card-head{min-height:64px}.forecast-card-icon{font-size:58px}.forecast-card-condition{font-size:13px;margin-top:8px}.forecast-card-rain{font-size:9px}.forecast-card-temps{font-size:25px;margin-top:10px}}
-    @media(max-width:650px){.weather-orbit{width:min(46vw,260px)}.weather-glyph{font-size:76px}.now-main{gap:8px}.temperature{font-size:58px}.condition{font-size:17px}.current-metrics{gap:7px}.current-metric{padding:9px 8px}.current-metric small{font-size:8px;letter-spacing:.035em}.current-metric b{font-size:17px}.forecast-title{font-size:32px}.forecast-grid{gap:8px}.forecast-card{padding:12px}.forecast-card-day{font-size:13px}.forecast-card-head{min-height:60px}.forecast-card-icon{font-size:52px}.forecast-card-condition{font-size:12px}.forecast-card-temps{font-size:22px;gap:9px}}
+    
+    
     @media(prefers-reduced-motion:reduce){.weather-glyph,.weather-stage{animation:none!important}}
   
     /* pv-tv-720p-v2: compact layout for Android TV and embedded L-frame viewports */
-    @media (orientation:landscape) and (max-height:800px){
-      .weather-stage{grid-template-columns:minmax(0,39%) minmax(0,61%);gap:clamp(18px,2vw,26px);overflow:hidden}
-      .weather-hero,.forecast-panel{min-width:0;min-height:0;overflow:hidden}
-      .weather-orbit{width:min(19vw,210px)}.weather-glyph{font-size:68px}.weather-now{margin-top:8px}
-      .weather-location{font-size:11px;margin-bottom:5px}.temperature{font-size:clamp(46px,4.6vw,66px)}.condition{font-size:15px}
-      .range{font-size:11px;margin-top:5px;gap:14px}.current-metrics{margin-top:8px;gap:7px}.current-metric{padding:8px 9px;border-radius:14px}
-      .current-metric small{font-size:7px}.current-metric small span{font-size:1.2em}.current-metric b{font-size:16px;margin-top:5px}
-      .forecast-panel{justify-content:flex-start}.forecast-kicker{font-size:9px;margin-bottom:4px}.forecast-title{font-size:clamp(26px,2.8vw,38px);line-height:.98;margin-bottom:8px}
-      .forecast-grid{flex:1;min-height:0;grid-template-rows:repeat(2,minmax(0,1fr));gap:7px}.forecast-card{min-height:0;height:100%;padding:9px 10px;border-radius:15px;display:flex;flex-direction:column;justify-content:space-between}
-      .forecast-card-head{min-height:42px}.forecast-card-day{font-size:11px}.forecast-card-date{font-size:8px;margin-top:2px}.forecast-card-icon{font-size:42px;margin:-3px 0 0}
-      .forecast-card-condition{font-size:11px;margin-top:5px}.forecast-card-rain{font-size:8px;margin-top:3px}.forecast-card-temps{font-size:19px;margin-top:5px;gap:9px}
-    }
-    @media (orientation:landscape) and (max-height:620px){
-      .weather-stage{grid-template-columns:minmax(0,36%) minmax(0,64%);gap:16px}.weather-orbit{width:min(15vw,150px)}.weather-glyph{font-size:52px}.weather-now{margin-top:5px}
-      .weather-location{font-size:9px}.temperature{font-size:44px}.condition{font-size:13px}.range{font-size:9px}.current-metrics{margin-top:6px}.current-metric{padding:6px 7px}.current-metric small{display:none}.current-metric b{font-size:14px;margin-top:0}
-      .forecast-kicker{font-size:8px}.forecast-title{font-size:24px;margin-bottom:5px}.forecast-grid{gap:5px}.forecast-card{padding:7px 8px;border-radius:12px}.forecast-card-head{min-height:34px}.forecast-card-icon{font-size:34px}.forecast-card-day{font-size:10px}.forecast-card-condition{font-size:10px;margin-top:3px}.forecast-card-rain{font-size:7px}.forecast-card-temps{font-size:17px;margin-top:3px}
-    }
-</style>
+    
+    
+</style><link rel="stylesheet" href="../shared/responsive.css">
 </head>
 <body>
   <div class="pv-ambient" aria-hidden="true"></div>
