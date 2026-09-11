@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Building2,
   CalendarClock,
   Check,
+  ChevronRight,
   Clock3,
+  Copy,
   CloudSun,
   MessageSquareText,
   Monitor,
@@ -227,7 +229,8 @@ export function ScreensSimplePage() {
   if (selected) {
     return (
       <ScreenEditor
-        screen={selected}
+        screen={screens.find((item) => item.id === selected.id) || selected}
+        screens={screens}
         playlists={playlists}
         onBack={() => setSelected(null)}
         onRefresh={load}
@@ -377,12 +380,14 @@ function ScreenCard({ screen, playlists, onManage }: { screen: Screen; playlists
 
 function ScreenEditor({
   screen,
+  screens,
   playlists,
   onBack,
   onRefresh,
   onDeactivate,
 }: {
   screen: Screen;
+  screens: Screen[];
   playlists: Playlist[];
   onBack: () => void;
   onRefresh: () => Promise<void>;
@@ -390,22 +395,50 @@ function ScreenEditor({
 }) {
   const { organization, user } = useAuth();
   const initial = firstSettings(screen);
-  const [settings, setSettings] = useState<ScreenSettings>({
+  const seededSettings: ScreenSettings = {
     ...defaultSettings,
     ...initial,
     widgets: { ...defaultSettings.widgets, ...initial?.widgets },
     operating_hours: normalizeOperatingHours(initial?.operating_hours || defaultOperatingHours),
-  });
+  };
+
+  const [settings, setSettings] = useState<ScreenSettings>(seededSettings);
   const [activeTab, setActiveTab] = useState<ScreenTab>("general");
   const [orientation, setOrientation] = useState<"landscape" | "portrait">(screen.orientation || "landscape");
   const [rotation, setRotation] = useState<ScreenRotation>(screen.rotation || "standard");
   const [name, setName] = useState(screen.name);
   const [playlist, setPlaylist] = useState(screen.default_playlist_id || "");
   const [revision, setRevision] = useState(screen.settings_revision || 0);
+  const [savedFingerprint, setSavedFingerprint] = useState(() => screenConfigFingerprint({
+    name: screen.name,
+    playlist: screen.default_playlist_id || "",
+    orientation: screen.orientation || "landscape",
+    rotation: screen.rotation || "standard",
+    settings: seededSettings,
+  }));
   const [busy, setBusy] = useState(false);
   const [reloadBusy, setReloadBusy] = useState(false);
+  const [copyBusy, setCopyBusy] = useState(false);
+  const [copyModal, setCopyModal] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const status = firstStatus(screen);
+  const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 120000);
+  const currentPlaylistName = playlists.find((item) => item.id === status?.current_playlist_id)?.name
+    || playlists.find((item) => item.id === playlist)?.name
+    || "Sem playlist";
+  const otherScreens = screens.filter((item) => item.id !== screen.id);
+
+  const currentFingerprint = useMemo(() => screenConfigFingerprint({
+    name,
+    playlist,
+    orientation,
+    rotation,
+    settings,
+  }), [name, playlist, orientation, rotation, settings]);
+  const dirty = currentFingerprint !== savedFingerprint;
 
   const tabs: Array<{ id: ScreenTab; label: string; icon: typeof Monitor }> = [
     { id: "general", label: "Geral", icon: Monitor },
@@ -413,6 +446,37 @@ function ScreenEditor({
     { id: "schedule", label: "Programação", icon: CalendarClock },
     { id: "advanced", label: "Avançado", icon: Settings2 },
   ];
+
+  useEffect(() => {
+    if (!dirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const guardLinks = (event: MouseEvent) => {
+      const element = event.target instanceof Element ? event.target.closest("a[href]") as HTMLAnchorElement | null : null;
+      if (!element || element.target === "_blank") return;
+      if (!confirm("Há alterações que ainda não foram salvas. Sair mesmo assim?")) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    document.addEventListener("click", guardLinks, true);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      document.removeEventListener("click", guardLinks, true);
+    };
+  }, [dirty]);
+
+  useEffect(() => {
+    if (dirty) setSuccess(null);
+  }, [dirty]);
+
+  const guardedBack = () => {
+    if (dirty && !confirm("Há alterações que ainda não foram salvas. Voltar sem salvar?")) return;
+    onBack();
+  };
 
   const toggleWidget = (key: string) => setSettings((current) => ({
     ...current,
@@ -464,17 +528,7 @@ function ScreenEditor({
     const nextRevision = revision + 1;
 
     const [settingsResult, screenResult] = await Promise.all([
-      supabase.from("screen_settings").update({
-        layout_mode: settings.layout_mode,
-        side_position: settings.side_position,
-        bar_position: settings.bar_position,
-        widgets: settings.widgets,
-        weather_location: settings.weather_location,
-        news_categories: settings.news_categories,
-        transition: settings.transition,
-        image_duration_seconds: settings.image_duration_seconds,
-        operating_hours: settings.operating_hours,
-      }).eq("screen_id", screen.id),
+      supabase.from("screen_settings").update(screenSettingsPayload(settings)).eq("screen_id", screen.id),
       supabase.from("screens").update({
         name: name.trim(),
         orientation,
@@ -491,7 +545,8 @@ function ScreenEditor({
     }
 
     setRevision(nextRevision);
-    setSuccess("Alterações salvas. A TV recebe a nova configuração automaticamente.");
+    setSavedFingerprint(screenConfigFingerprint({ name, playlist, orientation, rotation, settings }));
+    setSuccess("Salvo. A TV recebe as alterações automaticamente.");
     await onRefresh();
   };
 
@@ -503,21 +558,64 @@ function ScreenEditor({
     const result = await supabase.rpc("request_player_reload", { p_screen_id: screen.id });
     setReloadBusy(false);
     if (result.error) setError(result.error.message);
-    else setSuccess("Comando enviado. A TV será recarregada automaticamente em até 15 segundos.");
+    else setSuccess("Comando enviado. A TV será recarregada em até 15 segundos.");
+  };
+
+  const copyConfiguration = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const raw = new FormData(event.currentTarget);
+    const targets = otherScreens.filter((item) => raw.has(`target_${item.id}`));
+    if (!targets.length) {
+      setCopyError("Escolha pelo menos uma tela.");
+      return;
+    }
+
+    setCopyBusy(true);
+    setCopyError(null);
+    const results = await Promise.all(targets.map(async (target) => {
+      const [settingsResult, screenResult] = await Promise.all([
+        supabase.from("screen_settings").update(screenSettingsPayload(settings)).eq("screen_id", target.id),
+        supabase.from("screens").update({
+          orientation,
+          rotation,
+          default_playlist_id: playlist || null,
+          settings_revision: (target.settings_revision || 0) + 1,
+        }).eq("id", target.id),
+      ]);
+      return settingsResult.error?.message || screenResult.error?.message || null;
+    }));
+    setCopyBusy(false);
+
+    const copyFailure = results.find(Boolean);
+    if (copyFailure) {
+      setCopyError(copyFailure);
+      return;
+    }
+
+    setCopyModal(false);
+    setSuccess(`Configuração copiada para ${targets.length} tela(s).`);
+    await onRefresh();
   };
 
   return (
     <div className="screen-editor-v2">
       <div className="screen-editor-header">
-        <button className="btn secondary screen-back" onClick={onBack}>← Telas</button>
+        <button className="btn secondary screen-back" onClick={guardedBack}>← Telas</button>
         <div className="screen-editor-title">
           <small>CONFIGURAÇÃO DA TELA</small>
           <h1>{name || screen.name}</h1>
-          <span>{screen.orientation === "portrait" ? "Vertical" : "Horizontal"} · {playlists.find((item) => item.id === playlist)?.name || "Sem playlist padrão"}</span>
+          <span>{orientation === "portrait" ? "Vertical" : "Horizontal"} · {playlists.find((item) => item.id === playlist)?.name || "Sem playlist padrão"}</span>
         </div>
-        <AsyncButton busy={busy} className="btn primary screen-save-top" onClick={() => void save()}>
-          <Save /> Salvar
+        <AsyncButton busy={busy} className={`btn primary screen-save-top ${dirty ? "has-changes" : ""}`} onClick={() => void save()}>
+          <Save /> {dirty ? "Salvar alterações •" : "Salvo"}
         </AsyncButton>
+      </div>
+
+      <div className="screen-health-strip">
+        <span className={online ? "screen-health online" : "screen-health offline"}>{online ? <Wifi /> : <WifiOff />}<b>{online ? "Online" : "Offline"}</b></span>
+        <span><Play /><b>{currentPlaylistName}</b></span>
+        <span><Clock3 /><b>{operatingHoursSummary(settings.operating_hours)}</b></span>
+        <span className="screen-health-last">Último contato: {timeAgo(status?.last_seen)}</span>
       </div>
 
       <nav className="screen-config-tabs" aria-label="Áreas da configuração">
@@ -574,6 +672,11 @@ function ScreenEditor({
               reloadBusy={reloadBusy}
               requestReload={requestReload}
               onDeactivate={onDeactivate}
+              onCopy={() => { setCopyError(null); setCopyModal(true); }}
+              canCopy={otherScreens.length > 0}
+              status={status}
+              online={online}
+              currentPlaylistName={currentPlaylistName}
             />
           )}
         </section>
@@ -587,15 +690,38 @@ function ScreenEditor({
             <ScreenPreview settings={settings} orientation={orientation} />
             <div className="preview-note">
               <ShieldCheck />
-              <span>É apenas uma referência. Na TV, o Player usa toda a área disponível e adapta o layout automaticamente.</span>
+              <span>Na TV, o Player usa toda a área disponível e adapta o layout automaticamente.</span>
             </div>
           </aside>
         )}
       </div>
 
-      <div className="screen-mobile-save">
-        <AsyncButton busy={busy} className="btn primary full" onClick={() => void save()}><Save /> Salvar alterações</AsyncButton>
+      <div className={`screen-mobile-save ${dirty ? "pending" : ""}`}>
+        <span>{dirty ? "Alterações pendentes" : "Tudo salvo"}</span>
+        <AsyncButton busy={busy} className="btn primary" onClick={() => void save()}><Save /> {dirty ? "Salvar" : "Salvo"}</AsyncButton>
       </div>
+
+      {copyModal && (
+        <Modal eyebrow="COPIAR CONFIGURAÇÃO" title="Aplicar em outras telas" onClose={() => setCopyModal(false)}>
+          <form className="youtube-form simplified-modal" onSubmit={copyConfiguration}>
+            <fieldset className="screen-picker">
+              <legend>Escolha as telas</legend>
+              {otherScreens.map((item) => (
+                <label key={item.id}>
+                  <input type="checkbox" name={`target_${item.id}`} />
+                  <span>{item.name}</span>
+                </label>
+              ))}
+            </fieldset>
+            <small className="copy-note">Copia conteúdo padrão, visual, funcionamento e giro. O nome da tela não muda.</small>
+            <FormMessage error={copyError} />
+            <div className="modal-actions">
+              <button type="button" className="btn secondary" onClick={() => setCopyModal(false)}>Cancelar</button>
+              <AsyncButton busy={copyBusy} className="btn primary"><Copy /> Copiar</AsyncButton>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -681,23 +807,79 @@ function VisualSettings({
   setWeatherName: (value: string) => void;
   toggleNewsCategory: (category: string) => void;
 }) {
+  const weatherInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!settings.widgets.weather) return;
+    window.requestAnimationFrame(() => weatherInputRef.current?.focus());
+  }, [settings.widgets.weather]);
+
+  const applyPreset = (preset: "clean" | "info" | "full") => {
+    if (preset === "clean") {
+      setSettings((current) => ({ ...current, layout_mode: "fullscreen" }));
+      return;
+    }
+
+    if (preset === "info") {
+      setSettings((current) => ({
+        ...current,
+        layout_mode: "lframe",
+        widgets: {
+          ...current.widgets,
+          clock: true,
+          date: true,
+          news: true,
+          weather: false,
+          messages: false,
+          business: true,
+        },
+      }));
+      return;
+    }
+
+    setSettings((current) => ({
+      ...current,
+      layout_mode: "lframe",
+      widgets: {
+        ...current.widgets,
+        clock: true,
+        date: true,
+        weather: true,
+        news: true,
+        messages: true,
+        business: true,
+      },
+    }));
+  };
+
   return (
     <>
       <ConfigIntro
         icon={<PanelRight />}
         title="Visual da tela"
-        text="Escolha entre uma tela limpa ou uma composição com informações úteis ao redor do conteúdo."
+        text="Escolha um modelo pronto ou personalize somente o que precisar."
       />
 
       <div className="simple-setting-card">
         <div className="simple-setting-heading no-number">
-          <div><h2>Formato de exibição</h2><p>Para a maioria das TVs, Tela cheia é a opção mais simples.</p></div>
+          <div><h2>Modelos rápidos</h2><p>Um toque já deixa a tela pronta para os usos mais comuns.</p></div>
+        </div>
+        <div className="visual-presets">
+          <button onClick={() => applyPreset("clean")}><Monitor /><span><b>Essencial</b><small>Somente conteúdo</small></span></button>
+          <button onClick={() => applyPreset("info")}><Newspaper /><span><b>Informativo</b><small>Relógio e notícias</small></span></button>
+          <button onClick={() => applyPreset("full")}><PanelRight /><span><b>Completo</b><small>Todas as informações</small></span></button>
+        </div>
+      </div>
+
+      <div className="simple-setting-card">
+        <div className="simple-setting-heading no-number">
+          <div><h2>Formato de exibição</h2><p>Você ainda pode ajustar o modelo escolhido.</p></div>
         </div>
         <div className="friendly-choice-grid">
           <button className={settings.layout_mode === "fullscreen" ? "friendly-choice selected" : "friendly-choice"} onClick={() => setSettings((current) => ({ ...current, layout_mode: "fullscreen" }))}>
             <Monitor /><div><b>Tela cheia</b><small>Somente o conteúdo principal</small></div>{settings.layout_mode === "fullscreen" && <Check />}
           </button>
-          <button className={settings.layout_mode === "lframe" ? "friendly-choice selected" : "friendly-choice"} onClick={() => setSettings((current) => ({ ...current, layout_mode: "lframe" }))}>
+          <button className={settings.layout_mode === "lframe" ? "friendly-choice selected" : "friendly-choice"} onClick={() => setSettings((current) => ({ ...current, layout_mode: "lframe", widgets: { ...current.widgets, clock: true, date: true } }))}>
             <PanelRight /><div><b>Com informações</b><small>Relógio, clima, notícias e avisos</small></div>{settings.layout_mode === "lframe" && <Check />}
           </button>
         </div>
@@ -707,7 +889,7 @@ function VisualSettings({
         <>
           <div className="simple-setting-card">
             <div className="simple-setting-heading no-number">
-              <div><h2>Onde ficam as informações?</h2><p>Essas posições já são otimizadas para a TV.</p></div>
+              <div><h2>Posição das informações</h2></div>
             </div>
             <div className="position-choices">
               <div>
@@ -729,7 +911,7 @@ function VisualSettings({
 
           <div className="simple-setting-card">
             <div className="simple-setting-heading no-number">
-              <div><h2>O que você quer mostrar?</h2><p>Ative somente o que fizer sentido para este ambiente.</p></div>
+              <div><h2>Informações exibidas</h2></div>
             </div>
             <div className="friendly-widget-list">
               <FriendlyWidget icon={Clock3} label="Relógio e data" hint="Hora e data na coluna lateral" checked={settings.widgets.clock} onClick={() => toggleWidget("clock")} />
@@ -741,8 +923,7 @@ function VisualSettings({
 
             {settings.widgets.weather && (
               <div className="nested-setting">
-                <label className="simple-field">Cidade do clima<input value={String(settings.weather_location?.name || "")} onChange={(event) => setWeatherName(event.target.value)} placeholder="Ex.: Colatina, ES" /></label>
-                <small>A localização é encontrada automaticamente. Não é necessário informar latitude ou longitude.</small>
+                <label className="simple-field">Cidade do clima<input ref={weatherInputRef} value={String(settings.weather_location?.name || "")} onChange={(event) => setWeatherName(event.target.value)} placeholder="Ex.: Colatina, ES" /></label>
               </div>
             )}
 
@@ -791,6 +972,7 @@ function ProgrammingSettings({
   const [editing, setEditing] = useState<ScheduleRow | null>(null);
   const [scheduleBusy, setScheduleBusy] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [now, setNow] = useState(new Date());
 
   const loadSchedules = useCallback(async () => {
     const result = await supabase
@@ -809,6 +991,10 @@ function ProgrammingSettings({
   }, [organizationId, screen.id]);
 
   useEffect(() => { void loadSchedules(); }, [loadSchedules]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const openNew = () => {
     setEditing(null);
@@ -916,6 +1102,14 @@ function ProgrammingSettings({
         text="Defina quando a TV fica ligada e, se quiser, troque a playlist automaticamente em determinados horários."
       />
 
+      <div className="schedule-flow">
+        <span><b>Playlist padrão</b><small>Exibida normalmente</small></span>
+        <ChevronRight />
+        <span><b>Horário programado</b><small>Troca automática</small></span>
+        <ChevronRight />
+        <span><b>Playlist padrão</b><small>Volta sozinha</small></span>
+      </div>
+
       <div className="simple-setting-card">
         <div className="simple-setting-heading no-number">
           <div>
@@ -962,10 +1156,11 @@ function ProgrammingSettings({
           <div className="inline-schedule-list">
             {rows.map((row) => {
               const rule = row.schedule_rules?.find((item) => item.screen_id === screen.id) || row.schedule_rules?.[0];
+              const activeNow = scheduleMatchesNow(row, rule, timezone, now);
               return (
-                <article className="inline-schedule-card" key={row.id}>
+                <article className={activeNow ? "inline-schedule-card current" : "inline-schedule-card"} key={row.id}>
                   <div className="inline-schedule-main">
-                    <span className={row.is_active ? "schedule-state active" : "schedule-state paused"}>{row.is_active ? "Ativa" : "Pausada"}</span>
+                    <span className={activeNow ? "schedule-state now" : row.is_active ? "schedule-state active" : "schedule-state paused"}>{activeNow ? "Em exibição agora" : row.is_active ? "Agendada" : "Pausada"}</span>
                     <h3>{row.name}</h3>
                     <p>{row.playlists?.name || "Playlist"} · {scheduleDays(rule?.weekdays || [])}</p>
                     <small><Clock3 /> {formatRuleTime(rule)}</small>
@@ -1046,24 +1241,61 @@ function AdvancedSettings({
   reloadBusy,
   requestReload,
   onDeactivate,
+  onCopy,
+  canCopy,
+  status,
+  online,
+  currentPlaylistName,
 }: {
   rotation: ScreenRotation;
   setRotation: (value: ScreenRotation) => void;
   reloadBusy: boolean;
   requestReload: () => Promise<void>;
   onDeactivate: () => void;
+  onCopy: () => void;
+  canCopy: boolean;
+  status: ScreenStatus | null;
+  online: boolean;
+  currentPlaylistName: string;
 }) {
   return (
     <>
       <ConfigIntro
         icon={<Settings2 />}
         title="Avançado"
-        text="Estas opções normalmente não precisam ser alteradas depois da instalação."
+        text="Use esta área somente quando precisar ajustar instalação ou manutenção."
       />
 
       <div className="simple-setting-card">
         <div className="simple-setting-heading no-number">
-          <div><h2>A imagem ficou virada?</h2><p>Use o giro somente se a posição física da TV não tiver resolvido a orientação.</p></div>
+          <div><h2>Diagnóstico rápido</h2></div>
+        </div>
+        <div className="diagnostic-grid">
+          <div className={online ? "diagnostic-item ok" : "diagnostic-item warn"}>
+            {online ? <Wifi /> : <WifiOff />}
+            <span><small>Conexão</small><b>{online ? "TV conectada" : "Sem comunicação"}</b></span>
+          </div>
+          <div className="diagnostic-item">
+            <RefreshCw />
+            <span><small>Sincronização</small><b>{timeAgo(status?.last_seen)}</b></span>
+          </div>
+          <div className="diagnostic-item">
+            <Play />
+            <span><small>Conteúdo</small><b>{currentPlaylistName}</b></span>
+          </div>
+        </div>
+        <details className="diagnostic-details">
+          <summary>Detalhes técnicos</summary>
+          <dl>
+            <div><dt>Player</dt><dd>{status?.player_version || "Não identificado"}</dd></div>
+            <div><dt>Giro</dt><dd>{rotationLabels[rotation]}</dd></div>
+          </dl>
+        </details>
+      </div>
+
+      <div className="simple-setting-card">
+        <div className="simple-setting-heading no-number">
+          <div><h2>A imagem ficou virada?</h2></div>
         </div>
         <div className="rotation-choice friendly-rotation">
           <button className={rotation === "standard" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("standard")}><Monitor /><span>Sem giro</span></button>
@@ -1071,23 +1303,31 @@ function AdvancedSettings({
           <button className={rotation === "right" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("right")}><RotateCw /><span>Direita</span></button>
           <button className={rotation === "180" ? "rotation-option selected" : "rotation-option"} onClick={() => setRotation("180")}><RefreshCw /><span>Inverter</span></button>
         </div>
-        <small className="advanced-current">Atual: {rotationLabels[rotation]}</small>
       </div>
+
+      {canCopy && (
+        <div className="simple-setting-card">
+          <div className="simple-setting-heading no-number">
+            <div><h2>Usar esta configuração em outra TV</h2></div>
+          </div>
+          <button className="btn secondary" onClick={onCopy}><Copy /> Copiar para outra tela</button>
+        </div>
+      )}
 
       <div className="simple-setting-card">
         <div className="simple-setting-heading no-number">
-          <div><h2>Recarregar a TV</h2><p>Use se a tela estiver mostrando conteúdo antigo ou não tiver aplicado uma alteração.</p></div>
+          <div><h2>Recarregar a TV</h2></div>
         </div>
         <div className="maintenance-action">
           <RefreshCw />
-          <span><b>Limpar cache e recarregar</b><small>O pareamento da TV é mantido.</small></span>
+          <span><b>Limpar cache e recarregar</b><small>O pareamento é mantido.</small></span>
           <AsyncButton busy={reloadBusy} className="btn secondary" onClick={() => void requestReload()}>Recarregar</AsyncButton>
         </div>
       </div>
 
       <div className="simple-setting-card danger-zone">
         <div className="simple-setting-heading no-number">
-          <div><h2>Desconectar esta TV</h2><p>Use apenas se a TV deixar de fazer parte desta conta.</p></div>
+          <div><h2>Desconectar esta TV</h2></div>
         </div>
         <button className="btn danger" onClick={onDeactivate}><Power /> Desconectar Player</button>
       </div>
@@ -1164,6 +1404,61 @@ function scheduleDays(days: number[]) {
 function formatRuleTime(rule?: ScheduleRule) {
   if (!rule) return "Sem horário";
   return `${String(rule.start_time).slice(0, 5)} até ${String(rule.end_time).slice(0, 5)}`;
+}
+
+function screenSettingsPayload(settings: ScreenSettings) {
+  return {
+    layout_mode: settings.layout_mode,
+    side_position: settings.side_position,
+    bar_position: settings.bar_position,
+    widgets: settings.widgets,
+    weather_location: settings.weather_location,
+    news_categories: settings.news_categories,
+    transition: settings.transition,
+    image_duration_seconds: settings.image_duration_seconds,
+    operating_hours: settings.operating_hours,
+  };
+}
+
+function screenConfigFingerprint(value: {
+  name: string;
+  playlist: string;
+  orientation: "landscape" | "portrait";
+  rotation: ScreenRotation;
+  settings: ScreenSettings;
+}) {
+  return JSON.stringify({
+    name: value.name.trim(),
+    playlist: value.playlist,
+    orientation: value.orientation,
+    rotation: value.rotation,
+    settings: screenSettingsPayload(value.settings),
+  });
+}
+
+function scheduleMatchesNow(row: ScheduleRow, rule: ScheduleRule | undefined, timezone: string, now: Date) {
+  if (!row.is_active || !rule) return false;
+  if (row.starts_at && now < new Date(row.starts_at)) return false;
+  if (row.ends_at && now >= new Date(row.ends_at)) return false;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone || row.timezone || "America/Sao_Paulo",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.find((part) => part.type === "weekday")?.value || "Sun");
+  const minute = Number(parts.find((part) => part.type === "hour")?.value || 0) * 60
+    + Number(parts.find((part) => part.type === "minute")?.value || 0);
+  const [startHour, startMinute] = String(rule.start_time || "00:00").split(":").map(Number);
+  const [endHour, endMinute] = String(rule.end_time || "23:59").split(":").map(Number);
+  const start = startHour * 60 + startMinute;
+  const end = endHour * 60 + endMinute;
+
+  if (start <= end) return rule.weekdays.includes(day) && minute >= start && minute <= end;
+  if (minute >= start) return rule.weekdays.includes(day);
+  return minute <= end && rule.weekdays.includes((day + 6) % 7);
 }
 
 function readPairError(message: string) {
