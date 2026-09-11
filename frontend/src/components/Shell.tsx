@@ -2,7 +2,6 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   AppWindow,
   BadgeDollarSign,
-  CalendarClock,
   CircleHelp,
   Globe2,
   Headphones,
@@ -26,7 +25,6 @@ const primary = [
   ["/dashboard", "Visão geral", LayoutDashboard],
   ["/conteudo", "Conteúdo", AppWindow],
   ["/playlists", "Playlists", ListVideo],
-  ["/programacoes", "Programação", CalendarClock],
   ["/mensagens", "Mensagens", MessageSquareText],
   ["/telas", "Telas", Monitor],
   ["/apps", "Painéis PontoView", Sparkles],
