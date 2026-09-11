@@ -41,6 +41,7 @@ import {
   timeAgo,
 } from "../components/ui";
 import { defaultOperatingHours, normalizeOperatingHours, operatingHoursSummary } from "../lib/operatingHours";
+import { CURRENT_PLAYER_VERSION } from "../lib/playerVersion";
 import { supabase } from "../lib/supabase";
 import type { OperatingHours, Playlist, Screen, ScreenRotation, ScreenSettings, ScreenStatus } from "../types";
 
@@ -1275,9 +1276,9 @@ function AdvancedSettings({
             {online ? <Wifi /> : <WifiOff />}
             <span><small>Conexão</small><b>{online ? "TV conectada" : "Sem comunicação"}</b></span>
           </div>
-          <div className="diagnostic-item">
+          <div className={status?.player_version === CURRENT_PLAYER_VERSION ? "diagnostic-item ok" : "diagnostic-item"}>
             <RefreshCw />
-            <span><small>Sincronização</small><b>{timeAgo(status?.last_seen)}</b></span>
+            <span><small>Player</small><b>{status?.player_version === CURRENT_PLAYER_VERSION ? "Atualizado" : status?.player_version ? "Atualização pendente" : "Não identificado"}</b></span>
           </div>
           <div className="diagnostic-item">
             <Play />
@@ -1287,7 +1288,9 @@ function AdvancedSettings({
         <details className="diagnostic-details">
           <summary>Detalhes técnicos</summary>
           <dl>
-            <div><dt>Player</dt><dd>{status?.player_version || "Não identificado"}</dd></div>
+            <div><dt>Versão instalada</dt><dd>{status?.player_version || "Não identificada"}</dd></div>
+            <div><dt>Versão atual</dt><dd>{CURRENT_PLAYER_VERSION}</dd></div>
+            <div><dt>Última sincronização</dt><dd>{timeAgo(status?.last_seen)}</dd></div>
             <div><dt>Giro</dt><dd>{rotationLabels[rotation]}</dd></div>
           </dl>
         </details>
