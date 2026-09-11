@@ -125,7 +125,7 @@ export function AppShell() {
           <div className="top-actions">
             <span className="system-ok">● Conectado</span>
             <NavLink className="help-button" to="/ajuda"><CircleHelp size={17} /></NavLink>
-            <span className="top-avatar">{initials}</span>
+            <NavLink className="top-avatar" to="/conta" title="Minha conta">{initials}</NavLink>
           </div>
         </header>
         <div className="page"><Outlet /></div>
