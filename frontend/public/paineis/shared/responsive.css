@@ -1,0 +1,239 @@
+/* PontoView Responsive Panels 2.0
+   Resolution-independent sizing: the same composition scales proportionally
+   from 720p to 4K. Layout changes only by orientation/aspect ratio. */
+
+:root{
+  --pv-u:1vmin;
+  --pv-safe:2.8vmin;
+  --pv-radius:2.8vmin;
+}
+
+html,body{width:100%;height:100%;overflow:hidden}
+.pv-shell{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  padding:2.8vmin 3.2vmin 2.2vmin;
+  gap:2vmin;
+  overflow:hidden;
+}
+.pv-shell>*{min-width:0;min-height:0}
+.pv-header{gap:1.8vmin;min-width:0;min-height:0}
+.pv-brand{gap:1.5vmin;min-width:0}
+.pv-badge{
+  width:6.2vmin;
+  height:6.2vmin;
+  border-radius:1.8vmin;
+}
+.pv-badge .material-symbols-outlined{font-size:3.6vmin}
+.pv-title{
+  font-size:4.15vmin;
+  line-height:1;
+  white-space:nowrap;
+}
+.pv-source{
+  max-width:38%;
+  padding:1vmin 1.5vmin;
+  gap:.8vmin;
+  font-size:1.45vmin;
+}
+.pv-source .material-symbols-outlined{font-size:2.2vmin}
+.pv-footer{min-height:2.4vmin}
+.pv-footer img{height:2.9vmin}
+.pv-footer-brand{font-size:2.5vmin}
+
+/* Shared reading scale */
+.story-title,.fact-title,.headline,.primary,.eco-headline,.forecast-title{
+  font-size:6.9vmin;
+  line-height:1.01;
+  overflow-wrap:anywhere;
+}
+.story-text,.fact-text,.desc,.hint,.eco-text{
+  font-size:2.25vmin;
+  line-height:1.42;
+}
+.story-kicker,.fact-kicker,.source-row,.kicker,.eco-kicker,.forecast-kicker,.market-label{
+  font-size:1.55vmin;
+}
+.visual-tag,.topic,.page-count,.page,.asset-code,.eco-card-label{
+  font-size:1.35vmin;
+}
+
+/* Sustainability */
+.eco-stage{
+  grid-template-columns:minmax(0,40%) minmax(0,60%);
+  gap:2.6vmin;
+  overflow:hidden;
+}
+.eco-hero,.eco-content{min-width:0;min-height:0;overflow:hidden}
+.eco-orbit{width:min(38vmin,34vw)}
+.eco-glyph{font-size:13vmin}
+.eco-value strong{font-size:6.3vmin}
+.eco-value span{font-size:1.55vmin;margin-top:.5vmin}
+.eco-headline{font-size:6.9vmin}
+.eco-text{margin-top:1.8vmin}
+.eco-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:1.35vmin;
+  margin-top:2.1vmin;
+  min-height:0;
+}
+.eco-card{padding:1.65vmin;border-radius:2.2vmin;min-height:0}
+.eco-card-icon{width:5vmin;height:5vmin;border-radius:1.5vmin;margin-bottom:1.1vmin}
+.eco-card-icon span{font-size:3vmin}
+.eco-card-value{font-size:4.2vmin;margin-top:.7vmin}
+.eco-card-note{font-size:1.65vmin;margin-top:.7vmin;line-height:1.25}
+
+/* Cultura / Curiosidades */
+.culture-stage{grid-template-columns:minmax(0,44%) minmax(0,56%);gap:2.6vmin;overflow:hidden}
+.discovery{grid-template-columns:minmax(0,58%) minmax(0,42%);gap:2.6vmin;overflow:hidden}
+.story,.fact-copy,.discovery-card{min-width:0;min-height:0}
+.story-title,.fact-title{font-size:6.8vmin}
+.story-text,.fact-text{font-size:2.2vmin}
+.story-meta,.fact-footer{margin-top:2.2vmin}
+.story-qr{margin-top:1.4vmin}
+.story-qr img,.qr img{width:7vmin;height:7vmin}
+
+/* Economia */
+.market{grid-template-columns:minmax(0,43%) minmax(0,57%);gap:2.6vmin;overflow:hidden}
+.hero-symbol{width:9vmin;height:9vmin;border-radius:2.8vmin;margin-bottom:2.2vmin}
+.hero-symbol span{font-size:5vmin}
+.market-value{font-size:11vmin}
+.market-name{font-size:2.7vmin;margin-top:1.6vmin}
+.trend{font-size:2vmin;margin-top:1.7vmin;padding:1vmin 1.4vmin}
+.market-grid{gap:1.35vmin;min-height:0}
+.asset{padding:1.7vmin;border-radius:2.2vmin}
+.asset-icon{width:5.3vmin;height:5.3vmin;border-radius:1.6vmin;margin-bottom:1.4vmin}
+.asset-icon span{font-size:3.2vmin}
+.asset-value{font-size:4.8vmin}
+.asset-note{font-size:1.75vmin;margin-top:.8vmin}
+
+/* Notícias */
+.news-stage{grid-template-columns:minmax(0,58%) minmax(0,42%);gap:2.6vmin;overflow:hidden}
+.copy,.media{min-width:0;min-height:0}
+.headline{font-size:6.2vmin;max-width:20ch}
+.desc{font-size:2.05vmin;margin-top:1.6vmin;line-height:1.4}
+.source-row{margin-bottom:1.5vmin}
+.source-logo{width:4.2vmin;height:4.2vmin}
+.source-logo img{width:3.7vmin;height:3.7vmin}
+.qr{right:1.5vmin;bottom:1.5vmin;padding:.8vmin 1vmin;border-radius:1.7vmin}
+
+/* Orientações / Saúde */
+.orientation{grid-template-columns:minmax(0,30%) minmax(0,70%);gap:2.5vmin;overflow:hidden}
+.health{grid-template-columns:minmax(0,29%) minmax(0,71%);gap:2.5vmin;overflow:hidden}
+.orb{width:min(31vmin,26vw)}
+.orb span,.hero-icon{font-size:13vmin}
+.message,.tip{padding:3.2vmin;border-radius:2.8vmin;min-width:0;min-height:0}
+.primary{font-size:7vmin}
+.headline{font-size:6.3vmin}
+.hint{font-size:2.15vmin;margin-top:1.8vmin}
+
+/* Saudações */
+.greeting{grid-template-columns:minmax(0,58%) minmax(0,42%);gap:2.8vmin;overflow:hidden}
+.title{font-size:10.5vmin;line-height:.92}
+.subtitle{font-size:2.4vmin;margin-top:2vmin}
+.celestial{width:min(36vmin,29vw)}
+.celestial span{font-size:15vmin}
+
+/* Tempo */
+.weather-stage{
+  grid-template-columns:minmax(0,40%) minmax(0,60%);
+  gap:2.4vmin;
+  overflow:hidden;
+}
+.weather-hero,.forecast-panel{min-width:0;min-height:0;overflow:hidden}
+.weather-orbit{width:min(31vmin,26vw)}
+.weather-glyph{font-size:11vmin}
+.weather-now{margin-top:1.3vmin}
+.weather-location{font-size:1.7vmin;margin-bottom:.7vmin}
+.temperature{font-size:9.2vmin}
+.condition{font-size:2.7vmin}
+.range{font-size:1.85vmin;margin-top:.7vmin;gap:2vmin}
+.current-metrics{gap:1vmin;margin-top:1.4vmin}
+.current-metric{padding:1.15vmin 1.2vmin;border-radius:1.8vmin}
+.current-metric small{font-size:1.2vmin}
+.current-metric b{font-size:2.5vmin;margin-top:.7vmin}
+.forecast-kicker{margin-bottom:.8vmin}
+.forecast-title{font-size:5.8vmin;margin-bottom:1.4vmin}
+.forecast-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:1vmin;
+  min-height:0;
+  flex:1;
+}
+.forecast-card{
+  min-height:0;
+  height:100%;
+  padding:1.35vmin;
+  border-radius:2vmin;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.forecast-card-head{min-height:6.5vmin}
+.forecast-card-day{font-size:1.8vmin}
+.forecast-card-date{font-size:1.25vmin;margin-top:.35vmin}
+.forecast-card-icon{font-size:6.5vmin}
+.forecast-card-condition{font-size:1.9vmin;margin-top:.7vmin}
+.forecast-card-rain{font-size:1.35vmin;margin-top:.4vmin}
+.forecast-card-temps{font-size:3.3vmin;margin-top:.7vmin;gap:1.2vmin}
+
+/* Hora */
+.clock-icon{width:13vmin;border-radius:3.4vmin;margin-bottom:2.2vmin}
+.clock-icon span{font-size:7vmin}
+.date{font-size:2.1vmin;margin-bottom:1.5vmin}
+.time{font-size:22vmin}
+.divider{width:10vmin;height:.45vmin;margin:2vmin auto 1.2vmin}
+.location{font-size:1.8vmin}
+
+/* Portrait is a composition change, not a resolution change. */
+@media (orientation:portrait),(max-aspect-ratio:4/5){
+  :root{--pv-safe:4vmin;--pv-radius:3vmin}
+  .pv-shell{padding:4vmin 4.2vmin 3.2vmin;gap:2.3vmin}
+  .pv-badge{width:7vmin;height:7vmin;border-radius:2vmin}
+  .pv-badge .material-symbols-outlined{font-size:4vmin}
+  .pv-title{font-size:4.2vmin}
+  .pv-source{max-width:43%;font-size:1.6vmin;padding:1.1vmin 1.4vmin}
+  .pv-footer img{height:3.2vmin}
+  .pv-footer-brand{font-size:2.8vmin}
+
+  .culture-stage,.discovery,.market,.news-stage,.orientation,.greeting,.health,.eco-stage,.weather-stage{
+    grid-template-columns:1fr;
+    gap:2vmin;
+  }
+  .culture-stage{grid-template-rows:minmax(0,43%) minmax(0,57%)}
+  .discovery{grid-template-rows:minmax(0,56%) minmax(0,44%)}
+  .market{grid-template-rows:minmax(0,39%) minmax(0,61%)}
+  .news-stage{grid-template-rows:minmax(0,50%) minmax(0,50%)}
+  .orientation,.health{grid-template-rows:minmax(0,31%) minmax(0,69%)}
+  .greeting{grid-template-rows:minmax(0,58%) minmax(0,42%)}
+  .eco-stage{grid-template-rows:minmax(0,34%) minmax(0,66%)}
+  .weather-stage{grid-template-rows:minmax(0,38%) minmax(0,62%)}
+
+  .story-title,.fact-title,.headline,.primary,.eco-headline{font-size:6.4vmin}
+  .story-text,.fact-text,.desc,.hint,.eco-text{font-size:2.4vmin}
+
+  .eco-orbit{width:min(42vmin,44vw)}
+  .eco-glyph{font-size:14vmin}
+  .eco-headline{font-size:6.3vmin}
+  .eco-text{font-size:2.35vmin}
+  .eco-grid{gap:1.4vmin;margin-top:1.8vmin}
+  .eco-card{padding:1.7vmin}
+  .eco-card-value{font-size:4.4vmin}
+
+  .weather-orbit{width:min(38vmin,42vw)}
+  .forecast-title{font-size:5.5vmin}
+  .forecast-card{padding:1.4vmin}
+  .forecast-card-icon{font-size:6vmin}
+
+  .orb{width:min(37vmin,42vw)}
+  .celestial{width:min(46vmin,48vw)}
+  .title{font-size:10vmin}
+  .time{font-size:21vmin}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto}
+}
