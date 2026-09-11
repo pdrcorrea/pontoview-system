@@ -13,9 +13,8 @@ import { HomePage } from "./pages/Home";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentPage } from "./pages/Content";
 import { PlaylistsPage } from "./pages/PlaylistsV2";
-import { SchedulesPage } from "./pages/Schedules";
 import { MessagesPage } from "./pages/Messages";
-import { ScreensPage } from "./pages/Screens";
+import { ScreensSimplePage } from "./pages/ScreensSimple";
 import { AccountPage, OnboardingPage, SettingsPage } from "./pages/Account";
 import { BillingPage } from "./pages/Billing";
 import { AppsPage, HelpPage } from "./pages/Help";
@@ -29,6 +28,7 @@ import "./branding.css";
 import "./refinements.css";
 import "./brand-mobile-fixes.css";
 import "./playlist-builder.css";
+import "./screen-experience.css";
 import "./panelThumbs";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
@@ -106,9 +106,9 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/conteudo" element={<ContentPage />} />
           <Route path="/playlists" element={<PlaylistsPage />} />
-          <Route path="/programacoes" element={<SchedulesPage />} />
+          <Route path="/programacoes" element={<Navigate to="/telas" replace />} />
           <Route path="/mensagens" element={<MessagesPage />} />
-          <Route path="/telas" element={<ScreensPage />} />
+          <Route path="/telas" element={<ScreensSimplePage />} />
           <Route path="/apps" element={<AppsPage />} />
           <Route path="/conta" element={<AccountPage />} />
           <Route path="/financeiro" element={<BillingPage />} />
