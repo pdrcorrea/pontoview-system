@@ -118,6 +118,7 @@ const guides: HelpGuide[] = [
       "Entre na aba Programação e clique em Nova programação.",
       "Escolha a playlist, os dias e o intervalo de horário.",
       "Ao fim do período, o Player volta automaticamente para a playlist padrão.",
+      "Para programar um grupo inteiro, abra Telas → Organizar telas em grupos → Programar grupos.",
     ],
     icon: CalendarClock,
   },
