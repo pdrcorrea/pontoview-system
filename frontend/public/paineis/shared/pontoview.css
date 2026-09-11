@@ -55,44 +55,7 @@ button,a{font:inherit}
 .pv-footer{display:flex;align-items:center;justify-content:center;min-height:30px}.pv-footer img{height:clamp(22px,2vw,31px);width:auto;display:block;opacity:.92}.pv-footer-brand{font-size:clamp(18px,1.6vw,26px);font-weight:800;letter-spacing:-.04em;color:#fff;opacity:.92}
 .pv-transition{transition:opacity .54s var(--pv-ease),transform .54s var(--pv-ease),filter .54s var(--pv-ease)}
 .pv-shell.is-leaving .pv-copy{opacity:0;transform:translate3d(-24px,0,0) scale(.992);filter:blur(3px)}.pv-shell.is-leaving .pv-media,.pv-shell.is-leaving .pv-cards{opacity:0;transform:translate3d(22px,0,0) scale(.982);filter:blur(2px)}.pv-shell.is-entering .pv-copy{animation:pvEnterCopy .64s var(--pv-ease) both}.pv-shell.is-entering .pv-media,.pv-shell.is-entering .pv-cards{animation:pvEnterMedia .72s var(--pv-ease) both}.pv-error{color:var(--pv-soft)}
-@media (orientation:landscape) and (max-height:760px){.pv-shell{padding-top:20px;padding-bottom:16px;gap:15px}.pv-badge{width:48px;height:48px;border-radius:16px}.pv-title{font-size:30px}.pv-stage{grid-template-columns:minmax(0,58%) minmax(0,42%);gap:30px}.pv-headline{font-size:clamp(36px,4.1vw,60px)}.pv-body{font-size:14px;margin-top:14px}.pv-kicker{margin-bottom:14px}.pv-card{padding:16px}.pv-card-value{font-size:clamp(26px,3vw,44px)}}
+
 @media (orientation:portrait),(max-aspect-ratio:4/5){.pv-shell{padding:clamp(28px,5vw,54px) clamp(24px,5vw,52px) clamp(22px,4vw,42px);gap:clamp(24px,2.8vh,36px)}.pv-source{max-width:48vw}.pv-stage{grid-template-columns:1fr;grid-template-rows:minmax(0,50%) minmax(0,50%);gap:clamp(22px,2.7vh,34px)}.pv-copy{padding:0}.pv-headline{font-size:clamp(42px,7.4vw,70px)}.pv-body{font-size:clamp(16px,2.5vw,20px)}.pv-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (orientation:portrait) and (max-width:620px){.pv-badge{width:46px;height:46px}.pv-title{font-size:28px}.pv-source{max-width:43vw;padding:8px 10px}.pv-headline{font-size:36px}.pv-body{font-size:14px}.pv-stage{grid-template-rows:auto minmax(260px,1fr)}.pv-cards{grid-template-columns:1fr 1fr}.pv-card{padding:14px}.pv-card-note{font-size:11px}.pv-qr-copy{display:none}.pv-qr{padding:8px}.pv-qr img{width:60px;height:60px}}
+
 @media (prefers-reduced-motion:reduce){.pv-ambient,.pv-ambient::before,.pv-ambient::after,.pv-badge,.pv-image{animation:none!important}.pv-transition{transition:none!important}.pv-shell.is-entering .pv-copy,.pv-shell.is-entering .pv-media,.pv-shell.is-entering .pv-cards{animation:none!important}}
-
-/* TV 720p / embedded-player safety mode. Keeps every internal panel inside the
-   real viewport used by Android TV and by the PontoView L-frame layout. */
-@media (orientation:landscape) and (max-height:800px){
-  :root{--pv-safe:clamp(14px,2vw,26px);--pv-radius:clamp(18px,1.8vw,26px)}
-  .pv-shell{padding:14px clamp(18px,2.2vw,30px) 12px;gap:clamp(10px,1.6vh,16px);overflow:hidden}
-  .pv-shell>*{min-width:0;min-height:0}
-  .pv-header{gap:14px;min-height:0}
-  .pv-brand{gap:10px}
-  .pv-badge{width:42px;height:42px;border-radius:14px}
-  .pv-badge .material-symbols-outlined{font-size:24px}
-  .pv-title{font-size:clamp(24px,2.3vw,34px);line-height:1}
-  .pv-source{max-width:38vw;padding:6px 10px;font-size:9px;gap:6px}
-  .pv-source .material-symbols-outlined{font-size:15px}
-  .pv-stage{gap:clamp(18px,2vw,28px)}
-  .pv-copy{padding:6px 0}
-  .pv-kicker{margin-bottom:10px}
-  .pv-headline{font-size:clamp(34px,4vw,56px)}
-  .pv-body{margin-top:12px;font-size:13px;line-height:1.42}
-  .pv-card{padding:13px;border-radius:18px}
-  .pv-card-value{font-size:clamp(24px,2.7vw,40px)}
-  .pv-card-note{margin-top:7px;font-size:11px}
-  .pv-footer{min-height:18px}
-  .pv-footer img{height:22px}
-}
-@media (orientation:landscape) and (max-height:620px){
-  :root{--pv-safe:12px;--pv-radius:16px}
-  .pv-shell{padding:10px 16px 8px;gap:8px}
-  .pv-badge{width:36px;height:36px;border-radius:12px}
-  .pv-title{font-size:22px}
-  .pv-source{padding:5px 8px;font-size:8px}
-  .pv-headline{font-size:clamp(30px,3.6vw,48px)}
-  .pv-body{font-size:12px;line-height:1.36;margin-top:9px}
-  .pv-card{padding:10px}
-  .pv-footer img{height:18px}
-}
-
