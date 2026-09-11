@@ -29,3 +29,13 @@ Incidentes envolvendo dados pessoais devem ser avaliados quanto a risco ou dano 
 ## Revisão
 
 A interface ajuda a operacionalizar direitos do titular, mas não substitui revisão jurídica, inventário de tratamento, contratos com operadores ou procedimentos internos.
+
+
+## Pendências de segurança da plataforma
+
+A verificação do Supabase deve incluir:
+
+- habilitar a proteção contra senhas conhecidas como vazadas no Supabase Auth;
+- revisar periodicamente funções `SECURITY DEFINER` expostas a `anon` ou `authenticated`;
+- manter públicas somente as funções que dependem desse acesso por desenho, como ativação e Player, sempre com validação própria de token e escopo;
+- não revogar permissões em massa sem revisar os fluxos de TV, fila e dispositivos.
