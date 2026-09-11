@@ -8,5 +8,5 @@
         android:width="96dp"
         android:height="96dp"
         android:gravity="center"
-        android:drawable="@drawable/pv_logo" />
+        android:drawable="@drawable/pontoview_icon" />
 </layer-list>
