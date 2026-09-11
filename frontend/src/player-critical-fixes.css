@@ -71,3 +71,205 @@
   font-size: clamp(13px, .9vw, 17px) !important;
   color: #365a7b;
 }
+
+
+/*
+ * LOGICAL L-FRAME GEOMETRY 1.8
+ * ----------------------------
+ * The orientation canvas is the only sizing authority. The L-frame must never
+ * use the physical browser viewport after the canvas has been rotated, because
+ * vw/vh continue to describe the unrotated surface and make the footer/rail
+ * overflow. Container units below are therefore resolved against the logical
+ * canvas itself, with percentage/pixel fallbacks for older TV browsers.
+ */
+.pv-player-runtime .pv-orientation-canvas {
+  container-type: size;
+  contain: layout paint;
+}
+
+.pv-player-runtime .player-fullscreen,
+.pv-player-runtime .player-lframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.pv-player-runtime .player-lframe {
+  --pv-side-size: 20%;
+  --pv-bar-size: 9%;
+  --pv-aside-x: 18px;
+  --pv-aside-y: 20px;
+  --pv-aside-gap: 16px;
+  --pv-footer-x: 18px;
+  --pv-business-size: 18%;
+  position: relative;
+  display: grid !important;
+  overflow: hidden !important;
+}
+
+.pv-player-runtime .pv-orientation-canvas.logical-portrait .player-lframe {
+  --pv-side-size: 26%;
+  --pv-bar-size: 6.5%;
+  --pv-aside-x: 14px;
+  --pv-aside-y: 18px;
+  --pv-aside-gap: 12px;
+  --pv-footer-x: 14px;
+  --pv-business-size: 22%;
+}
+
+@supports (width: 1cqw) {
+  .pv-player-runtime .pv-orientation-canvas.logical-landscape .player-lframe {
+    --pv-side-size: max(170px, 20cqw);
+    --pv-bar-size: max(44px, 9cqh);
+    --pv-aside-x: max(14px, 2.1cqw);
+    --pv-aside-y: max(14px, 3.4cqh);
+    --pv-aside-gap: max(10px, 2.5cqh);
+    --pv-footer-x: max(14px, 2.1cqw);
+    --pv-business-size: 18cqw;
+  }
+
+  .pv-player-runtime .pv-orientation-canvas.logical-portrait .player-lframe {
+    --pv-side-size: max(140px, 26cqw);
+    --pv-bar-size: max(44px, 6.5cqh);
+    --pv-aside-x: max(12px, 2.8cqw);
+    --pv-aside-y: max(12px, 2.3cqh);
+    --pv-aside-gap: max(8px, 1.8cqh);
+    --pv-footer-x: max(12px, 2.8cqw);
+    --pv-business-size: 22cqw;
+  }
+}
+
+.pv-player-runtime .player-lframe.side-right {
+  grid-template-columns: minmax(0, 1fr) var(--pv-side-size) !important;
+}
+.pv-player-runtime .player-lframe.side-left {
+  grid-template-columns: var(--pv-side-size) minmax(0, 1fr) !important;
+}
+.pv-player-runtime .player-lframe.bar-bottom {
+  grid-template-rows: minmax(0, 1fr) var(--pv-bar-size) !important;
+}
+.pv-player-runtime .player-lframe.bar-top {
+  grid-template-rows: var(--pv-bar-size) minmax(0, 1fr) !important;
+}
+
+.pv-player-runtime .player-lframe.side-right .player-main {
+  grid-column: 1 !important;
+}
+.pv-player-runtime .player-lframe.side-right > aside {
+  grid-column: 2 !important;
+}
+.pv-player-runtime .player-lframe.side-left .player-main {
+  grid-column: 2 !important;
+}
+.pv-player-runtime .player-lframe.side-left > aside {
+  grid-column: 1 !important;
+}
+.pv-player-runtime .player-lframe.bar-bottom .player-main,
+.pv-player-runtime .player-lframe.bar-bottom > aside {
+  grid-row: 1 !important;
+}
+.pv-player-runtime .player-lframe.bar-top .player-main,
+.pv-player-runtime .player-lframe.bar-top > aside {
+  grid-row: 2 !important;
+}
+.pv-player-runtime .player-lframe > footer {
+  grid-column: 1 / -1 !important;
+  width: auto !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 var(--pv-footer-x) !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.pv-player-runtime .player-lframe.bar-bottom > footer {
+  grid-row: 2 !important;
+}
+.pv-player-runtime .player-lframe.bar-top > footer {
+  grid-row: 1 !important;
+}
+
+.pv-player-runtime .player-lframe .player-main,
+.pv-player-runtime .player-lframe > aside {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.pv-player-runtime .player-lframe > aside {
+  width: auto !important;
+  height: auto !important;
+  padding: var(--pv-aside-y) var(--pv-aside-x) !important;
+  gap: var(--pv-aside-gap) !important;
+}
+
+.pv-player-runtime .player-lframe .side-rotation-slot {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pv-player-runtime .player-lframe .side-panel-slide {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: 100%;
+}
+
+.pv-player-runtime .player-lframe > aside .live-business {
+  width: var(--pv-business-size) !important;
+  height: var(--pv-bar-size) !important;
+  right: var(--pv-footer-x) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.pv-player-runtime .player-lframe:has(> aside .live-business) > footer {
+  padding-right: calc(var(--pv-business-size) + var(--pv-footer-x) + var(--pv-footer-x)) !important;
+}
+
+@supports (width: 1cqw) {
+  .pv-player-runtime .player-lframe > footer {
+    gap: max(10px, 1.8cqmin) !important;
+    font-size: max(14px, 2.2cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe > footer .news-source-icon {
+    width: max(26px, 4.2cqmin) !important;
+    height: max(26px, 4.2cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .live-clock b {
+    font-size: max(38px, 7.6cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .live-clock small {
+    font-size: max(10px, 2cqmin) !important;
+    margin-top: max(4px, .8cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .live-weather small {
+    font-size: max(10px, 1.8cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .live-weather .weather-detail {
+    font-size: max(9px, 1.55cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-day > small {
+    font-size: max(9px, 1.55cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-day > span {
+    font-size: max(10px, 1.7cqmin) !important;
+  }
+}
