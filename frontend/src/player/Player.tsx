@@ -21,10 +21,11 @@ import {
   Wind,
 } from "lucide-react";
 import { isWithinOperatingHours } from "../lib/operatingHours";
+import { CURRENT_PLAYER_VERSION } from "../lib/playerVersion";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
 import type { PlayerManifest } from "../types";
 
-const PLAYER_VERSION = "1.8.3";
+const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_RUNTIME_STYLE = `
