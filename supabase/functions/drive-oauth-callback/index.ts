@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
       const redirect = new URL(returnTo);
       redirect.searchParams.set("drive", "picked");
       redirect.searchParams.set("driveFileIds", pickedFileIds.join(","));
+      redirect.searchParams.set("driveConnectionId", connectionId);
       return Response.redirect(redirect.toString(), 302);
     }
 
