@@ -85,7 +85,8 @@
 
     .now-main{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:clamp(14px,1.25vw,24px)!important;flex-wrap:nowrap!important;min-width:0}
     .temperature{font-size:clamp(82px,8.6vw,148px)!important;font-weight:300!important;line-height:.8!important;letter-spacing:-.075em;font-variant-numeric:tabular-nums;flex:0 0 auto}
-    .condition{font-size:clamp(21px,1.7vw,31px)!important;font-weight:700;line-height:1.08;max-width:11ch;text-wrap:balance}
+    .condition{font-size:clamp(21px,1.7vw,31px)!important;font-weight:700;line-height:1.08;text-wrap:balance}
+    .current-condition{margin-top:clamp(10px,1.1vh,15px);max-width:22ch;color:rgba(255,255,255,.96)}
     .range{display:flex;justify-content:flex-start!important;gap:24px;margin-top:clamp(11px,1.25vh,16px)!important;color:var(--pv-soft);font-size:clamp(13px,1vw,17px);font-weight:550}.range b{color:#fff}.range .min{color:var(--pv-sky)}
 
     .current-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,.8vw,13px);margin-top:clamp(24px,3vh,38px)!important;width:100%}
@@ -123,6 +124,7 @@
     .weather-alert.alert-active .material-symbols-outlined{color:#ffc06a}
     .weather-alert.alert-danger{background:linear-gradient(90deg,rgba(255,100,86,.17),rgba(255,255,255,.035));border-color:rgba(255,134,121,.28);color:#ffe4df}
     .weather-alert.alert-danger .material-symbols-outlined{color:#ff9d8f}
+    .weather-alert[hidden]{display:none!important}
 
     .forecast-panel{min-width:0;min-height:0;display:flex!important;flex-direction:column;justify-content:center!important;overflow:hidden!important}
     .forecast-kicker{display:flex;align-items:center;gap:8px;font-size:clamp(10px,.75vw,12px)!important;font-weight:750;letter-spacing:.13em;text-transform:uppercase;color:rgba(105,207,242,.9);margin-bottom:8px!important}
@@ -187,7 +189,8 @@
           <div class="weather-orbit" id="orbit"><span class="material-symbols-outlined weather-glyph" id="wx">cloud</span></div>
           <div class="weather-now">
             <div class="weather-location"><span class="material-symbols-outlined">location_on</span><span id="place">Carregando localização…</span></div>
-            <div class="now-main"><div class="temperature" id="temp">--°</div><div class="condition" id="condition">Atualizando…</div></div>
+            <div class="now-main"><div class="temperature" id="temp">--°</div></div>
+            <div class="condition current-condition" id="condition">Atualizando…</div>
             <div class="range"><span>mín <b class="min" id="min">--°</b></span><span>máx <b id="max">--°</b></span></div>
           </div>
         </div>
@@ -196,9 +199,9 @@
           <div class="current-metric"><small><span class="material-symbols-outlined">air</span>Vento</small><b id="wind">--</b></div>
           <div class="current-metric"><small><span class="material-symbols-outlined">opacity</span>Umidade</small><b id="humidity">--</b></div>
         </div>
-        <div class="weather-alert" id="weatherAlert" role="status" aria-live="polite">
-          <span class="material-symbols-outlined">verified_user</span>
-          <span><strong>Alertas</strong><span id="alertText">Verificando condições relevantes…</span></span>
+        <div class="weather-alert" id="weatherAlert" role="status" aria-live="polite" hidden>
+          <span class="material-symbols-outlined">warning</span>
+          <span><strong>INMET</strong><span id="alertText"></span></span>
         </div>
       </section>
       <section class="forecast-panel">
@@ -221,27 +224,33 @@ function configuredLocation(){try{for(let i=0;i<localStorage.length;i++){const k
 async function locate(){const configured=configuredLocation();if(configured)return configured;const queryLat=numeric(qs('lat','')),queryLon=numeric(qs('lon','')),queryName=qs('cidade','');if(queryLat!==null&&queryLon!==null)return{latitude:queryLat,longitude:queryLon,name:queryName||'Local configurado'};try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),3500);const r=await fetch('https://ipwho.is/?lang=pt',{signal:ctrl.signal});clearTimeout(timer);const d=await r.json();const lat=numeric(d.latitude),lon=numeric(d.longitude);if(lat!==null&&lon!==null)return{latitude:lat,longitude:lon,name:queryName||[d.city,d.region_code].filter(Boolean).join(', ')}}catch{}return{latitude:-19.5394,longitude:-40.6306,name:queryName||'Colatina, ES'}}
 function localDateKey(date=new Date()){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
 function applyThermal(feels){el.feelCard.classList.remove('thermal-hot','thermal-cold');if(feels===null)return;if(feels>=35)el.feelCard.classList.add('thermal-hot');else if(feels<=12)el.feelCard.classList.add('thermal-cold')}
-function derivedAlert(d){
-  const official=Array.isArray(d?.alerts)?d.alerts.filter(Boolean):[];
-  if(official.length){const first=official[0];return{level:String(first.level||first.severity||'active').toLowerCase(),text:String(first.title||first.headline||first.description||'Há um alerta meteorológico vigente.')}}
-  const code=Number(d?.weather_code);
-  const feels=numeric(d?.apparent_temperature);
-  const wind=numeric(d?.wind_speed);
-  const humidity=numeric(d?.humidity);
-  const next=Array.isArray(d?.forecast)?d.forecast.slice(0,3):[];
-  const rain=Math.max(0,...next.map(day=>Number(day?.precipitation_probability||0)));
-  const storm=next.some(day=>[95,96,99].includes(Number(day?.weather_code)))||[95,96,99].includes(code);
-  const heavyRain=next.some(day=>[65,82].includes(Number(day?.weather_code)))||[65,82].includes(code);
-  if(storm)return{level:'danger',text:'Possibilidade de trovoadas. Redobre a atenção às condições locais.'};
-  if(heavyRain&&rain>=70)return{level:'danger',text:`Chuva forte prevista, com probabilidade de até ${Math.round(rain)}%.`};
-  if(wind!==null&&wind>=50)return{level:'danger',text:`Vento forte no momento, próximo de ${Math.round(wind)} km/h.`};
-  if(feels!==null&&feels>=40)return{level:'active',text:`Calor intenso: sensação térmica de ${Math.round(feels)}°.`};
-  if(feels!==null&&feels<=5)return{level:'active',text:`Frio intenso: sensação térmica de ${Math.round(feels)}°.`};
-  if(humidity!==null&&humidity<=25)return{level:'active',text:`Umidade muito baixa, em torno de ${Math.round(humidity)}%.`};
-  if(rain>=80)return{level:'active',text:`Alta chance de chuva nas próximas previsões: até ${Math.round(rain)}%.`};
-  return{level:'none',text:'Nenhuma condição de atenção identificada agora.'};
+function renderAlert(d){
+  const alerts=Array.isArray(d?.alerts)?d.alerts.filter(alert=>alert?.official===true&&String(alert?.title||'').trim()):[];
+  el.weatherAlert.classList.remove('alert-active','alert-danger');
+
+  if(!alerts.length){
+    el.weatherAlert.hidden=true;
+    el.alertText.textContent='';
+    return;
+  }
+
+  const first=alerts[0];
+  const severity=String(first.severity||'').toLowerCase();
+  const level=Number(first.level||0);
+  const isDanger=level>=3||severity.includes('grande perigo');
+  const isActive=level>=1||severity.includes('perigo');
+
+  el.weatherAlert.hidden=false;
+  if(isDanger)el.weatherAlert.classList.add('alert-danger');
+  else if(isActive)el.weatherAlert.classList.add('alert-active');
+
+  const extra=alerts.length>1?` · +${alerts.length-1} aviso${alerts.length>2?'s':''}`:'';
+  const severityLabel=first.severity?` · ${first.severity}`:'';
+  el.alertText.textContent=`${first.title}${severityLabel}${extra}`;
+
+  const iconEl=el.weatherAlert.querySelector('.material-symbols-outlined');
+  if(iconEl)iconEl.textContent=isDanger?'emergency_home':'warning';
 }
-function renderAlert(d){const alert=derivedAlert(d);el.weatherAlert.classList.remove('alert-active','alert-danger');if(alert.level==='danger')el.weatherAlert.classList.add('alert-danger');else if(alert.level!=='none')el.weatherAlert.classList.add('alert-active');el.alertText.textContent=alert.text;const iconEl=el.weatherAlert.querySelector('.material-symbols-outlined');if(iconEl)iconEl.textContent=alert.level==='danger'?'warning':alert.level==='none'?'verified_user':'info'}
 function render(d){
   el.error.classList.remove('show');
   el.place.textContent=d.name||'Local configurado';
