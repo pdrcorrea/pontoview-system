@@ -28,6 +28,23 @@ Deno.serve(async (req) => {
     const tokens = await tokenResponse.json();
     if (!tokenResponse.ok || !tokens.access_token) throw new HttpError(400, "GOOGLE_TOKEN_EXCHANGE_FAILED");
 
+    const grantedScopes = String(tokens.scope || "")
+      .split(" ")
+      .map((scope: string) => scope.trim())
+      .filter(Boolean);
+    const broadDriveScopes = new Set([
+      "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/drive.readonly",
+      "https://www.googleapis.com/auth/drive.metadata",
+      "https://www.googleapis.com/auth/drive.metadata.readonly",
+    ]);
+    if (
+      !grantedScopes.includes("https://www.googleapis.com/auth/drive.file") ||
+      grantedScopes.some((scope: string) => broadDriveScopes.has(scope))
+    ) {
+      throw new HttpError(400, "GOOGLE_SCOPE_MISMATCH");
+    }
+
     const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
@@ -40,7 +57,7 @@ Deno.serve(async (req) => {
       connected_by: String(state.userId),
       google_account_id: String(googleUser.sub),
       google_email: String(googleUser.email || ""),
-      scopes: String(tokens.scope || "").split(" ").filter(Boolean),
+      scopes: grantedScopes,
       status: "active",
       token_expires_at: expiresAt,
     }, { onConflict: "organization_id,google_account_id" }).select("id").single();
