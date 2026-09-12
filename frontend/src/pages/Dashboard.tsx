@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  CalendarClock,
+  ArrowRight,
   Cloud,
+  HelpCircle,
   ListVideo,
   Monitor,
   Wifi,
@@ -22,12 +23,44 @@ const empty: DashboardData = {
   recentEvents: [],
 };
 
+const quickActions = [
+  {
+    step: "1",
+    title: "Conectar Google Drive",
+    text: "Autorize seus arquivos para usar imagens e vídeos sem duplicar a biblioteca.",
+    to: "/empresa#google-drive",
+    icon: Cloud,
+  },
+  {
+    step: "2",
+    title: "Adicionar conteúdo",
+    text: "Escolha arquivos do Drive, YouTube, páginas ou painéis prontos.",
+    to: "/conteudo",
+    icon: Cloud,
+  },
+  {
+    step: "3",
+    title: "Criar uma playlist",
+    text: "Organize a ordem do que será exibido na TV.",
+    to: "/playlists",
+    icon: ListVideo,
+  },
+  {
+    step: "4",
+    title: "Conectar uma TV",
+    text: "Use o código mostrado no Player e coloque a primeira tela no ar.",
+    to: "/telas?parear=1",
+    icon: Monitor,
+  },
+] as const;
+
 export function DashboardPage() {
   const { organization, profile } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState(empty);
   const [screens, setScreens] = useState<Screen[]>([]);
   const [error, setError] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     if (!organization) return;
     const [dashboard, deviceRows] = await Promise.all([
@@ -44,10 +77,12 @@ export function DashboardPage() {
         .order("created_at", { ascending: false })
         .limit(6),
     ]);
+
     if (dashboard.error) setError(dashboard.error.message);
     else setData((dashboard.data || empty) as DashboardData);
     if (deviceRows.data) setScreens(deviceRows.data as unknown as Screen[]);
   }, [organization]);
+
   useEffect(() => {
     void load();
     if (!organization) return;
@@ -64,53 +99,82 @@ export function DashboardPage() {
         () => void load(),
       )
       .subscribe();
+
     return () => {
       void supabase.removeChannel(channel);
     };
   }, [load, organization]);
+
   const firstName = (profile?.full_name || "").split(" ")[0];
-  const statCards = [
-    [
-      "Telas online",
-      data.screensOnline,
-      `de ${data.screensTotal} telas`,
-      Monitor,
-    ],
-    ["Conteúdos", data.media, "na biblioteca", Cloud],
-    ["Playlists", data.playlists, "organizadas", ListVideo],
-    ["Programações", data.activeSchedules, "ativas agora", CalendarClock],
-  ] as const;
+  const firstSetup = data.screensTotal === 0 || data.media === 0 || data.playlists === 0;
+
   return (
     <>
       <PageHead
         eyebrow="Visão geral"
         title={firstName ? `Olá, ${firstName}.` : "Visão geral"}
-        text="Acompanhe suas telas, conteúdos e programações em um só lugar."
+        text="O essencial para colocar suas telas no ar e acompanhar o que está funcionando."
         action="Conectar tela"
         onAction={() => navigate("/telas?parear=1")}
       />
+
       {error && <div className="form-message error">{error}</div>}
-      <div className="stats">
-        {statCards.map(([label, value, meta, Icon]) => (
-          <article key={label}>
-            <Icon size={19} />
-            <span>{label}</span>
-            <strong>{value}</strong>
-            <small>{meta}</small>
-          </article>
-        ))}
-      </div>
-      <div className="dashboard-grid">
-        <section className="panel">
-          <div className="panel-title">
-            <div>
-              <h2>Telas</h2>
-              <p>Status em tempo real dos Players</p>
-            </div>
-            <Link to="/telas">Ver todas</Link>
+
+      <section className={firstSetup ? "dashboard-start dashboard-start-first" : "dashboard-start"}>
+        <div className="dashboard-start-head">
+          <div>
+            <small>{firstSetup ? "COMECE POR AQUI" : "ACESSO RÁPIDO"}</small>
+            <h2>{firstSetup ? "Sua primeira tela em poucos passos." : "O que você quer fazer agora?"}</h2>
+            <p>{firstSetup ? "Siga esta ordem na primeira configuração. Depois, estes atalhos continuam disponíveis para o dia a dia." : "Acesse as tarefas mais usadas sem procurar pelo menu."}</p>
           </div>
-          {screens.length ? (
-            screens.map((screen) => {
+          <Link className="dashboard-help-link" to="/ajuda"><HelpCircle /> Ver passo a passo</Link>
+        </div>
+
+        <div className="dashboard-quick-grid">
+          {quickActions.map(({ step, title, text, to, icon: Icon }) => (
+            <Link className="dashboard-quick-card" to={to} key={title}>
+              <span className="dashboard-quick-icon"><Icon /></span>
+              <span className="dashboard-quick-copy">
+                <small>{firstSetup ? `PASSO ${step}` : "ATALHO"}</small>
+                <b>{title}</b>
+                <em>{text}</em>
+              </span>
+              <ArrowRight />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="dashboard-compact-stats">
+        <article>
+          <span><Monitor /> Telas</span>
+          <strong>{data.screensOnline}<small>/{data.screensTotal}</small></strong>
+          <p>{data.screensTotal ? "online agora" : "nenhuma conectada"}</p>
+        </article>
+        <article>
+          <span><Cloud /> Conteúdos</span>
+          <strong>{data.media}</strong>
+          <p>na biblioteca</p>
+        </article>
+        <article>
+          <span><ListVideo /> Playlists</span>
+          <strong>{data.playlists}</strong>
+          <p>criadas</p>
+        </article>
+      </div>
+
+      <section className="panel dashboard-screens-panel">
+        <div className="panel-title">
+          <div>
+            <h2>Suas telas</h2>
+            <p>Veja rapidamente quais Players estão conectados.</p>
+          </div>
+          <Link to="/telas">Gerenciar telas <ArrowRight size={14} /></Link>
+        </div>
+
+        {screens.length ? (
+          <div className="dashboard-screen-list">
+            {screens.map((screen) => {
               const raw = screen.screen_status;
               const status = (Array.isArray(raw) ? raw[0] : raw) || null;
               const online = Boolean(
@@ -121,83 +185,36 @@ export function DashboardPage() {
               const settings = (
                 Array.isArray(settingsRaw) ? settingsRaw[0] : settingsRaw
               ) as { layout_mode?: string } | undefined;
+
               return (
-                <div className="screen-row" key={screen.id}>
-                  <span className="icon-box">
-                    <Monitor size={19} />
-                  </span>
+                <Link className="screen-row dashboard-screen-row" to="/telas" key={screen.id}>
+                  <span className="icon-box"><Monitor size={19} /></span>
                   <span>
                     <b>{screen.name}</b>
                     <small>
-                      {settings?.layout_mode === "lframe"
-                        ? "Moldura em L"
-                        : "Tela cheia"}{" "}
-                      · {timeAgo(status?.last_seen)}
+                      {settings?.layout_mode === "lframe" ? "Com informações" : "Tela cheia"} · {timeAgo(status?.last_seen)}
                     </small>
                   </span>
                   <em className={online ? "online" : "offline"}>
-                    {online ? <Wifi size={14} /> : <WifiOff size={14} />}{" "}
+                    {online ? <Wifi size={14} /> : <WifiOff size={14} />}
                     {online ? "Online" : "Offline"}
                   </em>
-                </div>
+                  <ArrowRight className="screen-row-arrow" size={16} />
+                </Link>
               );
-            })
-          ) : (
-            <div className="compact-empty">
-              <Monitor />
-              <span>
-                <b>Nenhuma tela conectada</b>
-                <small>Abra o Player em uma TV para começar.</small>
-              </span>
-            </div>
-          )}
-        </section>
-        <section className="panel activity">
-          <div className="panel-title">
+            })}
+          </div>
+        ) : (
+          <div className="dashboard-empty-screen">
+            <span className="icon-box"><Monitor size={20} /></span>
             <div>
-              <h2>Atividade recente</h2>
-              <p>Eventos enviados pelos Players</p>
+              <b>Nenhuma tela conectada ainda</b>
+              <small>Abra tv.pontoview.com.br na TV e use o código exibido.</small>
             </div>
+            <Link className="btn primary" to="/telas?parear=1">Conectar tela</Link>
           </div>
-          <div className="timeline">
-            {data.recentEvents.length ? (
-              data.recentEvents.map((event) => (
-                <span key={event.id}>
-                  <i />
-                  <b>{eventLabel(event.event_type)}</b>
-                  <small>{timeAgo(event.occurred_at)}</small>
-                </span>
-              ))
-            ) : (
-              <div className="compact-empty">
-                <ListVideo />
-                <span>
-                  <b>Aguardando atividade</b>
-                  <small>
-                    Os eventos aparecerão após a primeira tela entrar no ar.
-                  </small>
-                </span>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
+        )}
+      </section>
     </>
-  );
-}
-
-function eventLabel(type: string) {
-  return (
-    (
-      {
-        player_online: "Player conectado",
-        player_offline: "Player ficou offline",
-        content_started: "Conteúdo iniciado",
-        content_ended: "Conteúdo concluído",
-        media_error: "Erro de mídia registrado",
-        sync: "Playlist sincronizada",
-        paired: "Nova tela pareada",
-      } as Record<string, string>
-    )[type] || "Atividade do Player"
   );
 }
