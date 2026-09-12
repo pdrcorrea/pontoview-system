@@ -231,7 +231,18 @@ export function ContentPage() {
     }
   };
 
-  const startDriveOAuth = async () => {
+  const isMobileDriveFlow = () => {
+    const userAgent = navigator.userAgent || "";
+    const iOS =
+      /iPad|iPhone|iPod/i.test(userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const safari =
+      /Safari/i.test(userAgent) &&
+      !/Chrome|CriOS|Chromium|Edg|OPR|Android/i.test(userAgent);
+    return iOS || safari;
+  };
+
+  const startDriveOAuth = async (pickerMode = false) => {
     if (!organization) return;
     setBusy(true);
     setError(null);
@@ -244,6 +255,7 @@ export function ContentPage() {
         {
           organizationId: organization.id,
           returnTo: returnUrl.toString(),
+          pickerMode,
         },
       );
       window.location.assign(result.url);
@@ -267,6 +279,12 @@ export function ContentPage() {
     const currentUrl = new URL(window.location.href);
     const driveStatus = currentUrl.searchParams.get("drive");
     const reopenDrive = currentUrl.searchParams.get("drivePicker") === "1";
+    const pickedFileIds = String(
+      currentUrl.searchParams.get("driveFileIds") || "",
+    )
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
 
     if (!driveStatus && !reopenDrive) return;
 
@@ -275,9 +293,15 @@ export function ContentPage() {
       setModal(true);
     }
 
-    if (driveStatus === "denied") {
+    if (driveStatus === "denied" || driveStatus === "cancelled") {
       setError("A conexão com o Google Drive foi cancelada.");
-    } else if (driveStatus && driveStatus !== "connected") {
+    } else if (driveStatus === "picked" && pickedFileIds.length) {
+      void importDriveFilesByIds(pickedFileIds);
+    } else if (
+      driveStatus &&
+      driveStatus !== "connected" &&
+      driveStatus !== "picked"
+    ) {
       setError(
         "Não foi possível concluir a conexão com o Google Drive. Tente novamente.",
       );
@@ -285,6 +309,7 @@ export function ContentPage() {
 
     currentUrl.searchParams.delete("drive");
     currentUrl.searchParams.delete("drivePicker");
+    currentUrl.searchParams.delete("driveFileIds");
     const nextUrl =
       currentUrl.pathname +
       (currentUrl.searchParams.toString()
@@ -294,12 +319,99 @@ export function ContentPage() {
     window.history.replaceState({}, "", nextUrl);
   }, [organization, user]);
 
+  const importDriveFilesByIds = async (fileIds: string[]) => {
+    if (!organization || !user || !fileIds.length) return;
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const resolved = await invokeFunction<{
+        files: Array<{
+          id: string;
+          name: string;
+          mimeType: string;
+          connectionId: string;
+        }>;
+      }>("drive-files", { fileIds });
+
+      const uniqueFiles = Array.from(
+        new Map((resolved.files || []).map((file) => [file.id, file])).values(),
+      );
+      if (!uniqueFiles.length) {
+        throw new Error("Nenhum arquivo compatível foi selecionado.");
+      }
+
+      const existingResult = await supabase
+        .from("media")
+        .select("drive_file_id")
+        .eq("organization_id", organization.id)
+        .neq("status", "archived")
+        .in(
+          "drive_file_id",
+          uniqueFiles.map((file) => file.id),
+        );
+      if (existingResult.error) throw existingResult.error;
+
+      const existingIds = new Set(
+        (existingResult.data || [])
+          .map((row) => String(row.drive_file_id || ""))
+          .filter(Boolean),
+      );
+
+      const filesToAdd = uniqueFiles.filter(
+        (file) => !existingIds.has(file.id),
+      );
+
+      if (!filesToAdd.length) {
+        setError("Os arquivos selecionados já estão na biblioteca.");
+        return;
+      }
+
+      const result = await supabase.from("media").insert(
+        filesToAdd.map((file) => ({
+          organization_id: organization.id,
+          type: file.mimeType.startsWith("video/")
+            ? "drive_video"
+            : "drive_image",
+          name: file.name || "Arquivo do Drive",
+          drive_connection_id: file.connectionId,
+          drive_file_id: file.id,
+          drive_mime_type: file.mimeType,
+          drive_modified_time: null,
+          drive_checksum: null,
+          thumbnail_url: null,
+          duration_seconds: file.mimeType.startsWith("image/") ? 15 : null,
+          online_required: false,
+          created_by: user.id,
+          status: "ready",
+        })),
+      );
+      if (result.error) throw result.error;
+
+      setModal(false);
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível adicionar os arquivos do Google Drive.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const selectDriveFiles = async () => {
     if (!organization || !user) return;
     setBusy(true);
     setError(null);
 
     try {
+      if (isMobileDriveFlow()) {
+        await startDriveOAuth(true);
+        return;
+      }
       const apiKey = String(import.meta.env.VITE_GOOGLE_PICKER_API_KEY || "");
       const appId = String(import.meta.env.VITE_GOOGLE_PICKER_APP_ID || "");
       if (!apiKey || !appId) {
