@@ -15,6 +15,8 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -43,6 +45,9 @@ import org.videolan.libvlc.interfaces.IVLCVout;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -51,6 +56,8 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -117,7 +124,7 @@ public class NativeMediaBridge {
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/2.0.0-beta8")
+                .setUserAgent("PontoViewTV/2.0.0-beta9")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -134,7 +141,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta8";
+        return "2.0.0-beta9";
     }
 
     @JavascriptInterface
@@ -191,7 +198,7 @@ public class NativeMediaBridge {
         c.setRequestProperty("apikey", PUBLISHABLE_KEY);
         c.setRequestProperty("x-screen-id", screenId);
         c.setRequestProperty("x-screen-token", token);
-        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta8");
+        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta9");
         byte[] body = new JSONObject().put("mediaId", mediaId).put("action", "ticket")
                 .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }
@@ -232,7 +239,7 @@ public class NativeMediaBridge {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(120000);
-                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta8");
+                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta9");
                 connection.connect();
 
                 int status = connection.getResponseCode();
@@ -277,6 +284,135 @@ public class NativeMediaBridge {
             return true;
         }
         return false;
+    }
+
+    @JavascriptInterface
+    public String getLocalVideoUrl(String session, String cacheKey) {
+        if (!validSession(session) || empty(cacheKey)) return "";
+        File file = videoFile(cacheKey);
+        if (!file.exists() || file.length() <= 0) return "";
+        file.setLastModified(System.currentTimeMillis());
+        return "https://local.pontoview.invalid/video/" + sha256(cacheKey) + ".mp4";
+    }
+
+    WebResourceResponse serveLocalVideo(WebResourceRequest request) {
+        if (request == null || request.getUrl() == null) return null;
+        Uri uri = request.getUrl();
+        if (!"local.pontoview.invalid".equalsIgnoreCase(uri.getHost())) return null;
+        String path = uri.getPath();
+        if (path == null || !path.matches("^/video/[a-f0-9]{64}\\.mp4$")) {
+            return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found",
+                    java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
+        }
+
+        String hash = path.substring("/video/".length(), path.length() - ".mp4".length());
+        File file = new File(videoLibraryDir, hash + ".media");
+        if (!file.exists() || file.length() <= 0) {
+            return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found",
+                    java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
+        }
+
+        try {
+            long total = file.length();
+            String range = null;
+            for (Map.Entry<String, String> entry : request.getRequestHeaders().entrySet()) {
+                if ("range".equalsIgnoreCase(entry.getKey())) {
+                    range = entry.getValue();
+                    break;
+                }
+            }
+
+            long start = 0;
+            long end = total - 1;
+            boolean partial = false;
+
+            if (range != null && range.startsWith("bytes=")) {
+                String spec = range.substring(6).trim();
+                int dash = spec.indexOf('-');
+                if (dash >= 0) {
+                    String startText = spec.substring(0, dash).trim();
+                    String endText = spec.substring(dash + 1).trim();
+                    if (!startText.isEmpty()) start = Long.parseLong(startText);
+                    if (!endText.isEmpty()) end = Math.min(total - 1, Long.parseLong(endText));
+                    partial = true;
+                }
+            }
+
+            if (start < 0 || start >= total || end < start) {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Range", "bytes */" + total);
+                headers.put("Accept-Ranges", "bytes");
+                return new WebResourceResponse("video/mp4", null, 416, "Range Not Satisfiable",
+                        headers, new ByteArrayInputStream(new byte[0]));
+            }
+
+            long length = end - start + 1;
+            FileInputStream raw = new FileInputStream(file);
+            long skipped = 0;
+            while (skipped < start) {
+                long step = raw.skip(start - skipped);
+                if (step <= 0) {
+                    raw.close();
+                    throw new java.io.IOException("seek_failed");
+                }
+                skipped += step;
+            }
+
+            InputStream stream = new LimitedInputStream(raw, length);
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Accept-Ranges", "bytes");
+            headers.put("Content-Type", "video/mp4");
+            headers.put("Content-Length", String.valueOf(length));
+            headers.put("Cache-Control", "private, max-age=31536000, immutable");
+            if (partial) headers.put("Content-Range", "bytes " + start + "-" + end + "/" + total);
+
+            file.setLastModified(System.currentTimeMillis());
+            return new WebResourceResponse(
+                    "video/mp4",
+                    null,
+                    partial ? 206 : 200,
+                    partial ? "Partial Content" : "OK",
+                    headers,
+                    "HEAD".equalsIgnoreCase(request.getMethod()) ? new ByteArrayInputStream(new byte[0]) : stream
+            );
+        } catch (Exception error) {
+            Log.w(TAG, "Local video response failed", error);
+            return new WebResourceResponse("text/plain", "UTF-8", 500, "Local Media Error",
+                    java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
+        }
+    }
+
+    private static final class LimitedInputStream extends FilterInputStream {
+        private long remaining;
+
+        LimitedInputStream(InputStream input, long remaining) {
+            super(input);
+            this.remaining = remaining;
+        }
+
+        @Override
+        public int read() throws java.io.IOException {
+            if (remaining <= 0) return -1;
+            int value = super.read();
+            if (value >= 0) remaining--;
+            return value;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws java.io.IOException {
+            if (remaining <= 0) return -1;
+            int allowed = (int) Math.min(length, remaining);
+            int read = super.read(buffer, offset, allowed);
+            if (read > 0) remaining -= read;
+            return read;
+        }
+
+        @Override
+        public long skip(long amount) throws java.io.IOException {
+            long skipped = super.skip(Math.min(amount, remaining));
+            remaining -= skipped;
+            return skipped;
+        }
     }
 
     @JavascriptInterface
@@ -706,7 +842,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta8");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta9");
         connection.connect();
 
         int status = connection.getResponseCode();
