@@ -285,6 +285,9 @@ export function ContentPage() {
       .split(",")
       .map((id) => id.trim())
       .filter(Boolean);
+    const pickedConnectionId = String(
+      currentUrl.searchParams.get("driveConnectionId") || "",
+    ).trim();
 
     if (!driveStatus && !reopenDrive) return;
 
@@ -296,7 +299,7 @@ export function ContentPage() {
     if (driveStatus === "denied" || driveStatus === "cancelled") {
       setError("A conexão com o Google Drive foi cancelada.");
     } else if (driveStatus === "picked" && pickedFileIds.length) {
-      void importDriveFilesByIds(pickedFileIds);
+      void importDriveFilesByIds(pickedFileIds, pickedConnectionId);
     } else if (
       driveStatus &&
       driveStatus !== "connected" &&
@@ -310,6 +313,7 @@ export function ContentPage() {
     currentUrl.searchParams.delete("drive");
     currentUrl.searchParams.delete("drivePicker");
     currentUrl.searchParams.delete("driveFileIds");
+    currentUrl.searchParams.delete("driveConnectionId");
     const nextUrl =
       currentUrl.pathname +
       (currentUrl.searchParams.toString()
@@ -319,7 +323,10 @@ export function ContentPage() {
     window.history.replaceState({}, "", nextUrl);
   }, [organization, user]);
 
-  const importDriveFilesByIds = async (fileIds: string[]) => {
+  const importDriveFilesByIds = async (
+    fileIds: string[],
+    connectionId?: string,
+  ) => {
     if (!organization || !user || !fileIds.length) return;
 
     setBusy(true);
@@ -333,7 +340,10 @@ export function ContentPage() {
           mimeType: string;
           connectionId: string;
         }>;
-      }>("drive-files", { fileIds });
+      }>("drive-files", {
+        fileIds,
+        ...(connectionId ? { connectionId } : {}),
+      });
 
       const uniqueFiles = Array.from(
         new Map((resolved.files || []).map((file) => [file.id, file])).values(),
@@ -463,7 +473,10 @@ export function ContentPage() {
           md5Checksum?: string | null;
           connectionId?: string;
         }>;
-      }>("drive-files", { fileIds });
+      }>("drive-files", {
+        fileIds,
+        connectionId: token.connectionId,
+      });
 
       const validatedFiles = (validated.files || []).filter(
         (file) =>
