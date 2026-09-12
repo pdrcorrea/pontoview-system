@@ -34,6 +34,14 @@ const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export function AccountPage() {
   const { organization, user, refresh } = useAuth();
+
+  useEffect(() => {
+    if (window.location.hash !== "#google-drive") return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("google-drive")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [members, setMembers] = useState<Membership[]>([]);
   const [drives, setDrives] = useState<DriveConnection[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
