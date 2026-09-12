@@ -99,7 +99,7 @@ public class NativeMediaBridge {
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/2.0.0-beta3")
+                .setUserAgent("PontoViewTV/2.0.0-beta4")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -116,7 +116,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta3";
+        return "2.0.0-beta4";
     }
 
     @JavascriptInterface
@@ -446,7 +446,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta3");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta4");
         connection.connect();
 
         int status = connection.getResponseCode();

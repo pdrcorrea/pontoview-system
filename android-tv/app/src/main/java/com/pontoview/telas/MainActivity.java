@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta3");
+        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta4");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
         webView.addJavascriptInterface(nativeBridge, "PontoViewNative");
@@ -91,7 +91,10 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageCommitVisible(WebView view, String url) {
-                if (isTrustedTopLevelUrl(Uri.parse(url))) injectNativeRuntime();
+                if (isTrustedTopLevelUrl(Uri.parse(url))) {
+                    injectNativeRuntime();
+                    injectPlaybackCompatibility();
+                }
             }
 
             @Override
@@ -126,10 +129,88 @@ public class MainActivity extends Activity {
         String script =
                 "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
-                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta3';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta3'}}));" +
+                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta4';" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta4'}}));" +
                 "})();";
         webView.evaluateJavascript(script, null);
+        injectPlaybackCompatibility();
+    }
+
+    private void injectPlaybackCompatibility() {
+        if (webView == null) return;
+
+        String compatibilityScript =
+                "(function(){" +
+                "if(window.__PV_ANDROID_VIDEO_COMPAT_V4)return;" +
+                "window.__PV_ANDROID_VIDEO_COMPAT_V4=true;" +
+                "var tracked=new WeakSet();" +
+                "function prepare(v){" +
+                "if(!v||tracked.has(v))return;" +
+                "tracked.add(v);" +
+                "try{" +
+                "v.autoplay=true;" +
+                "v.setAttribute('autoplay','');" +
+                "v.setAttribute('playsinline','');" +
+                "v.playsInline=true;" +
+                "v.controls=false;" +
+                "v.removeAttribute('controls');" +
+                "}catch(e){}" +
+                "var busy=false;" +
+                "function kick(){" +
+                "if(busy||v.ended)return;" +
+                "if(v.readyState<2)return;" +
+                "if(!v.paused)return;" +
+                "busy=true;" +
+                "try{v.muted=true;}catch(e){}" +
+                "var p;" +
+                "try{p=v.play();}catch(e){busy=false;return;}" +
+                "Promise.resolve(p).then(function(){" +
+                "busy=false;" +
+                "setTimeout(function(){" +
+                "if(v.ended)return;" +
+                "try{" +
+                "v.muted=false;" +
+                "var p2=v.play();" +
+                "if(p2&&p2.catch)p2.catch(function(){" +
+                "try{v.muted=true;v.play();}catch(e){}" +
+                "});" +
+                "}catch(e){" +
+                "try{v.muted=true;v.play();}catch(x){}" +
+                "}" +
+                "},500);" +
+                "}).catch(function(){busy=false;});" +
+                "}" +
+                "['loadedmetadata','loadeddata','canplay','canplaythrough','stalled'].forEach(function(ev){" +
+                "v.addEventListener(ev,kick,{passive:true});" +
+                "});" +
+                "v.addEventListener('pause',function(){if(!v.ended)setTimeout(kick,250);},{passive:true});" +
+                "kick();" +
+                "}" +
+                "function scan(){" +
+                "try{document.querySelectorAll('video').forEach(prepare);}catch(e){}" +
+                "}" +
+                "scan();" +
+                "var mo=new MutationObserver(scan);" +
+                "try{mo.observe(document.documentElement||document,{subtree:true,childList:true});}catch(e){}" +
+                "setInterval(function(){" +
+                "scan();" +
+                "try{" +
+                "document.querySelectorAll('video').forEach(function(v){" +
+                "if(!v.ended&&v.paused&&v.readyState>=2){" +
+                "try{v.muted=true;v.play();}catch(e){}" +
+                "}" +
+                "});" +
+                "}catch(e){}" +
+                "},1200);" +
+                "})();";
+
+        webView.evaluateJavascript(compatibilityScript, null);
+        webView.postDelayed(() -> {
+            if (webView != null) webView.evaluateJavascript(compatibilityScript, null);
+        }, 1000);
+        webView.postDelayed(() -> {
+            if (webView != null) webView.evaluateJavascript(compatibilityScript, null);
+        }, 3000);
     }
 
     private void applyImmersiveMode() {
