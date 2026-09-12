@@ -53,18 +53,21 @@ const PLAYER_RUNTIME_STYLE = `
   .side-message.priority-urgent { border-left: .35vw solid #9a4f20; padding-left: 1vw; }
   .side-message.priority-important { border-left: .25vw solid #d39a3a; padding-left: .9vw; }
   .side-message.exclusive { background: rgba(255,255,255,.46); }
-  .live-weather { display: block; }
-  .weather-current { display: flex; align-items: center; gap: 1vw; }
-  .weather-current > svg { width: clamp(30px,3vw,58px); height: auto; flex: 0 0 auto; }
+  .live-weather { display: block; width: 100%; min-width: 0; }
+  .weather-current { display: grid; grid-template-columns: clamp(30px,3vw,58px) minmax(0,1fr); align-items: center; gap: clamp(8px,1vw,18px); min-width: 0; }
+  .weather-current > svg { width: 100%; max-width: 58px; height: auto; min-width: 0; }
+  .weather-current > span { min-width: 0; }
+  .weather-current > span > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .live-weather small.condition { opacity: .8; }
-  .live-weather .weather-detail { display: flex; gap: .7em; margin-top: .25em; font-size: clamp(8px,.72vw,13px); color: #61768a; }
-  .live-weather .weather-detail svg { width: 1em; height: 1em; }
-  .weather-forecast { margin-top: 2.2vh; border-top: 1px solid #d6e0e7; padding-top: 1.7vh; display: grid; gap: 1.15vh; }
-  .weather-day { display: grid !important; grid-template-columns: minmax(42px,.75fr) 26px 1fr; align-items: center; gap: .55vw; color: #40586d; }
-  .weather-day > small { font-size: clamp(8px,.74vw,13px); font-weight: 700; color: #40586d; text-transform: uppercase; letter-spacing: .04em; }
-  .weather-day > svg { width: clamp(17px,1.45vw,28px); height: auto; color: #244f7e; }
-  .weather-day > span { display: flex; justify-content: flex-end; gap: .45em; font-size: clamp(9px,.82vw,15px); white-space: nowrap; }
-  .weather-day .min { color: #6a8295; }
+  .live-weather .weather-detail { display: flex; flex-wrap: wrap; align-items: center; gap: .2em .7em; margin-top: .25em; font-size: clamp(8px,.72vw,13px); color: #61768a; white-space: normal; }
+  .live-weather .weather-detail svg { width: 1em; height: 1em; flex: 0 0 auto; }
+  .weather-forecast { width: 100%; min-width: 0; box-sizing: border-box; margin-top: 2.2vh; border-top: 1px solid #d6e0e7; padding-top: 1.7vh; display: grid; gap: 1.15vh; }
+  .weather-day { width: 100%; min-width: 0; box-sizing: border-box; display: grid !important; grid-template-columns: minmax(34px,.68fr) clamp(20px,1.45vw,28px) minmax(0,1.45fr); align-items: center; column-gap: clamp(6px,.55vw,11px); color: #40586d; }
+  .weather-day > small { min-width: 0; font-size: clamp(8px,.74vw,13px); font-weight: 700; color: #40586d; text-transform: uppercase; letter-spacing: .04em; }
+  .weather-day > svg { width: clamp(17px,1.45vw,28px); max-width: 100%; height: auto; color: #244f7e; justify-self: center; }
+  .weather-day > span { min-width: 0; display: grid !important; grid-template-columns: minmax(0,1fr) auto; align-items: baseline; justify-items: end; column-gap: clamp(4px,.35vw,8px); font-size: clamp(9px,.82vw,15px); white-space: nowrap; padding-right: 1px; }
+  .weather-day > span > b { display: block; min-width: 0; font-size: clamp(24px,2.15vw,40px); line-height: .95; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+  .weather-day .min { display: block; color: #6a8295; font-size: clamp(11px,.92vw,17px); line-height: 1; align-self: start; padding-top: .1em; font-variant-numeric: tabular-nums; }
   .player-lframe > footer .news-source { display: inline-flex; align-items: center; gap: .55em; flex: 0 0 auto; animation: none; }
   .news-source-icon { position: relative; width: 1.7em; height: 1.7em; border-radius: .38em; background: #edf3f7; display: grid !important; place-items: center; overflow: hidden; }
   .news-source-icon svg { width: 56%; height: 56%; color: #244f7e; }
@@ -83,7 +86,9 @@ const PLAYER_RUNTIME_STYLE = `
   .pv-orientation-canvas.logical-portrait .player-lframe > aside { min-width: 220px; padding: 3vh clamp(12px, 1.2vw, 20px); gap: 2vh; }
   .pv-orientation-canvas.logical-portrait .side-message h2 { font-size: clamp(18px,2.6vw,34px); }
   .pv-orientation-canvas.logical-portrait .side-message p { font-size: clamp(13px,1.8vw,21px); }
-  @media (orientation: portrait) { .weather-forecast { gap: .75vh; } .weather-day { grid-template-columns: minmax(36px,.8fr) 22px 1fr; } .news-source strong { max-width: 8em; } }
+  .pv-orientation-canvas.logical-portrait .weather-forecast { gap: .75vh; }
+  .pv-orientation-canvas.logical-portrait .weather-day { grid-template-columns: minmax(34px,.66fr) clamp(20px,1.35vw,26px) minmax(0,1.5fr); }
+  @media (orientation: portrait) { .news-source strong { max-width: 8em; } }
   @media (prefers-reduced-motion: reduce) { .pv-stage-transition, .side-panel-slide { animation-duration: 1ms; } }
 `;
 
