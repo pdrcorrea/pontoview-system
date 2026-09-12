@@ -392,11 +392,30 @@ export function ContentPage() {
       setModal(false);
       await load();
     } catch (cause) {
-      setError(
+      const message =
         cause instanceof Error
           ? cause.message
-          : "Não foi possível adicionar os arquivos do Google Drive.",
-      );
+          : "Não foi possível adicionar os arquivos do Google Drive.";
+
+      if (
+        message.includes("DRIVE_NOT_CONNECTED") ||
+        message.includes("DRIVE_RECONNECT_REQUIRED")
+      ) {
+        await startDriveOAuth(true);
+        return;
+      }
+
+      if (
+        message.includes("DRIVE_LIST_FAILED") ||
+        message.includes("DRIVE_SELECTED_FILES_UNAVAILABLE") ||
+        message.includes("DRIVE_FILE_IDS_REQUIRED")
+      ) {
+        setError(
+          "Não foi possível acessar um dos arquivos selecionados. Abra o Google Drive novamente e selecione o arquivo desejado.",
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -524,6 +543,14 @@ export function ContentPage() {
       if (message.includes("GOOGLE_PICKER")) {
         setError(
           "Não foi possível abrir o seletor do Google Drive. Reconecte a conta e tente novamente.",
+        );
+      } else if (
+        message.includes("DRIVE_LIST_FAILED") ||
+        message.includes("DRIVE_SELECTED_FILES_UNAVAILABLE") ||
+        message.includes("DRIVE_FILE_IDS_REQUIRED")
+      ) {
+        setError(
+          "Não foi possível acessar um dos arquivos selecionados. Abra o Google Drive novamente e selecione o arquivo desejado.",
         );
       } else {
         setError(message);
