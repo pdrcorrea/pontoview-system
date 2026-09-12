@@ -435,12 +435,39 @@ export function ContentPage() {
       );
       const fileIds = uniqueFiles.map((file) => file.id);
 
+      const validated = await invokeFunction<{
+        files: Array<{
+          id: string;
+          name: string;
+          mimeType: string;
+          modifiedTime?: string | null;
+          md5Checksum?: string | null;
+          connectionId?: string;
+        }>;
+      }>("drive-files", { fileIds });
+
+      const validatedFiles = (validated.files || []).filter(
+        (file) =>
+          file.id &&
+          (file.mimeType?.startsWith("image/") ||
+            file.mimeType?.startsWith("video/")),
+      );
+
+      if (!validatedFiles.length) {
+        throw new Error(
+          "Os arquivos selecionados não estão disponíveis para a PontoView. Tente selecioná-los novamente no Google Drive.",
+        );
+      }
+
       const existingResult = await supabase
         .from("media")
         .select("drive_file_id")
         .eq("organization_id", organization.id)
         .neq("status", "archived")
-        .in("drive_file_id", fileIds);
+        .in(
+          "drive_file_id",
+          validatedFiles.map((file) => file.id),
+        );
       if (existingResult.error) throw existingResult.error;
 
       const existingIds = new Set(
@@ -448,7 +475,9 @@ export function ContentPage() {
           .map((row) => String(row.drive_file_id || ""))
           .filter(Boolean),
       );
-      const filesToAdd = uniqueFiles.filter((file) => !existingIds.has(file.id));
+      const filesToAdd = validatedFiles.filter(
+        (file) => !existingIds.has(file.id),
+      );
 
       if (!filesToAdd.length) {
         setError("Os arquivos selecionados já estão na biblioteca.");
@@ -462,11 +491,11 @@ export function ContentPage() {
             ? "drive_video"
             : "drive_image",
           name: file.name || "Arquivo do Drive",
-          drive_connection_id: token.connectionId,
+          drive_connection_id: file.connectionId || token.connectionId,
           drive_file_id: file.id,
           drive_mime_type: file.mimeType,
-          drive_modified_time: null,
-          drive_checksum: null,
+          drive_modified_time: file.modifiedTime || null,
+          drive_checksum: file.md5Checksum || null,
           thumbnail_url: null,
           duration_seconds: file.mimeType.startsWith("image/") ? 15 : null,
           online_required: false,
