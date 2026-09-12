@@ -719,32 +719,49 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 42px;
   box-sizing: border-box;
   background: radial-gradient(circle at 50% 35%, #173e62, #071a2d 62%);
-}
-.activation-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  align-self: flex-start;
-}
-.activation-brand .player-mark {
-  width: 38px;
-  height: 38px;
-}
-.activation-brand b {
-  font-size: 13px;
 }
 .activation-screen section {
   text-align: center;
   max-width: 620px;
 }
-.activation-screen section > svg {
-  width: 38px;
-  height: 38px;
-  color: #7ab1dc;
+.activation-mark {
+  width: clamp(54px, 4.6vw, 78px);
+  height: clamp(54px, 4.6vw, 78px);
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+.activation-mark .pv-brand-official {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.activation-mark .pv-brand-fallback {
+  background: transparent !important;
+  color: #69cff2;
+  font-size: clamp(22px, 2vw, 34px);
+}
+.activation-screen footer {
+  position: absolute;
+  left: 42px;
+  right: 42px;
+  bottom: 42px;
+  text-align: center;
 }
 .activation-screen section > small {
   display: block;
