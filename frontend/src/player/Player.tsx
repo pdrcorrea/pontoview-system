@@ -12,7 +12,6 @@ import {
   Info,
   Loader2,
   MessageSquareText,
-  Monitor,
   Newspaper,
   RefreshCw,
   Snowflake,
@@ -242,7 +241,7 @@ export function PlayerPage() {
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
-  return <div className="activation-screen"><div className="activation-brand"><span className="player-mark"><BrandMark /></span><b>PontoView Player</b></div><section><Monitor /><small>CONECTAR ESTA TELA</small><h1>{activation?.code || "••••••"}</h1><p>No painel PontoView, acesse <b>Telas → Conectar tela</b> e informe este código.</p>{activation && <em>O código é temporário e será renovado automaticamente.</em>}{error && <div className="activation-error">{error}<button onClick={onRetry}><RefreshCw />Tentar novamente</button></div>}</section><footer>pontoview.com.br</footer></div>;
+  return <div className="activation-screen"><section><span className="activation-mark" aria-hidden="true"><BrandMark /></span><small>CONECTAR ESTA TELA</small><h1>{activation?.code || "••••••"}</h1><p>No painel PontoView, acesse <b>Telas → Conectar tela</b> e informe este código.</p>{activation && <em>O código é temporário e será renovado automaticamente.</em>}{error && <div className="activation-error">{error}<button onClick={onRetry}><RefreshCw />Tentar novamente</button></div>}</section><footer>pontoview.com.br</footer></div>;
 }
 
 function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; onEnd: () => void; onError: (detail: string) => void; }) {
