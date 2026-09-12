@@ -65,10 +65,30 @@ Deno.serve(async (req) => {
       Deno.env.get("GOOGLE_REDIRECT_URI") ||
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/drive-oauth-callback`;
 
+    const pickerMode = body.pickerMode === true;
+    let connectionId = "";
+
+    if (pickerMode) {
+      const { admin } = await import("../_shared/common.ts");
+      const { data: connection } = await admin
+        .from("drive_connections")
+        .select("id,scopes")
+        .eq("organization_id", orgId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!connection) throw new HttpError(409, "DRIVE_NOT_CONNECTED");
+      connectionId = String(connection.id);
+    }
+
     const state = await signState({
       userId: user.id,
       organizationId: orgId,
       returnTo,
+      pickerMode,
+      connectionId,
       exp: Date.now() + 10 * 60_000,
     });
 
@@ -76,11 +96,32 @@ Deno.serve(async (req) => {
     url.searchParams.set("client_id", clientId);
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("scope", `openid email ${DRIVE_FILE_SCOPE}`);
+    url.searchParams.set(
+      "scope",
+      pickerMode ? DRIVE_FILE_SCOPE : `openid email ${DRIVE_FILE_SCOPE}`,
+    );
     url.searchParams.set("access_type", "offline");
     url.searchParams.set("include_granted_scopes", "false");
-    url.searchParams.set("prompt", "consent select_account");
+    url.searchParams.set("prompt", pickerMode ? "consent" : "consent select_account");
     url.searchParams.set("state", state);
+
+    if (pickerMode) {
+      url.searchParams.set("trigger_onepick", "true");
+      url.searchParams.set("allow_multiple", "true");
+      url.searchParams.set(
+        "mimetypes",
+        [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "image/gif",
+          "video/mp4",
+          "video/webm",
+          "video/quicktime",
+          "video/x-matroska",
+        ].join(","),
+      );
+    }
 
     return reply({ url: url.toString() });
   } catch (error) {
