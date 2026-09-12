@@ -168,9 +168,12 @@ public class NativeMediaBridge {
                     String mediaId = media.optString("id", "");
                     String type = media.optString("type", "");
                     if (empty(mediaId) || (!"drive_video".equals(type) && !"drive_image".equals(type))) continue;
-                    String checksum = media.optString("driveChecksum", "latest");
-                    if (empty(checksum) || "null".equalsIgnoreCase(checksum)) checksum = "latest";
-                    String cacheKey = screenId + ":" + mediaId + ":" + checksum;
+                    String revision = media.optString("driveChecksum", "");
+                    if (empty(revision) || "null".equalsIgnoreCase(revision)) {
+                        revision = media.optString("driveModifiedTime", "");
+                    }
+                    if (empty(revision) || "null".equalsIgnoreCase(revision)) revision = "latest";
+                    String cacheKey = screenId + ":" + mediaId + ":" + revision;
                     if ("drive_video".equals(type) && hasCachedVideo(session, cacheKey)) continue;
                     if ("drive_image".equals(type) && hasCachedImage(session, cacheKey)) continue;
                     String streamUrl = requestDriveTicket(screenId, token, mediaId);
