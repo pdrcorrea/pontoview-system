@@ -32,11 +32,18 @@ Deno.serve(async (req) => {
     const orgId = membership?.organization_id || "";
     await requireOrgRole(user.id, orgId, ["owner", "admin", "editor"]);
 
-    const { data: connection } = await admin
+    const requestedConnectionId = String(body.connectionId || "").trim();
+    let connectionQuery = admin
       .from("drive_connections")
       .select("id,scopes")
       .eq("organization_id", orgId)
-      .eq("status", "active")
+      .eq("status", "active");
+
+    if (requestedConnectionId) {
+      connectionQuery = connectionQuery.eq("id", requestedConnectionId);
+    }
+
+    const { data: connection } = await connectionQuery
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
