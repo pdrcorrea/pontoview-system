@@ -354,7 +354,7 @@ const drivePreloads = new Map<string, DrivePreloadEntry>();
 const DRIVE_PRELOAD_TTL_MS = 2 * 60_000;
 
 function driveAssetKey(media: ManifestItem["media"], device: Device) {
-  return `${device.screenId}:${media.id}:${media.driveChecksum || "latest"}`;
+  return `${device.screenId}:${media.id}:${media.driveChecksum || media.driveModifiedTime || "latest"}`;
 }
 
 type NativeBridgeContext = {
@@ -519,17 +519,196 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
 
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const native = useNativeBridgeContext();
-  if (native) {
+
+  if (native && media.type === "drive_video") {
+    return <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />;
+  }
+
+  if (native && media.type === "drive_image") {
     return <NativeDriveStage
       media={media}
       duration={duration}
       device={device}
       onEnd={onEnd}
-      onNativeFailure={() => onError("native_drive_failed")}
+      onNativeFailure={() => onError("native_drive_image_failed")}
       native={native}
     />;
   }
+
   return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
+}
+
+function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: {
+  media: ManifestItem["media"];
+  device: Device;
+  onEnd: () => void;
+  onError: (detail: string) => void;
+  native: NativeBridgeContext;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [fallback, setFallback] = useState(false);
+  const [autoplayMuted, setAutoplayMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const soundAttemptedRef = useRef(false);
+  const retryRef = useRef(false);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
+  useEffect(() => {
+    let active = true;
+    let timer: number | null = null;
+    const key = driveAssetKey(media, device);
+    const deadline = Date.now() + 4 * 60_000;
+
+    const useLocal = () => {
+      try {
+        if (!native.bridge.hasCachedVideo(native.session, key)) return false;
+        const localUrl = native.bridge.getLocalVideoUrl(native.session, key);
+        if (!localUrl) return false;
+        if (active) setUrl(localUrl);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const poll = () => {
+      if (!active || useLocal()) return;
+      if (Date.now() >= deadline) {
+        if (active) setFallback(true);
+        return;
+      }
+      timer = window.setTimeout(poll, 650);
+    };
+
+    if (!useLocal()) {
+      void requestDriveStream(media, device).then(({ streamUrl }) => {
+        if (!active) return;
+        try {
+          native.bridge.preloadVideo(native.session, streamUrl, key);
+          poll();
+        } catch {
+          setFallback(true);
+        }
+      }).catch(() => {
+        if (active) setFallback(true);
+      });
+    }
+
+    return () => {
+      active = false;
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, [media.id, media.driveChecksum, media.driveModifiedTime, device.screenId, device.token, native.session]);
+
+  useEffect(() => {
+    if (!url || fallback) return;
+    let lastTime = -1;
+    let lastProgressAt = Date.now();
+    let recoveryAt = 0;
+
+    const watchdog = window.setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.ended) return;
+
+      const current = Number(video.currentTime || 0);
+      if (current > lastTime + 0.15) {
+        lastTime = current;
+        lastProgressAt = Date.now();
+        return;
+      }
+
+      const stalledFor = Date.now() - lastProgressAt;
+      if (stalledFor >= 8_000 && Date.now() - recoveryAt > 7_000) {
+        recoveryAt = Date.now();
+        const resumeAt = current;
+        try {
+          video.pause();
+          video.load();
+          video.currentTime = resumeAt;
+          video.muted = true;
+          setAutoplayMuted(true);
+          void video.play().catch(() => {});
+        } catch {}
+      }
+
+      if (stalledFor >= 20_000) {
+        setFallback(true);
+      }
+    }, 2_000);
+
+    return () => window.clearInterval(watchdog);
+  }, [url, fallback]);
+
+  const start = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.controls = false;
+    video.muted = true;
+    setAutoplayMuted(true);
+    void video.play().catch(() => {});
+  };
+
+  const handlePlaying = () => {
+    const video = videoRef.current;
+    if (!video || soundAttemptedRef.current) return;
+    soundAttemptedRef.current = true;
+    window.setTimeout(() => {
+      const current = videoRef.current;
+      if (!current || current.ended) return;
+      current.muted = false;
+      setAutoplayMuted(false);
+      void current.play().catch(() => {
+        current.muted = true;
+        setAutoplayMuted(true);
+        void current.play().catch(() => {});
+      });
+    }, 300);
+  };
+
+  const handleError = () => {
+    if (!retryRef.current) {
+      retryRef.current = true;
+      const video = videoRef.current;
+      if (video) {
+        try {
+          video.load();
+          video.muted = true;
+          setAutoplayMuted(true);
+          void video.play().catch(() => setFallback(true));
+          return;
+        } catch {}
+      }
+    }
+    setFallback(true);
+  };
+
+  if (fallback) {
+    return <WebDriveStage media={media} duration={media.durationSeconds || 15} device={device} onEnd={onEnd} onError={onError} />;
+  }
+
+  if (!url) {
+    return <div className="drive-stage player-loading"><Loader2 className="spin" /><small>Preparando {media.name}</small></div>;
+  }
+
+  return <video
+    ref={videoRef}
+    src={url}
+    autoPlay
+    muted={autoplayMuted}
+    playsInline
+    preload="auto"
+    controls={false}
+    disablePictureInPicture
+    controlsList="nodownload noplaybackrate nofullscreen"
+    onLoadedMetadata={start}
+    onLoadedData={start}
+    onCanPlay={start}
+    onPlaying={handlePlaying}
+    onEnded={onEnd}
+    onError={handleError}
+  />;
 }
 
 function NativeDriveStage({ media, duration, device, onEnd, onNativeFailure, native }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onNativeFailure: () => void; native: NativeBridgeContext; }) {
@@ -867,6 +1046,7 @@ declare global {
       stopVideo: (session: string, playbackId: string) => void;
       stopImage: (session: string, playbackId: string) => void;
       getCacheStatus: (session: string) => string;
+      getLocalVideoUrl: (session: string, cacheKey: string) => string;
       setAutoStart: (session: string, enabled: boolean) => void;
       syncManifest: (session: string, screenId: string, token: string, manifestJson: string) => void;
     };
