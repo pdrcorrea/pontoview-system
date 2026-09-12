@@ -214,7 +214,7 @@ export function AccountPage() {
             </div>
           ))}
 
-          <div className="panel-title integration-title">
+          <div id="google-drive" className="panel-title integration-title">
             <div><h2>Google Drive</h2><p>Arquivos conectados à PontoView.</p></div>
           </div>
 
