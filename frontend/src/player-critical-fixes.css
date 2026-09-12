@@ -224,6 +224,60 @@
   max-height: 100%;
 }
 
+.pv-player-runtime .player-lframe .live-weather,
+.pv-player-runtime .player-lframe .weather-forecast,
+.pv-player-runtime .player-lframe .weather-day {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pv-player-runtime .player-lframe .weather-current {
+  min-width: 0;
+}
+
+.pv-player-runtime .player-lframe .weather-current > span {
+  min-width: 0;
+}
+
+.pv-player-runtime .player-lframe .weather-detail {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.pv-player-runtime .player-lframe .weather-day {
+  grid-template-columns: minmax(34px, .68fr) minmax(20px, 28px) minmax(0, 1.45fr) !important;
+}
+
+.pv-player-runtime .player-lframe .weather-day > span {
+  min-width: 0;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: baseline;
+  justify-items: end;
+  column-gap: clamp(4px, .35vw, 8px);
+  white-space: nowrap;
+}
+
+.pv-player-runtime .player-lframe .weather-day > span > b {
+  font-size: clamp(24px, 2.15vw, 40px) !important;
+  line-height: .95;
+  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-player-runtime .player-lframe .weather-day .min {
+  font-size: clamp(11px, .92vw, 17px) !important;
+  line-height: 1;
+  align-self: start;
+  padding-top: .1em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-player-runtime .pv-orientation-canvas.logical-portrait .weather-day {
+  grid-template-columns: minmax(32px, .64fr) minmax(20px, 26px) minmax(0, 1.55fr) !important;
+}
+
 .pv-player-runtime .player-lframe > aside .live-business {
   width: var(--pv-business-size) !important;
   height: var(--pv-bar-size) !important;
@@ -271,5 +325,34 @@
 
   .pv-player-runtime .player-lframe .weather-day > span {
     font-size: max(10px, 1.7cqmin) !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-day > span > b {
+    font-size: clamp(24px, 4.2cqmin, 48px) !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-day .min {
+    font-size: clamp(11px, 1.7cqmin, 18px) !important;
+  }
+}
+
+@media (max-height: 720px) {
+  .pv-player-runtime .player-lframe .weather-forecast {
+    margin-top: 1.25vh !important;
+    padding-top: .9vh !important;
+    gap: .5vh !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-detail {
+    margin-top: .12em !important;
+    row-gap: .12em !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-day > span > b {
+    font-size: clamp(22px, 3.8vh, 34px) !important;
+  }
+
+  .pv-player-runtime .player-lframe .weather-day .min {
+    font-size: clamp(10px, 1.8vh, 15px) !important;
   }
 }
