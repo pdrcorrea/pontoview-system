@@ -337,7 +337,7 @@ const drivePreloads = new Map<string, DrivePreloadEntry>();
 const DRIVE_PRELOAD_TTL_MS = 2 * 60_000;
 
 function driveAssetKey(media: ManifestItem["media"], device: Device) {
-  return \`\${device.screenId}:\${media.id}:\${media.driveChecksum || "latest"}\`;
+  return `${device.screenId}:${media.id}:${media.driveChecksum || "latest"}`;
 }
 
 type NativeBridgeContext = {
@@ -402,7 +402,7 @@ function nativeBounds(element: HTMLElement) {
 
 async function requestDriveStream(media: ManifestItem["media"], device: Device) {
   if (!navigator.onLine) throw new Error("offline");
-  const response = await fetch(\`\${functionsUrl}/drive-media\`, {
+  const response = await fetch(`${functionsUrl}/drive-media`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -524,7 +524,7 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
 
 function NativeDriveStage({ media, duration, device, onEnd, onNativeFailure, native }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onNativeFailure: () => void; native: NativeBridgeContext; }) {
   const host = useRef<HTMLDivElement>(null);
-  const playbackId = useRef(\`pv-\${media.id}-\${Date.now()}-\${Math.random().toString(36).slice(2)}\`).current;
+  const playbackId = useRef(`pv-${media.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`).current;
   const onEndRef = useRef(onEnd);
   const onNativeFailureRef = useRef(onNativeFailure);
   const readyRef = useRef(false);
@@ -735,8 +735,8 @@ function WebDriveStage({ media, duration, device, onEnd, onError }: { media: Man
 }
 
 async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
-  const cache = await caches.open("pontoview-media-v1"); const key = new Request(\`\${location.origin}/__pv_cache/\${device.screenId}/\${media.id}/\${media.driveChecksum || "latest"}\`); const cached = await cache.match(key); if (cached) return URL.createObjectURL(await cached.blob()); if (!navigator.onLine) throw new Error("offline");
-  const response = await fetch(\`\${functionsUrl}/drive-media\`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": device.screenId, "x-screen-token": device.token }, body: JSON.stringify({ mediaId: media.id }) });
+  const cache = await caches.open("pontoview-media-v1"); const key = new Request(`${location.origin}/__pv_cache/${device.screenId}/${media.id}/${media.driveChecksum || "latest"}`); const cached = await cache.match(key); if (cached) return URL.createObjectURL(await cached.blob()); if (!navigator.onLine) throw new Error("offline");
+  const response = await fetch(`${functionsUrl}/drive-media`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": device.screenId, "x-screen-token": device.token }, body: JSON.stringify({ mediaId: media.id }) });
   if (!response.ok) throw new Error("drive_media_error"); await cache.put(key, response.clone()); return URL.createObjectURL(await response.blob());
 }
 
