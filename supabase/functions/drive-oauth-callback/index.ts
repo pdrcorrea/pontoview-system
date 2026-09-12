@@ -45,6 +45,65 @@ Deno.serve(async (req) => {
       throw new HttpError(400, "GOOGLE_SCOPE_MISMATCH");
     }
 
+    const pickerMode = state.pickerMode === true;
+    const pickedFileIds = String(url.searchParams.get("picked_file_ids") || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    if (pickerMode) {
+      if (!pickedFileIds.length) {
+        return Response.redirect(
+          `${returnTo}${returnTo.includes("?") ? "&" : "?"}drive=cancelled`,
+          302,
+        );
+      }
+
+      const connectionId = String(state.connectionId || "");
+      if (!connectionId) throw new HttpError(400, "DRIVE_CONNECTION_MISSING");
+
+      const expiresAt = new Date(
+        Date.now() + Number(tokens.expires_in || 3600) * 1000,
+      ).toISOString();
+
+      const { data: existing, error: existingError } = await admin
+        .rpc("get_drive_credentials", { p_connection_id: connectionId })
+        .maybeSingle();
+      if (existingError)
+        throw new HttpError(500, "DRIVE_CREDENTIAL_LOOKUP_FAILED");
+
+      const accessTokenEncrypted = await encrypt(tokens.access_token);
+      const refreshTokenEncrypted = tokens.refresh_token
+        ? await encrypt(tokens.refresh_token)
+        : existing?.refresh_token_encrypted || null;
+      if (!refreshTokenEncrypted)
+        throw new HttpError(400, "GOOGLE_REFRESH_TOKEN_MISSING");
+
+      const { error: saveError } = await admin.rpc("upsert_drive_credentials", {
+        p_connection_id: connectionId,
+        p_access_token_encrypted: accessTokenEncrypted,
+        p_refresh_token_encrypted: refreshTokenEncrypted,
+        p_token_expires_at: expiresAt,
+      });
+      if (saveError)
+        throw new HttpError(500, "DRIVE_CREDENTIAL_SAVE_FAILED");
+
+      await admin
+        .from("drive_connections")
+        .update({
+          scopes: grantedScopes,
+          status: "active",
+          token_expires_at: expiresAt,
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq("id", connectionId);
+
+      const redirect = new URL(returnTo);
+      redirect.searchParams.set("drive", "picked");
+      redirect.searchParams.set("driveFileIds", pickedFileIds.join(","));
+      return Response.redirect(redirect.toString(), 302);
+    }
+
     const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
