@@ -39,7 +39,7 @@ import androidx.media3.ui.AspectRatioFrameLayout;
 
 import org.json.JSONArray;
 import org.videolan.libvlc.LibVLC;
-import org.videolan.libvlc.IVLCVout;
+import org.videolan.libvlc.interfaces.IVLCVout;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
