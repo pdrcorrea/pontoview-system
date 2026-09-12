@@ -40,8 +40,6 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.AspectRatioFrameLayout;
 
 import org.json.JSONArray;
-import org.videolan.libvlc.LibVLC;
-import org.videolan.libvlc.interfaces.IVLCVout;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -94,8 +92,6 @@ public class NativeMediaBridge {
     private AspectRatioFrameLayout videoFrame;
     private SurfaceView surfaceView;
     private ImageView imageView;
-    private LibVLC libVLC;
-    private org.videolan.libvlc.MediaPlayer vlcPlayer;
     private final Handler videoWatchdog = new Handler(Looper.getMainLooper());
     private Runnable firstFrameTimeout;
     private boolean firstFrameRendered;
@@ -364,6 +360,7 @@ public class NativeMediaBridge {
             headers.put("Content-Type", "video/mp4");
             headers.put("Content-Length", String.valueOf(length));
             headers.put("Cache-Control", "private, max-age=31536000, immutable");
+            headers.put("Access-Control-Allow-Origin", "*");
             if (partial) headers.put("Content-Range", "bytes " + start + "-" + end + "/" + total);
 
             file.setLastModified(System.currentTimeMillis());
@@ -574,8 +571,7 @@ public class NativeMediaBridge {
                 public void onPlayerError(PlaybackException error) {
                     if (!playbackId.equals(activeVideoId)) return;
                     sendDiagnostics(playbackId, "media3_error_" + error.errorCode, 0, 0);
-                    startVlcFallback(localFile, playbackId, x, y, width, height, rotation,
-                            viewportWidth, viewportHeight, muted, volume, "media3_error_" + error.errorCode);
+                    sendError(playbackId, "media3_error_" + error.errorCode);
                 }
 
                 @Override
@@ -596,92 +592,9 @@ public class NativeMediaBridge {
             firstFrameTimeout = () -> {
                 if (!playbackId.equals(activeVideoId) || firstFrameRendered) return;
                 sendDiagnostics(playbackId, "media3_no_first_frame", 0, 0);
-                startVlcFallback(localFile, playbackId, x, y, width, height, rotation,
-                        viewportWidth, viewportHeight, muted, volume, "media3_no_first_frame");
+                sendError(playbackId, "media3_no_first_frame");
             };
             videoWatchdog.postDelayed(firstFrameTimeout, 8000);
-        });
-    }
-
-    private void startVlcFallback(
-            File localFile,
-            String playbackId,
-            double x, double y, double width, double height, double rotation,
-            double viewportWidth, double viewportHeight,
-            boolean muted, double volume,
-            String reason
-    ) {
-        main.post(() -> {
-            if (!playbackId.equals(activeVideoId)) return;
-
-            if (firstFrameTimeout != null) videoWatchdog.removeCallbacks(firstFrameTimeout);
-
-            if (player != null) {
-                try {
-                    if (surfaceView != null) player.clearVideoSurfaceView(surfaceView);
-                    player.stop();
-                    player.release();
-                } catch (Exception ignored) {}
-                player = null;
-            }
-            if (videoFrame != null) nativeLayer.removeView(videoFrame);
-
-            videoFrame = new AspectRatioFrameLayout(activity);
-            videoFrame.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-            videoFrame.setBackgroundColor(Color.BLACK);
-            surfaceView = new SurfaceView(activity);
-            surfaceView.setBackgroundColor(Color.BLACK);
-            videoFrame.addView(surfaceView, new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-            ));
-            nativeLayer.addView(videoFrame);
-            applyBounds(videoFrame, x, y, width, height, rotation, viewportWidth, viewportHeight);
-            nativeLayer.setVisibility(View.VISIBLE);
-
-            try {
-                if (libVLC == null) {
-                    java.util.ArrayList<String> options = new java.util.ArrayList<>();
-                    options.add("--no-drop-late-frames");
-                    options.add("--no-skip-frames");
-                    options.add("--avcodec-hw=any");
-                    libVLC = new LibVLC(activity, options);
-                }
-
-                if (vlcPlayer != null) {
-                    try { vlcPlayer.stop(); } catch (Exception ignored) {}
-                    try { vlcPlayer.release(); } catch (Exception ignored) {}
-                }
-
-                vlcPlayer = new org.videolan.libvlc.MediaPlayer(libVLC);
-                IVLCVout vout = vlcPlayer.getVLCVout();
-                vout.setVideoView(surfaceView);
-                vout.attachViews();
-
-                vlcPlayer.setEventListener(event -> {
-                    if (!playbackId.equals(activeVideoId)) return;
-                    if (event.type == org.videolan.libvlc.MediaPlayer.Event.Playing) {
-                        sendDiagnostics(playbackId, "vlc_playing_" + reason, 0, 0);
-                    } else if (event.type == org.videolan.libvlc.MediaPlayer.Event.EndReached) {
-                        sendEnded(playbackId);
-                    } else if (event.type == org.videolan.libvlc.MediaPlayer.Event.EncounteredError) {
-                        sendError(playbackId, "vlc_decode_failed");
-                    } else if (event.type == org.videolan.libvlc.MediaPlayer.Event.Vout) {
-                        sendDiagnostics(playbackId, "vlc_video_output", 0, 0);
-                    }
-                });
-
-                org.videolan.libvlc.Media media = new org.videolan.libvlc.Media(libVLC, Uri.fromFile(localFile));
-                media.setHWDecoderEnabled(true, false);
-                vlcPlayer.setMedia(media);
-                media.release();
-                vlcPlayer.setVolume(muted ? 0 : Math.max(0, Math.min(100, (int) Math.round(volume * 100d))));
-                vlcPlayer.play();
-                sendDiagnostics(playbackId, "vlc_start_" + reason, 0, 0);
-            } catch (Exception error) {
-                Log.e(TAG, "VLC fallback failed", error);
-                sendError(playbackId, "vlc_start_failed");
-            }
         });
     }
 
@@ -942,13 +855,6 @@ public class NativeMediaBridge {
         }
         player = null;
 
-        if (vlcPlayer != null) {
-            try { vlcPlayer.stop(); } catch (Exception ignored) {}
-            try { vlcPlayer.getVLCVout().detachViews(); } catch (Exception ignored) {}
-            try { vlcPlayer.release(); } catch (Exception ignored) {}
-            vlcPlayer = null;
-        }
-
         surfaceView = null;
         if (videoFrame != null) nativeLayer.removeView(videoFrame);
         videoFrame = null;
@@ -1094,10 +1000,5 @@ public class NativeMediaBridge {
             videoCache.release();
         } catch (Exception ignored) {
         }
-        try {
-            if (libVLC != null) libVLC.release();
-        } catch (Exception ignored) {
-        }
-        libVLC = null;
     }
 }
