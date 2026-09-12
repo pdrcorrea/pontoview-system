@@ -31,7 +31,10 @@ import {
   PageHead,
   formData,
 } from "../components/ui";
-import { openGoogleDrivePicker } from "../lib/googlePicker";
+import {
+  openGoogleDrivePicker,
+  preloadGoogleDrivePicker,
+} from "../lib/googlePicker";
 import { invokeFunction, supabase } from "../lib/supabase";
 import { extractYouTubeId, formatDuration } from "../lib/youtube";
 import type { Media, MediaType } from "../types";
@@ -74,6 +77,11 @@ export function ContentPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!modal || source !== "drive") return;
+    void preloadGoogleDrivePicker().catch(() => undefined);
+  }, [modal, source]);
 
   const shown = useMemo(
     () =>
@@ -223,13 +231,20 @@ export function ContentPage() {
     }
   };
 
-  const connectDrive = async () => {
+  const startDriveOAuth = async () => {
+    if (!organization) return;
     setBusy(true);
     setError(null);
     try {
+      const returnUrl = new URL("/conteudo", window.location.origin);
+      returnUrl.searchParams.set("drivePicker", "1");
+
       const result = await invokeFunction<{ url: string }>(
         "drive-oauth-start",
-        { returnTo: `${window.location.origin}/conteudo` },
+        {
+          organizationId: organization.id,
+          returnTo: returnUrl.toString(),
+        },
       );
       window.location.assign(result.url);
     } catch (cause) {
@@ -241,6 +256,43 @@ export function ContentPage() {
       setBusy(false);
     }
   };
+
+  const connectDrive = async () => {
+    await startDriveOAuth();
+  };
+
+  useEffect(() => {
+    if (!organization || !user) return;
+
+    const currentUrl = new URL(window.location.href);
+    const driveStatus = currentUrl.searchParams.get("drive");
+    const reopenDrive = currentUrl.searchParams.get("drivePicker") === "1";
+
+    if (!driveStatus && !reopenDrive) return;
+
+    if (reopenDrive) {
+      setSource("drive");
+      setModal(true);
+    }
+
+    if (driveStatus === "denied") {
+      setError("A conexão com o Google Drive foi cancelada.");
+    } else if (driveStatus && driveStatus !== "connected") {
+      setError(
+        "Não foi possível concluir a conexão com o Google Drive. Tente novamente.",
+      );
+    }
+
+    currentUrl.searchParams.delete("drive");
+    currentUrl.searchParams.delete("drivePicker");
+    const nextUrl =
+      currentUrl.pathname +
+      (currentUrl.searchParams.toString()
+        ? `?${currentUrl.searchParams.toString()}`
+        : "") +
+      currentUrl.hash;
+    window.history.replaceState({}, "", nextUrl);
+  }, [organization, user]);
 
   const selectDriveFiles = async () => {
     if (!organization || !user) return;
@@ -315,11 +367,26 @@ export function ContentPage() {
       setModal(false);
       await load();
     } catch (cause) {
-      setError(
+      const message =
         cause instanceof Error
           ? cause.message
-          : "Não foi possível abrir o Google Drive.",
-      );
+          : "Não foi possível abrir o Google Drive.";
+
+      if (
+        message.includes("DRIVE_NOT_CONNECTED") ||
+        message.includes("DRIVE_RECONNECT_REQUIRED")
+      ) {
+        await startDriveOAuth();
+        return;
+      }
+
+      if (message.includes("GOOGLE_PICKER")) {
+        setError(
+          "Não foi possível abrir o seletor do Google Drive. Reconecte a conta e tente novamente.",
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setBusy(false);
     }
