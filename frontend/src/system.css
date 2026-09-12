@@ -942,17 +942,34 @@
   width: clamp(30px, 3vw, 58px);
   height: auto;
 }
-.live-weather span,
-.live-weather b,
-.live-weather small {
+.weather-current > span,
+.weather-current > span > b,
+.weather-current > span > small {
   display: block;
 }
-.live-weather b {
+.weather-current > span {
+  min-width: 0;
+}
+.weather-current > span > b {
   font-size: clamp(28px, 3.5vw, 64px);
+  line-height: .95;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
 }
 .live-weather small {
   font-size: clamp(9px, 0.9vw, 17px);
   color: #61768a;
+}
+.weather-day > span > b {
+  font-size: clamp(24px, 2.15vw, 40px);
+  line-height: .95;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+.weather-day > span > .min {
+  font-size: clamp(11px, .92vw, 17px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .live-business {
   margin-top: auto;
