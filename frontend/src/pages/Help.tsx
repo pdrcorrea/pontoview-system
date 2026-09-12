@@ -25,6 +25,7 @@ import {
   Youtube,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { Modal, PageHead } from "../components/ui";
 import { supabase } from "../lib/supabase";
@@ -35,6 +36,8 @@ type HelpGuide = {
   intro: string;
   steps: string[];
   icon: LucideIcon;
+  action?: { label: string; to: string };
+  featured?: boolean;
 };
 
 const guides: HelpGuide[] = [
@@ -43,12 +46,16 @@ const guides: HelpGuide[] = [
     summary: "O caminho mais curto entre a conta criada e a primeira TV no ar.",
     intro: "Para colocar a primeira tela em funcionamento, siga esta ordem:",
     steps: [
-      "Em Conteúdo, adicione arquivos do Drive, vídeos do YouTube ou Painéis PontoView.",
-      "Em Playlists, crie uma sequência e adicione os conteúdos na ordem desejada.",
-      "Em Telas, conecte o Player usando o código mostrado na TV e escolha a playlist padrão.",
+      "Se pretende usar arquivos próprios, conecte primeiro o Google Drive em Empresa.",
+      "Em Conteúdo, adicione imagens, vídeos do Drive, YouTube ou Painéis PontoView.",
+      "Em Playlists, crie uma sequência e coloque os conteúdos na ordem desejada.",
+      "Abra tv.pontoview.com.br na TV ou use o aplicativo PontoView Telas para obter o código de conexão.",
+      "Em Telas, clique em Conectar tela, informe o código e escolha a playlist padrão.",
       "Se quiser automatizar horários, abra Telas → Configurar esta tela → Programação.",
     ],
     icon: BookOpen,
+    action: { label: "Ir para Conteúdo", to: "/conteudo" },
+    featured: true,
   },
   {
     title: "Adicionar conteúdo",
@@ -63,16 +70,22 @@ const guides: HelpGuide[] = [
     icon: Image,
   },
   {
-    title: "Google Drive",
-    summary: "Use os próprios arquivos da empresa sem criar uma segunda biblioteca de mídia.",
-    intro: "A PontoView lê os arquivos autorizados no Drive e os prepara para o Player.",
+    title: "Conectar e usar o Google Drive",
+    summary: "Passo a passo completo, desde a autorização da conta até adicionar o primeiro arquivo.",
+    intro: "A conexão é feita uma única vez por conta Google. Depois disso, você escolhe os arquivos diretamente na biblioteca da PontoView.",
     steps: [
-      "Em Empresa, conecte a conta Google que possui os arquivos.",
-      "Em Conteúdo, escolha Google Drive e selecione a imagem ou vídeo.",
-      "Evite apagar ou mover o arquivo no Drive enquanto ele estiver em uso.",
-      "Se a conexão expirar, volte a Empresa e reconecte o Google Drive.",
+      "Abra Empresa e localize a seção Google Drive.",
+      "Clique em Conectar Google Drive. Uma janela do Google será aberta para você escolher a conta.",
+      "Confirme a autorização solicitada pelo Google. A PontoView usa apenas o acesso necessário para trabalhar com os arquivos escolhidos pelo usuário.",
+      "Ao voltar para a PontoView, confira se a conta aparece como Ativo na seção Google Drive.",
+      "Abra Conteúdo e escolha Google Drive para abrir o seletor de arquivos.",
+      "Navegue pelas pastas, escolha uma imagem ou vídeo e confirme a seleção.",
+      "O item aparecerá na biblioteca. Depois, adicione-o a uma playlist normalmente.",
+      "Se a conta aparecer como Atenção necessária, volte em Empresa e conecte novamente a mesma conta.",
     ],
     icon: Cloud,
+    action: { label: "Conectar Google Drive", to: "/empresa#google-drive" },
+    featured: true,
   },
   {
     title: "Vídeos do YouTube",
@@ -253,6 +266,12 @@ export function HelpPage() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por tela, playlist, clima, YouTube…" />
         </label>
       </div>
+      <div className="help-quick-actions">
+        <Link to="/empresa#google-drive"><Cloud /><span><b>Conectar Drive</b><small>Autorizar arquivos da empresa</small></span><ChevronRight /></Link>
+        <Link to="/conteudo"><Image /><span><b>Adicionar conteúdo</b><small>Drive, YouTube e páginas</small></span><ChevronRight /></Link>
+        <Link to="/telas?parear=1"><Monitor /><span><b>Conectar uma TV</b><small>Usar o código do Player</small></span><ChevronRight /></Link>
+      </div>
+
       <section className="how">
         <div className="section-head">
           <small>FLUXO PRINCIPAL</small>
@@ -273,7 +292,7 @@ export function HelpPage() {
         {filtered.map((guide) => {
           const Icon = guide.icon;
           return (
-            <details className="help-card help-topic" key={guide.title}>
+            <details className={guide.featured ? "help-card help-topic featured" : "help-card help-topic"} key={guide.title}>
               <summary>
                 <span><Icon /></span>
                 <div><h2>{guide.title}</h2><p>{guide.summary}</p></div>
@@ -282,6 +301,7 @@ export function HelpPage() {
               <div className="help-topic-body">
                 <p>{guide.intro}</p>
                 <ol>{guide.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+                {guide.action && <Link className="btn secondary help-guide-action" to={guide.action.to}>{guide.action.label}<ChevronRight /></Link>}
               </div>
             </details>
           );
