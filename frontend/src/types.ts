@@ -109,6 +109,7 @@ export interface ScreenSettings {
   news_categories: string[];
   transition: "fade" | "cut";
   image_duration_seconds: number;
+  auto_start: boolean;
   operating_hours: OperatingHours;
 }
 

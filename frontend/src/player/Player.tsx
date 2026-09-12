@@ -109,6 +109,14 @@ export function PlayerPage() {
 
   useEffect(() => { const timer = window.setInterval(() => setRuntimeNow(new Date()), 15000); return () => window.clearInterval(timer); }, []);
   useEffect(() => {
+    if (!manifest) return;
+    const native = nativeBridgeContext();
+    if (!native) return;
+    try {
+      native.bridge.setAutoStart(native.session, manifest.settings?.auto_start !== false);
+    } catch {}
+  }, [manifest?.settings?.auto_start, manifest?.screen?.id]);
+  useEffect(() => {
     const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener("resize", resize); window.addEventListener("orientationchange", resize);
     return () => { window.removeEventListener("resize", resize); window.removeEventListener("orientationchange", resize); };
@@ -193,7 +201,7 @@ export function PlayerPage() {
 
   useEffect(() => {
     if (!activeDevice || !manifest) return;
-    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating } });
+    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null } });
     heartbeat(); const timer = window.setInterval(heartbeat, 30000); return () => window.clearInterval(timer);
   }, [activeDevice, manifest?.playlist?.id, manifest?.screen.orientation, operating, item?.media.id]);
 

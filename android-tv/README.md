@@ -1,35 +1,10 @@
-# PontoView Telas para Android TV
+# PontoView Telas Android TV 2.0.0 beta 5
 
-Player híbrido do PontoView para Android TV/TV sticks.
+Esta versão consolida o player Android como camada nativa de reprodução para mídias do Google Drive e sincroniza a preferência de inicialização automática por tela.
 
-## Arquitetura
-
-- WebView continua responsável por ativação da tela, programação, painéis, mensagens, sites e YouTube.
-- Vídeos do Google Drive são reproduzidos nativamente com AndroidX Media3/ExoPlayer.
-- O cache de vídeo é local no dispositivo, com LRU de aproximadamente 1,75 GB.
-- Imagens do Drive são baixadas temporariamente, redimensionadas para a capacidade da tela, comprimidas localmente e mantidas em um cache LRU de aproximadamente 256 MB.
-- Não há Cloudflare R2 e nenhuma mídia otimizada é gravada no Supabase Storage.
-- O Supabase continua fornecendo metadados e o endpoint assinado temporário que encaminha o arquivo original do Google Drive.
-- Se a mídia já estiver totalmente em cache, o APK consegue reutilizá-la sem solicitar um novo stream.
-- TVs/navegadores sem o APK continuam usando o player Web existente.
-
-## Build
-
-Requer JDK 17, Gradle 9.6 e Android SDK 36.
-
-```bash
-cd android-tv
-gradle :app:assembleDebug
-```
-
-APK de teste: `app/build/outputs/apk/debug/app-debug.apk`.
-
-## Inicialização automática
-
-O receiver de boot inicia o PontoView automaticamente por padrão. O bridge nativo também expõe a preferência `setAutoStart` para a configuração poder ser controlada pelo PontoView Telas.
-
-
-## 2.0.0 beta 2
-
-- Usa o arquivo oficial `frontend/public/assets/icon.png` como ícone do aplicativo.
-- Atualiza também a identidade visual do banner do Android TV.
+- Drive vídeo: Media3/ExoPlayer nativo.
+- Drive imagem: cache e otimização local.
+- WebView: painéis, páginas, mensagens e YouTube.
+- Preferência "Iniciar PontoView ao ligar o dispositivo" salva em screen_settings.auto_start.
+- A APK persiste a última preferência localmente para poder aplicá-la no boot antes da sincronização com a nuvem.
+- Cache de mídia continua local. Nenhuma mídia é enviada ao Supabase Storage ou Cloudflare R2.

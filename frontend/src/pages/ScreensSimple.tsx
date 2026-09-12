@@ -64,6 +64,7 @@ const defaultSettings: ScreenSettings = {
   news_categories: ["general"],
   transition: "fade",
   image_duration_seconds: 15,
+  auto_start: true,
   operating_hours: defaultOperatingHours,
 };
 
@@ -675,6 +676,8 @@ function ScreenEditor({
             <AdvancedSettings
               rotation={rotation}
               setRotation={setRotation}
+              autoStart={settings.auto_start !== false}
+              setAutoStart={(value) => setSettings((current) => ({ ...current, auto_start: value }))}
               reloadBusy={reloadBusy}
               requestReload={requestReload}
               onDeactivate={onDeactivate}
@@ -1258,6 +1261,8 @@ function ProgrammingSettings({
 function AdvancedSettings({
   rotation,
   setRotation,
+  autoStart,
+  setAutoStart,
   reloadBusy,
   requestReload,
   onDeactivate,
@@ -1269,6 +1274,8 @@ function AdvancedSettings({
 }: {
   rotation: ScreenRotation;
   setRotation: (value: ScreenRotation) => void;
+  autoStart: boolean;
+  setAutoStart: (value: boolean) => void;
   reloadBusy: boolean;
   requestReload: () => Promise<void>;
   onDeactivate: () => void;
@@ -1335,6 +1342,17 @@ function AdvancedSettings({
           <button className="btn secondary" onClick={onCopy}><Copy /> Copiar para outra tela</button>
         </div>
       )}
+
+      <div className="simple-setting-card">
+        <div className="simple-setting-heading no-number">
+          <div><h2>Inicialização automática</h2><p>Ideal para TVs dedicadas ao PontoView.</p></div>
+        </div>
+        <button className={autoStart ? "friendly-widget enabled" : "friendly-widget"} onClick={() => setAutoStart(!autoStart)}>
+          <span className="friendly-widget-icon"><Power /></span>
+          <span><b>Iniciar PontoView ao ligar o dispositivo</b><small>{autoStart ? "Ativado. O app tentará abrir sozinho após reiniciar o Android." : "Desativado. O app só abre manualmente."}</small></span>
+          <i className={autoStart ? "simple-switch on" : "simple-switch"}><b /></i>
+        </button>
+      </div>
 
       <div className="simple-setting-card">
         <div className="simple-setting-heading no-number">
@@ -1438,6 +1456,7 @@ function screenSettingsPayload(settings: ScreenSettings) {
     news_categories: settings.news_categories,
     transition: settings.transition,
     image_duration_seconds: settings.image_duration_seconds,
+    auto_start: settings.auto_start !== false,
     operating_hours: settings.operating_hours,
   };
 }
