@@ -356,7 +356,22 @@ function useNativeBridgeContext() {
   useEffect(() => {
     const handleReady = () => setGeneration((value) => value + 1);
     window.addEventListener("pontoview-native-ready", handleReady);
-    return () => window.removeEventListener("pontoview-native-ready", handleReady);
+
+    // Some Android WebViews finish the native injection before React mounts.
+    // Poll for a few seconds so a missed event never leaves Drive video on <video>.
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      if (nativeBridgeContext() || attempts >= 40) {
+        setGeneration((value) => value + 1);
+        window.clearInterval(timer);
+      }
+    }, 250);
+
+    return () => {
+      window.removeEventListener("pontoview-native-ready", handleReady);
+      window.clearInterval(timer);
+    };
   }, []);
   return nativeBridgeContext();
 }
@@ -487,36 +502,85 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
 
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const native = useNativeBridgeContext();
-  if (native) return <NativeDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} native={native} />;
+  const [forceWeb, setForceWeb] = useState(false);
+
+  useEffect(() => {
+    setForceWeb(false);
+  }, [media.id, media.driveChecksum]);
+
+  if (native && !forceWeb) {
+    return <NativeDriveStage
+      media={media}
+      duration={duration}
+      device={device}
+      onEnd={onEnd}
+      onNativeFailure={() => setForceWeb(true)}
+      native={native}
+    />;
+  }
+
   return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
 }
 
-function NativeDriveStage({ media, duration, device, onEnd, onError, native }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; native: NativeBridgeContext; }) {
+function NativeDriveStage({ media, duration, device, onEnd, onNativeFailure, native }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onNativeFailure: () => void; native: NativeBridgeContext; }) {
   const host = useRef<HTMLDivElement>(null);
   const playbackId = useRef(\`pv-\${media.id}-\${Date.now()}-\${Math.random().toString(36).slice(2)}\`).current;
   const onEndRef = useRef(onEnd);
-  const onErrorRef = useRef(onError);
+  const onNativeFailureRef = useRef(onNativeFailure);
+  const readyRef = useRef(false);
   useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
-  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  useEffect(() => { onNativeFailureRef.current = onNativeFailure; }, [onNativeFailure]);
 
   useEffect(() => {
     const previousEnded = window.__pvNativeOnEnded;
     const previousError = window.__pvNativeOnError;
+    const previousDiagnostics = window.__pvNativeOnDiagnostics;
+
     const ended = (id: string) => {
       if (id === playbackId) onEndRef.current();
       else previousEnded?.(id);
     };
+
     const failed = (id: string, detail?: string) => {
-      if (id === playbackId) onErrorRef.current(detail || "native_media_error");
-      else previousError?.(id, detail);
+      if (id === playbackId) {
+        console.warn("[PontoView] Native Drive playback failed, using WebView fallback:", detail || "native_media_error");
+        onNativeFailureRef.current();
+      } else {
+        previousError?.(id, detail);
+      }
     };
+
+    const diagnostics = (id: string, payload: string) => {
+      if (id === playbackId) {
+        try {
+          const data = JSON.parse(payload || "{}");
+          if (["ready", "video_size", "image_ready"].includes(String(data.state || ""))) readyRef.current = true;
+        } catch {
+          readyRef.current = true;
+        }
+      } else {
+        previousDiagnostics?.(id, payload);
+      }
+    };
+
     window.__pvNativeOnEnded = ended;
     window.__pvNativeOnError = failed;
+    window.__pvNativeOnDiagnostics = diagnostics;
+
+    const startupWatchdog = window.setTimeout(() => {
+      if (!readyRef.current) {
+        console.warn("[PontoView] Native Drive player did not become ready in time; falling back to WebView.");
+        onNativeFailureRef.current();
+      }
+    }, media.type === "drive_video" ? 12_000 : 20_000);
+
     return () => {
+      window.clearTimeout(startupWatchdog);
       if (window.__pvNativeOnEnded === ended) window.__pvNativeOnEnded = previousEnded;
       if (window.__pvNativeOnError === failed) window.__pvNativeOnError = previousError;
+      if (window.__pvNativeOnDiagnostics === diagnostics) window.__pvNativeOnDiagnostics = previousDiagnostics;
     };
-  }, [playbackId]);
+  }, [playbackId, media.type]);
 
   useEffect(() => {
     let active = true;
@@ -548,12 +612,12 @@ function NativeDriveStage({ media, duration, device, onEnd, onError, native }: {
         apply("");
       } else {
         void requestDriveStream(media, device).then(({ streamUrl }) => apply(streamUrl)).catch(() => {
-          if (active) onErrorRef.current(navigator.onLine ? "native_stream_prepare_error" : "offline_content_not_cached");
+          if (active) onNativeFailureRef.current();
         });
       }
     } catch {
       void requestDriveStream(media, device).then(({ streamUrl }) => apply(streamUrl)).catch(() => {
-        if (active) onErrorRef.current("native_stream_prepare_error");
+        if (active) onNativeFailureRef.current();
       });
     }
 

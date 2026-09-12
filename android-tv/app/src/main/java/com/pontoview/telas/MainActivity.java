@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta2");
+        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta3");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
         webView.addJavascriptInterface(nativeBridge, "PontoViewNative");
@@ -83,8 +83,24 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void onPageFinished(WebView view, String url) {
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                if (isTrustedTopLevelUrl(Uri.parse(url))) {
+                    view.postDelayed(() -> injectNativeRuntime(), 150);
+                }
+            }
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
                 if (isTrustedTopLevelUrl(Uri.parse(url))) injectNativeRuntime();
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (isTrustedTopLevelUrl(Uri.parse(url))) {
+                    injectNativeRuntime();
+                    view.postDelayed(() -> injectNativeRuntime(), 500);
+                    view.postDelayed(() -> injectNativeRuntime(), 1500);
+                }
             }
 
             @Override
@@ -108,9 +124,11 @@ public class MainActivity extends Activity {
     private void injectNativeRuntime() {
         if (webView == null || nativeBridge == null) return;
         String script =
+                "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
-                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta2';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta2'}}));";
+                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta3';" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta3'}}));" +
+                "})();";
         webView.evaluateJavascript(script, null);
     }
 

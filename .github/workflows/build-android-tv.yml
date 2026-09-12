@@ -20,6 +20,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
       - name: Java 17
         uses: actions/setup-java@v4
         with:
@@ -37,16 +50,16 @@ jobs:
 
       - name: Prepare artifact
         run: |
-          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v2.0.0-beta2.apk
-          sha256sum PontoView-Telas-v2.0.0-beta2.apk > PontoView-Telas-v2.0.0-beta2.sha256
+          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v2.0.0-beta3.apk
+          sha256sum PontoView-Telas-v2.0.0-beta3.apk > PontoView-Telas-v2.0.0-beta3.sha256
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PontoView-Telas-v2.0.0-beta2
+          name: PontoView-Telas-v2.0.0-beta3
           path: |
-            PontoView-Telas-v2.0.0-beta2.apk
-            PontoView-Telas-v2.0.0-beta2.sha256
+            PontoView-Telas-v2.0.0-beta3.apk
+            PontoView-Telas-v2.0.0-beta3.sha256
           retention-days: 30
 
       - name: Publish testing release
@@ -54,11 +67,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-v2.0.0-beta2"
-          APK="PontoView-Telas-v2.0.0-beta2.apk"
-          SUM="PontoView-Telas-v2.0.0-beta2.sha256"
+          TAG="android-v2.0.0-beta3"
+          APK="PontoView-Telas-v2.0.0-beta3.apk"
+          SUM="PontoView-Telas-v2.0.0-beta3.sha256"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" "$SUM" --clobber
           else
-            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 2.0.0 beta 2"               --notes "APK de testes com Media3/ExoPlayer, cache local, otimização local de imagens e identidade oficial PontoView. Sem Cloudflare R2."               --prerelease
+            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 2.0.0 beta 3"               --notes "APK de testes com Media3/ExoPlayer, cache local, otimização local de imagens e identidade oficial PontoView. Sem Cloudflare R2."               --prerelease
           fi
