@@ -11,7 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.TextureView;
+import android.view.SurfaceView;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -33,10 +33,13 @@ import androidx.media3.datasource.cache.ContentMetadata;
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
 import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.AspectRatioFrameLayout;
 
 import org.json.JSONArray;
+import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.IVLCVout;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -82,8 +85,13 @@ public class NativeMediaBridge {
 
     private ExoPlayer player;
     private AspectRatioFrameLayout videoFrame;
-    private TextureView textureView;
+    private SurfaceView surfaceView;
     private ImageView imageView;
+    private LibVLC libVLC;
+    private org.videolan.libvlc.MediaPlayer vlcPlayer;
+    private final Handler videoWatchdog = new Handler(Looper.getMainLooper());
+    private Runnable firstFrameTimeout;
+    private boolean firstFrameRendered;
     private String activeVideoId;
     private String activeImageId;
 
@@ -109,7 +117,7 @@ public class NativeMediaBridge {
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/2.0.0-beta7")
+                .setUserAgent("PontoViewTV/2.0.0-beta8")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -126,7 +134,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta7";
+        return "2.0.0-beta8";
     }
 
     @JavascriptInterface
@@ -183,7 +191,7 @@ public class NativeMediaBridge {
         c.setRequestProperty("apikey", PUBLISHABLE_KEY);
         c.setRequestProperty("x-screen-id", screenId);
         c.setRequestProperty("x-screen-token", token);
-        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta7");
+        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta8");
         byte[] body = new JSONObject().put("mediaId", mediaId).put("action", "ticket")
                 .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }
@@ -224,7 +232,7 @@ public class NativeMediaBridge {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(120000);
-                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta7");
+                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta8");
                 connection.connect();
 
                 int status = connection.getResponseCode();
@@ -345,66 +353,14 @@ public class NativeMediaBridge {
                 return;
             }
             localFile.setLastModified(System.currentTimeMillis());
-
-            main.post(() -> {
-                stopVideoInternal();
-                stopImageInternal();
-                activeVideoId = playbackId;
-
-                videoFrame = new AspectRatioFrameLayout(activity);
-                videoFrame.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-                videoFrame.setBackgroundColor(Color.BLACK);
-
-                textureView = new TextureView(activity);
-                videoFrame.addView(textureView, new FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                ));
-                nativeLayer.addView(videoFrame);
-                applyBounds(videoFrame, x, y, width, height, rotation, viewportWidth, viewportHeight);
-                nativeLayer.setVisibility(View.VISIBLE);
-
-                DefaultDataSource.Factory localDataSource = new DefaultDataSource.Factory(activity);
-                player = new ExoPlayer.Builder(activity)
-                        .setMediaSourceFactory(new DefaultMediaSourceFactory(localDataSource))
-                        .build();
-                player.setVideoTextureView(textureView);
-                player.setVolume(muted ? 0f : clampVolume(volume));
-                player.addListener(new Player.Listener() {
-                    @Override public void onPlaybackStateChanged(int state) {
-                        if (!playbackId.equals(activeVideoId)) return;
-                        if (state == Player.STATE_READY) sendDiagnostics(playbackId, "ready_local_file", 0, 0);
-                        else if (state == Player.STATE_ENDED) sendEnded(playbackId);
-                    }
-
-                    @Override public void onPlayerError(PlaybackException error) {
-                        if (playbackId.equals(activeVideoId)) {
-                            sendError(playbackId, "native_file_video_" + error.errorCode);
-                        }
-                    }
-
-                    @Override public void onVideoSizeChanged(VideoSize size) {
-                        if (!playbackId.equals(activeVideoId)) return;
-                        if (size.height > 0 && videoFrame != null) {
-                            videoFrame.setAspectRatio((size.width * size.pixelWidthHeightRatio) / size.height);
-                        }
-                        sendDiagnostics(playbackId, "video_size", size.width, size.height);
-                    }
-                });
-
-                MediaItem item = new MediaItem.Builder()
-                        .setUri(Uri.fromFile(localFile))
-                        .build();
-                player.setMediaItem(item);
-                player.prepare();
-                player.play();
-            });
+            startMedia3(localFile, playbackId, x, y, width, height, rotation, viewportWidth, viewportHeight, muted, volume);
         };
 
         if (hasCachedVideo(session, cacheKey)) {
             startLocal.run();
             return;
         }
+
         if (!validHttpsUrl(streamUrl)) {
             sendError(playbackId, "native_video_download_url_missing");
             return;
@@ -418,6 +374,177 @@ public class NativeMediaBridge {
             } catch (Exception e) {
                 Log.w(TAG, "Full video download failed", e);
                 sendError(playbackId, "native_video_full_download_failed");
+            }
+        });
+    }
+
+    private void startMedia3(
+            File localFile,
+            String playbackId,
+            double x, double y, double width, double height, double rotation,
+            double viewportWidth, double viewportHeight,
+            boolean muted, double volume
+    ) {
+        main.post(() -> {
+            stopVideoInternal();
+            stopImageInternal();
+
+            activeVideoId = playbackId;
+            firstFrameRendered = false;
+
+            videoFrame = new AspectRatioFrameLayout(activity);
+            videoFrame.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            videoFrame.setBackgroundColor(Color.BLACK);
+
+            surfaceView = new SurfaceView(activity);
+            surfaceView.setBackgroundColor(Color.BLACK);
+            videoFrame.addView(surfaceView, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+            ));
+            nativeLayer.addView(videoFrame);
+            applyBounds(videoFrame, x, y, width, height, rotation, viewportWidth, viewportHeight);
+            nativeLayer.setVisibility(View.VISIBLE);
+
+            DefaultDataSource.Factory localDataSource = new DefaultDataSource.Factory(activity);
+            DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(activity)
+                    .setEnableDecoderFallback(true);
+
+            player = new ExoPlayer.Builder(activity, renderersFactory)
+                    .setMediaSourceFactory(new DefaultMediaSourceFactory(localDataSource))
+                    .build();
+            player.setVideoSurfaceView(surfaceView);
+            player.setVolume(muted ? 0f : clampVolume(volume));
+            player.addListener(new Player.Listener() {
+                @Override
+                public void onPlaybackStateChanged(int state) {
+                    if (!playbackId.equals(activeVideoId)) return;
+                    if (state == Player.STATE_READY) {
+                        sendDiagnostics(playbackId, "media3_ready", 0, 0);
+                    } else if (state == Player.STATE_ENDED) {
+                        sendEnded(playbackId);
+                    }
+                }
+
+                @Override
+                public void onRenderedFirstFrame() {
+                    if (!playbackId.equals(activeVideoId)) return;
+                    firstFrameRendered = true;
+                    if (firstFrameTimeout != null) videoWatchdog.removeCallbacks(firstFrameTimeout);
+                    sendDiagnostics(playbackId, "media3_first_frame", 0, 0);
+                }
+
+                @Override
+                public void onPlayerError(PlaybackException error) {
+                    if (!playbackId.equals(activeVideoId)) return;
+                    sendDiagnostics(playbackId, "media3_error_" + error.errorCode, 0, 0);
+                    startVlcFallback(localFile, playbackId, x, y, width, height, rotation,
+                            viewportWidth, viewportHeight, muted, volume, "media3_error_" + error.errorCode);
+                }
+
+                @Override
+                public void onVideoSizeChanged(VideoSize size) {
+                    if (!playbackId.equals(activeVideoId)) return;
+                    if (size.height > 0 && videoFrame != null) {
+                        videoFrame.setAspectRatio((size.width * size.pixelWidthHeightRatio) / size.height);
+                    }
+                    sendDiagnostics(playbackId, "media3_video_size", size.width, size.height);
+                }
+            });
+
+            MediaItem item = new MediaItem.Builder().setUri(Uri.fromFile(localFile)).build();
+            player.setMediaItem(item);
+            player.prepare();
+            player.play();
+
+            firstFrameTimeout = () -> {
+                if (!playbackId.equals(activeVideoId) || firstFrameRendered) return;
+                sendDiagnostics(playbackId, "media3_no_first_frame", 0, 0);
+                startVlcFallback(localFile, playbackId, x, y, width, height, rotation,
+                        viewportWidth, viewportHeight, muted, volume, "media3_no_first_frame");
+            };
+            videoWatchdog.postDelayed(firstFrameTimeout, 8000);
+        });
+    }
+
+    private void startVlcFallback(
+            File localFile,
+            String playbackId,
+            double x, double y, double width, double height, double rotation,
+            double viewportWidth, double viewportHeight,
+            boolean muted, double volume,
+            String reason
+    ) {
+        main.post(() -> {
+            if (!playbackId.equals(activeVideoId)) return;
+
+            if (firstFrameTimeout != null) videoWatchdog.removeCallbacks(firstFrameTimeout);
+
+            if (player != null) {
+                try {
+                    if (surfaceView != null) player.clearVideoSurfaceView(surfaceView);
+                    player.stop();
+                    player.release();
+                } catch (Exception ignored) {}
+                player = null;
+            }
+            if (videoFrame != null) nativeLayer.removeView(videoFrame);
+
+            videoFrame = new AspectRatioFrameLayout(activity);
+            videoFrame.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            videoFrame.setBackgroundColor(Color.BLACK);
+            surfaceView = new SurfaceView(activity);
+            surfaceView.setBackgroundColor(Color.BLACK);
+            videoFrame.addView(surfaceView, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+            ));
+            nativeLayer.addView(videoFrame);
+            applyBounds(videoFrame, x, y, width, height, rotation, viewportWidth, viewportHeight);
+            nativeLayer.setVisibility(View.VISIBLE);
+
+            try {
+                if (libVLC == null) {
+                    java.util.ArrayList<String> options = new java.util.ArrayList<>();
+                    options.add("--no-drop-late-frames");
+                    options.add("--no-skip-frames");
+                    options.add("--avcodec-hw=any");
+                    libVLC = new LibVLC(activity, options);
+                }
+
+                if (vlcPlayer != null) {
+                    try { vlcPlayer.stop(); } catch (Exception ignored) {}
+                    try { vlcPlayer.release(); } catch (Exception ignored) {}
+                }
+
+                vlcPlayer = new org.videolan.libvlc.MediaPlayer(libVLC);
+                IVLCVout vout = vlcPlayer.getVLCVout();
+                vout.setVideoView(surfaceView);
+                vout.attachViews();
+
+                vlcPlayer.setEventListener(event -> {
+                    if (!playbackId.equals(activeVideoId)) return;
+                    if (event.type == org.videolan.libvlc.MediaPlayer.Event.Playing) {
+                        sendDiagnostics(playbackId, "vlc_playing_" + reason, 0, 0);
+                    } else if (event.type == org.videolan.libvlc.MediaPlayer.Event.EndReached) {
+                        sendEnded(playbackId);
+                    } else if (event.type == org.videolan.libvlc.MediaPlayer.Event.EncounteredError) {
+                        sendError(playbackId, "vlc_decode_failed");
+                    } else if (event.type == org.videolan.libvlc.MediaPlayer.Event.Vout) {
+                        sendDiagnostics(playbackId, "vlc_video_output", 0, 0);
+                    }
+                });
+
+                org.videolan.libvlc.Media media = new org.videolan.libvlc.Media(libVLC, Uri.fromFile(localFile));
+                media.setHWDecoderEnabled(true, false);
+                vlcPlayer.setMedia(media);
+                media.release();
+                vlcPlayer.setVolume(muted ? 0 : Math.max(0, Math.min(100, (int) Math.round(volume * 100d))));
+                vlcPlayer.play();
+                sendDiagnostics(playbackId, "vlc_start_" + reason, 0, 0);
+            } catch (Exception error) {
+                Log.e(TAG, "VLC fallback failed", error);
+                sendError(playbackId, "vlc_start_failed");
             }
         });
     }
@@ -579,7 +706,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta7");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta8");
         connection.connect();
 
         int status = connection.getResponseCode();
@@ -665,16 +792,28 @@ public class NativeMediaBridge {
 
     private void stopVideoInternal() {
         activeVideoId = null;
+        if (firstFrameTimeout != null) {
+            videoWatchdog.removeCallbacks(firstFrameTimeout);
+            firstFrameTimeout = null;
+        }
+
         if (player != null) {
             try {
-                if (textureView != null) player.clearVideoTextureView(textureView);
+                if (surfaceView != null) player.clearVideoSurfaceView(surfaceView);
                 player.stop();
                 player.release();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
         }
         player = null;
-        textureView = null;
+
+        if (vlcPlayer != null) {
+            try { vlcPlayer.stop(); } catch (Exception ignored) {}
+            try { vlcPlayer.getVLCVout().detachViews(); } catch (Exception ignored) {}
+            try { vlcPlayer.release(); } catch (Exception ignored) {}
+            vlcPlayer = null;
+        }
+
+        surfaceView = null;
         if (videoFrame != null) nativeLayer.removeView(videoFrame);
         videoFrame = null;
         updateNativeLayerVisibility();
@@ -819,5 +958,10 @@ public class NativeMediaBridge {
             videoCache.release();
         } catch (Exception ignored) {
         }
+        try {
+            if (libVLC != null) libVLC.release();
+        } catch (Exception ignored) {
+        }
+        libVLC = null;
     }
 }

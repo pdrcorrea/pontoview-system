@@ -52,16 +52,16 @@ jobs:
 
       - name: Prepare artifact
         run: |
-          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v2.0.0-beta7.apk
-          sha256sum PontoView-Telas-v2.0.0-beta7.apk > PontoView-Telas-v2.0.0-beta7.sha256
+          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v2.0.0-beta8.apk
+          sha256sum PontoView-Telas-v2.0.0-beta8.apk > PontoView-Telas-v2.0.0-beta8.sha256
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PontoView-Telas-v2.0.0-beta7
+          name: PontoView-Telas-v2.0.0-beta8
           path: |
-            PontoView-Telas-v2.0.0-beta7.apk
-            PontoView-Telas-v2.0.0-beta7.sha256
+            PontoView-Telas-v2.0.0-beta8.apk
+            PontoView-Telas-v2.0.0-beta8.sha256
           retention-days: 30
 
       - name: Publish testing release
@@ -69,11 +69,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-v2.0.0-beta7"
-          APK="PontoView-Telas-v2.0.0-beta7.apk"
-          SUM="PontoView-Telas-v2.0.0-beta7.sha256"
+          TAG="android-v2.0.0-beta8"
+          APK="PontoView-Telas-v2.0.0-beta8.apk"
+          SUM="PontoView-Telas-v2.0.0-beta8.sha256"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" "$SUM" --clobber
           else
-            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 2.0.0 beta 7"               --notes "APK de testes com Media3/ExoPlayer, cache local, otimização local de imagens e identidade oficial PontoView. Sem Cloudflare R2."               --prerelease
+            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 2.0.0 beta 8"               --notes "APK de testes com Media3/ExoPlayer, cache local, otimização local de imagens e identidade oficial PontoView. Sem Cloudflare R2."               --prerelease
           fi

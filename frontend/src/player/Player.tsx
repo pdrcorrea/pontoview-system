@@ -205,7 +205,7 @@ export function PlayerPage() {
 
   useEffect(() => {
     if (!activeDevice || !manifest) return;
-    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null } });
+    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null, nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null } });
     heartbeat(); const timer = window.setInterval(heartbeat, 30000); return () => window.clearInterval(timer);
   }, [activeDevice, manifest?.playlist?.id, manifest?.screen.orientation, operating, item?.media.id]);
 
@@ -559,7 +559,11 @@ function NativeDriveStage({ media, duration, device, onEnd, onNativeFailure, nat
       if (id === playbackId) {
         try {
           const data = JSON.parse(payload || "{}");
-          if (["ready", "video_size", "image_ready"].includes(String(data.state || ""))) readyRef.current = true;
+          window.__PV_NATIVE_DIAGNOSTICS = { ...data, playbackId: id, at: new Date().toISOString() };
+          const state = String(data.state || "");
+          if (["ready_local_file", "media3_ready", "media3_first_frame", "media3_video_size", "image_ready", "vlc_playing", "vlc_video_output"].some((prefix) => state.startsWith(prefix))) {
+            readyRef.current = true;
+          }
         } catch {
           readyRef.current = true;
         }
@@ -845,6 +849,7 @@ declare global {
     __pvNativeOnEnded?: (playbackId: string) => void;
     __pvNativeOnError?: (playbackId: string, detail?: string) => void;
     __pvNativeOnDiagnostics?: (playbackId: string, payload: string) => void;
+    __PV_NATIVE_DIAGNOSTICS?: Record<string, unknown>;
     PontoViewNative?: {
       getVersion: () => string;
       hasCachedVideo: (session: string, cacheKey: string) => boolean;
