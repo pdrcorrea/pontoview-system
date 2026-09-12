@@ -27,3 +27,9 @@ APK de teste: `app/build/outputs/apk/debug/app-debug.apk`.
 ## Inicialização automática
 
 O receiver de boot inicia o PontoView automaticamente por padrão. O bridge nativo também expõe a preferência `setAutoStart` para a configuração poder ser controlada pelo PontoView Telas.
+
+
+## 2.0.0 beta 2
+
+- Usa o arquivo oficial `frontend/public/assets/icon.png` como ícone do aplicativo.
+- Atualiza também a identidade visual do banner do Android TV.

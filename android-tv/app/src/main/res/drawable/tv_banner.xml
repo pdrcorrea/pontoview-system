@@ -6,10 +6,12 @@
             <gradient android:angle="0" android:startColor="#17344F" android:endColor="#244F7E" />
         </shape>
     </item>
-    <item android:left="92dp" android:right="92dp" android:top="42dp" android:bottom="42dp">
-        <shape android:shape="rectangle">
-            <corners android:radius="12dp" />
-            <solid android:color="#FFFFFF" />
-        </shape>
+    <item
+        android:width="104dp"
+        android:height="104dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@drawable/pontoview_icon"
+            android:gravity="fill" />
     </item>
 </layer-list>
