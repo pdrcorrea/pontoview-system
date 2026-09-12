@@ -383,7 +383,7 @@ function nativeBounds(element: HTMLElement) {
   while (node) {
     const transform = window.getComputedStyle(node).transform;
     if (transform && transform !== "none") {
-      const match = /^matrix\\(([^,]+),\\s*([^,]+),/.exec(transform);
+      const match = /^matrix\(([^,]+),\s*([^,]+),/.exec(transform);
       if (match) rotation += Math.atan2(Number(match[2]), Number(match[1])) * 180 / Math.PI;
     }
     node = node.parentElement;
