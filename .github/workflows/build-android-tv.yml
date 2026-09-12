@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "android-tv/**"
+      - "frontend/src/player/Player.tsx"
+      - "frontend/src/lib/playerVersion.ts"
       - ".github/workflows/build-android-tv.yml"
   workflow_dispatch:
 
