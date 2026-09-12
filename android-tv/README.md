@@ -1,13 +1,20 @@
-# PontoView Telas Android TV 2.0.0 beta 6
+# PontoView Telas Android TV 2.0.0 beta 7
 
-Arquitetura local-first para mídia de digital signage.
+Player local-first para digital signage.
 
-- O manifesto da playlist é enviado à APK.
-- A APK prepara todos os vídeos e imagens do Google Drive em segundo plano.
-- Vídeos são totalmente baixados para a biblioteca persistente antes de tocar.
-- A reprodução do Drive é feita pelo Media3/ExoPlayer a partir do conteúdo local.
-- O Android não cai em um player web manual quando o player nativo falha; o erro é registrado e a playlist segue.
-- Biblioteca de vídeo com LRU aproximado de 1,75 GB.
-- Biblioteca de imagens com aproximadamente 256 MB e otimização local.
-- YouTube, páginas e painéis continuam no WebView.
-- A configuração de inicialização automática continua sincronizada por tela.
+## Drive
+- Vídeos são baixados como arquivos completos para a área persistente privada do aplicativo.
+- O download usa o stream assinado sem Range.
+- O arquivo é gravado primeiro como .part, sincronizado e só depois promovido à biblioteca.
+- Media3/ExoPlayer reproduz via file:// usando DefaultDataSource.
+- Não há streaming durante a reprodução do vídeo.
+- Arquivos são identificados por screen + media + checksum, portanto alterações no Drive geram uma nova cópia.
+- Biblioteca de vídeo gerenciada por LRU com limite aproximado de 1,75 GB.
+
+## Outros conteúdos
+- Imagens do Drive permanecem otimizadas e persistentes.
+- YouTube, sites e painéis continuam no WebView.
+- Falha de mídia nativa é registrada e a playlist segue, sem aguardar clique em Play.
+
+## Boot
+A preferência de inicialização automática é definida no painel por tela e persistida localmente no dispositivo.
