@@ -35,6 +35,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.AspectRatioFrameLayout;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -58,6 +59,8 @@ public class NativeMediaBridge {
     private static final long VIDEO_CACHE_BYTES = 1792L * 1024L * 1024L;
     private static final long IMAGE_CACHE_BYTES = 256L * 1024L * 1024L;
     private static final long MAX_IMAGE_DOWNLOAD_BYTES = 80L * 1024L * 1024L;
+    private static final String FUNCTIONS_URL = "https://fpdojntvnhiszagczfqr.supabase.co/functions/v1";
+    private static final String PUBLISHABLE_KEY = "sb_publishable_hd9GQaTeJ18o3pwMIZevJQ_EgVIOVOp";
 
     private final Activity activity;
     private final WebView webView;
@@ -86,20 +89,20 @@ public class NativeMediaBridge {
         this.webView = webView;
         this.nativeLayer = nativeLayer;
 
-        imageCacheDir = new File(activity.getCacheDir(), "pv-image-cache");
+        imageCacheDir = new File(activity.getFilesDir(), "pv-image-library");
         imageTempDir = new File(activity.getCacheDir(), "pv-image-temp");
         imageCacheDir.mkdirs();
         imageTempDir.mkdirs();
 
         StandaloneDatabaseProvider databaseProvider = new StandaloneDatabaseProvider(activity);
         videoCache = new SimpleCache(
-                new File(activity.getCacheDir(), "pv-video-cache"),
+                new File(activity.getFilesDir(), "pv-video-library"),
                 new LeastRecentlyUsedCacheEvictor(VIDEO_CACHE_BYTES),
                 databaseProvider
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/2.0.0-beta5")
+                .setUserAgent("PontoViewTV/2.0.0-beta6")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -116,7 +119,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta5";
+        return "2.0.0-beta6";
     }
 
     @JavascriptInterface
@@ -124,6 +127,80 @@ public class NativeMediaBridge {
         if (!validSession(session)) return;
         SharedPreferences prefs = activity.getSharedPreferences("pontoview_player", Context.MODE_PRIVATE);
         prefs.edit().putBoolean("auto_start", enabled).apply();
+    }
+
+
+    @JavascriptInterface
+    public void syncManifest(String session, String screenId, String token, String manifestJson) {
+        if (!validSession(session) || empty(screenId) || empty(token) || empty(manifestJson)) return;
+        preloadExecutor.execute(() -> {
+            try {
+                JSONObject manifest = new JSONObject(manifestJson);
+                JSONObject settings = manifest.optJSONObject("settings");
+                if (settings != null) {
+                    activity.getSharedPreferences("pontoview_player", Context.MODE_PRIVATE).edit()
+                            .putBoolean("auto_start", settings.optBoolean("auto_start", true)).apply();
+                }
+                JSONArray items = manifest.optJSONArray("items");
+                if (items == null) return;
+                for (int i = 0; i < items.length(); i++) {
+                    JSONObject row = items.optJSONObject(i);
+                    JSONObject media = row != null ? row.optJSONObject("media") : null;
+                    if (media == null) continue;
+                    String mediaId = media.optString("id", "");
+                    String type = media.optString("type", "");
+                    if (empty(mediaId) || (!"drive_video".equals(type) && !"drive_image".equals(type))) continue;
+                    String checksum = media.optString("driveChecksum", "latest");
+                    if (empty(checksum) || "null".equalsIgnoreCase(checksum)) checksum = "latest";
+                    String cacheKey = screenId + ":" + mediaId + ":" + checksum;
+                    if ("drive_video".equals(type) && hasCachedVideo(session, cacheKey)) continue;
+                    if ("drive_image".equals(type) && hasCachedImage(session, cacheKey)) continue;
+                    String streamUrl = requestDriveTicket(screenId, token, mediaId);
+                    if (empty(streamUrl)) continue;
+                    if ("drive_video".equals(type)) cacheVideoFully(streamUrl, cacheKey);
+                    else ensureOptimizedImage(streamUrl, cacheKey, Math.max(1280, Math.max(webView.getWidth(), webView.getHeight())));
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Manifest sync failed", e);
+            }
+        });
+    }
+
+    private String requestDriveTicket(String screenId, String token, String mediaId) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(FUNCTIONS_URL + "/drive-media").openConnection();
+        c.setRequestMethod("POST");
+        c.setDoOutput(true);
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(30000);
+        c.setRequestProperty("Content-Type", "application/json");
+        c.setRequestProperty("apikey", PUBLISHABLE_KEY);
+        c.setRequestProperty("x-screen-id", screenId);
+        c.setRequestProperty("x-screen-token", token);
+        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta6");
+        byte[] body = new JSONObject().put("mediaId", mediaId).put("action", "ticket")
+                .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }
+        int status = c.getResponseCode();
+        if (status < 200 || status >= 300) {
+            c.disconnect();
+            throw new IllegalStateException("ticket_http_" + status);
+        }
+        StringBuilder txt = new StringBuilder();
+        try (java.io.BufferedReader r = new java.io.BufferedReader(
+                new java.io.InputStreamReader(c.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) txt.append(line);
+        } finally {
+            c.disconnect();
+        }
+        return new JSONObject(txt.toString()).optString("streamUrl", "");
+    }
+
+    private void cacheVideoFully(String streamUrl, String cacheKey) throws Exception {
+        if (hasCachedVideo(sessionToken, cacheKey)) return;
+        DataSpec spec = new DataSpec.Builder().setUri(Uri.parse(streamUrl)).setKey(cacheKey).build();
+        CacheWriter writer = new CacheWriter(cacheDataSourceFactory.createDataSource(), spec, null, null);
+        writer.cache();
     }
 
     @JavascriptInterface
@@ -170,13 +247,7 @@ public class NativeMediaBridge {
         if (hasCachedVideo(session, cacheKey) || !preloadingVideos.add(cacheKey)) return;
         preloadExecutor.execute(() -> {
             try {
-                DataSpec spec = new DataSpec.Builder()
-                        .setUri(Uri.parse(streamUrl))
-                        .setKey(cacheKey)
-                        .build();
-                CacheDataSource source = cacheDataSourceFactory.createDataSource();
-                CacheWriter writer = new CacheWriter(source, spec, null, null);
-                writer.cache();
+                cacheVideoFully(streamUrl, cacheKey);
             } catch (Exception error) {
                 Log.w(TAG, "Video preload failed", error);
             } finally {
@@ -201,41 +272,23 @@ public class NativeMediaBridge {
         });
     }
 
+
     @JavascriptInterface
     public void playVideo(
-            String session,
-            String streamUrl,
-            String cacheKey,
-            String playbackId,
-            double x,
-            double y,
-            double width,
-            double height,
-            double rotation,
-            double viewportWidth,
-            double viewportHeight,
-            boolean muted,
-            double volume
+            String session, String streamUrl, String cacheKey, String playbackId,
+            double x, double y, double width, double height, double rotation,
+            double viewportWidth, double viewportHeight, boolean muted, double volume
     ) {
         if (!validSession(session) || empty(cacheKey) || empty(playbackId)) return;
-        boolean cached = hasCachedVideo(session, cacheKey);
-        if (!cached && !validHttpsUrl(streamUrl)) {
-            sendError(playbackId, "native_video_not_cached");
-            return;
-        }
-        final String uri = cached && empty(streamUrl)
-                ? "https://cache.pontoview.invalid/" + sha256(cacheKey)
-                : streamUrl;
 
-        main.post(() -> {
+        Runnable start = () -> main.post(() -> {
             stopVideoInternal();
             stopImageInternal();
-
             activeVideoId = playbackId;
+
             videoFrame = new AspectRatioFrameLayout(activity);
             videoFrame.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
             videoFrame.setBackgroundColor(Color.BLACK);
-
             textureView = new TextureView(activity);
             videoFrame.addView(textureView, new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
@@ -251,41 +304,52 @@ public class NativeMediaBridge {
             player.setVideoTextureView(textureView);
             player.setVolume(muted ? 0f : clampVolume(volume));
             player.addListener(new Player.Listener() {
-                @Override
-                public void onPlaybackStateChanged(int state) {
+                @Override public void onPlaybackStateChanged(int state) {
                     if (!playbackId.equals(activeVideoId)) return;
-                    if (state == Player.STATE_READY) {
-                        sendDiagnostics(playbackId, "ready", 0, 0);
-                    } else if (state == Player.STATE_ENDED) {
-                        sendEnded(playbackId);
-                    }
+                    if (state == Player.STATE_READY) sendDiagnostics(playbackId, "ready_local", 0, 0);
+                    else if (state == Player.STATE_ENDED) sendEnded(playbackId);
                 }
-
-                @Override
-                public void onPlayerError(PlaybackException error) {
-                    if (playbackId.equals(activeVideoId)) {
-                        sendError(playbackId, "native_video_" + error.errorCode);
-                    }
+                @Override public void onPlayerError(PlaybackException error) {
+                    if (playbackId.equals(activeVideoId)) sendError(playbackId, "native_local_video_" + error.errorCode);
                 }
-
-                @Override
-                public void onVideoSizeChanged(VideoSize videoSize) {
+                @Override public void onVideoSizeChanged(VideoSize size) {
                     if (!playbackId.equals(activeVideoId)) return;
-                    if (videoSize.height > 0 && videoFrame != null) {
-                        float ratio = (videoSize.width * videoSize.pixelWidthHeightRatio) / videoSize.height;
-                        videoFrame.setAspectRatio(ratio);
+                    if (size.height > 0 && videoFrame != null) {
+                        videoFrame.setAspectRatio((size.width * size.pixelWidthHeightRatio) / size.height);
                     }
-                    sendDiagnostics(playbackId, "video_size", videoSize.width, videoSize.height);
+                    sendDiagnostics(playbackId, "video_size", size.width, size.height);
                 }
             });
 
-            MediaItem mediaItem = new MediaItem.Builder()
-                    .setUri(uri)
+            MediaItem item = new MediaItem.Builder()
+                    .setUri("https://cache.pontoview.invalid/" + sha256(cacheKey) + ".mp4")
+                    .setMimeType("video/mp4")
                     .setCustomCacheKey(cacheKey)
                     .build();
-            player.setMediaItem(mediaItem);
+            player.setMediaItem(item);
             player.prepare();
             player.play();
+        });
+
+        if (hasCachedVideo(session, cacheKey)) {
+            start.run();
+            return;
+        }
+        if (!validHttpsUrl(streamUrl)) {
+            sendError(playbackId, "native_video_not_downloaded");
+            return;
+        }
+
+        preloadExecutor.execute(() -> {
+            try {
+                sendDiagnostics(playbackId, "downloading", 0, 0);
+                cacheVideoFully(streamUrl, cacheKey);
+                if (!hasCachedVideo(session, cacheKey)) throw new IllegalStateException("cache_incomplete");
+                start.run();
+            } catch (Exception e) {
+                Log.w(TAG, "Video local-first download failed", e);
+                sendError(playbackId, "native_video_download_failed");
+            }
         });
     }
 
@@ -446,7 +510,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta5");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta6");
         connection.connect();
 
         int status = connection.getResponseCode();

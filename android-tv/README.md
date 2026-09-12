@@ -1,10 +1,13 @@
-# PontoView Telas Android TV 2.0.0 beta 5
+# PontoView Telas Android TV 2.0.0 beta 6
 
-Esta versão consolida o player Android como camada nativa de reprodução para mídias do Google Drive e sincroniza a preferência de inicialização automática por tela.
+Arquitetura local-first para mídia de digital signage.
 
-- Drive vídeo: Media3/ExoPlayer nativo.
-- Drive imagem: cache e otimização local.
-- WebView: painéis, páginas, mensagens e YouTube.
-- Preferência "Iniciar PontoView ao ligar o dispositivo" salva em screen_settings.auto_start.
-- A APK persiste a última preferência localmente para poder aplicá-la no boot antes da sincronização com a nuvem.
-- Cache de mídia continua local. Nenhuma mídia é enviada ao Supabase Storage ou Cloudflare R2.
+- O manifesto da playlist é enviado à APK.
+- A APK prepara todos os vídeos e imagens do Google Drive em segundo plano.
+- Vídeos são totalmente baixados para a biblioteca persistente antes de tocar.
+- A reprodução do Drive é feita pelo Media3/ExoPlayer a partir do conteúdo local.
+- O Android não cai em um player web manual quando o player nativo falha; o erro é registrado e a playlist segue.
+- Biblioteca de vídeo com LRU aproximado de 1,75 GB.
+- Biblioteca de imagens com aproximadamente 256 MB e otimização local.
+- YouTube, páginas e painéis continuam no WebView.
+- A configuração de inicialização automática continua sincronizada por tela.

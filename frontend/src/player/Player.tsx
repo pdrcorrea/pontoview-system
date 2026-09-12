@@ -184,6 +184,10 @@ export function PlayerPage() {
     } else next.news = [];
 
     localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next));
+    const native = nativeBridgeContext();
+    if (native) {
+      try { native.bridge.syncManifest(native.session, activeDevice.screenId, activeDevice.token, JSON.stringify(next)); } catch {}
+    }
     setManifest(next); setConnected(true); setError(null); setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
   }, [activeDevice]);
 
@@ -510,23 +514,16 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
 
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const native = useNativeBridgeContext();
-  const [forceWeb, setForceWeb] = useState(false);
-
-  useEffect(() => {
-    setForceWeb(false);
-  }, [media.id, media.driveChecksum]);
-
-  if (native && !forceWeb) {
+  if (native) {
     return <NativeDriveStage
       media={media}
       duration={duration}
       device={device}
       onEnd={onEnd}
-      onNativeFailure={() => setForceWeb(true)}
+      onNativeFailure={() => onError("native_drive_failed")}
       native={native}
     />;
   }
-
   return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
 }
 
@@ -861,6 +858,7 @@ declare global {
       stopImage: (session: string, playbackId: string) => void;
       getCacheStatus: (session: string) => string;
       setAutoStart: (session: string, enabled: boolean) => void;
+      syncManifest: (session: string, screenId: string, token: string, manifestJson: string) => void;
     };
   }
 }
