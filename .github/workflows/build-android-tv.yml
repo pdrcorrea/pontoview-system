@@ -9,6 +9,8 @@ on:
       - "android-tv/**"
       - "frontend/src/player/Player.tsx"
       - "frontend/src/lib/playerVersion.ts"
+      - "frontend/src/App.tsx"
+      - "frontend/vite.player.config.ts"
       - ".github/workflows/build-android-tv.yml"
   workflow_dispatch:
 
@@ -32,9 +34,19 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
+        env:
+          VITE_SUPABASE_URL: https://fpdojntvnhiszagczfqr.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_hd9GQaTeJ18o3pwMIZevJQ_EgVIOVOp
         run: |
           npm ci
           npm run build
+          npx vite build --config vite.player.config.ts
+
+      - name: Bundle Player frontend into APK
+        run: |
+          rm -rf android-tv/app/src/main/assets
+          mkdir -p android-tv/app/src/main/assets
+          cp -R frontend/dist-player/. android-tv/app/src/main/assets/
 
       - name: Java 17
         uses: actions/setup-java@v4
