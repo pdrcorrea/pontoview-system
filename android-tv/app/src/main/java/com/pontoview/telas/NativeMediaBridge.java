@@ -150,6 +150,10 @@ public class NativeMediaBridge {
         return sessionToken;
     }
 
+    public void onResume() {
+        updateManager.onResume();
+    }
+
     @JavascriptInterface
     public String getVersion() {
         return "3.0.0-beta3";
