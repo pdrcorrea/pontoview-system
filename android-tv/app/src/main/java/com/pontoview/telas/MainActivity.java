@@ -108,7 +108,7 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/3.0.0-beta3");
+        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/3.0.0-beta4");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
         assetLoader = new WebViewAssetLoader.Builder()
@@ -192,8 +192,8 @@ public class MainActivity extends Activity {
         String script =
                 "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
-                "window.__PV_NATIVE_APP_VERSION='3.0.0-beta3';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'3.0.0-beta3'}}));" +
+                "window.__PV_NATIVE_APP_VERSION='3.0.0-beta4';" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'3.0.0-beta4'}}));" +
                 "})();";
         webView.evaluateJavascript(script, null);
         injectPlaybackCompatibility();
