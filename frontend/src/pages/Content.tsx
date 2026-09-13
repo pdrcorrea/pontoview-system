@@ -642,12 +642,14 @@ export function ContentPage() {
                     item.online_required ? "requires-net" : "offline-ready"
                   }
                 >
-                  {item.online_required ? (
+                  {item.type === "drive_image" || item.type === "drive_video" ? (
+                    <>Origem: Google Drive · sincronizado nas TVs</>
+                  ) : item.online_required ? (
                     <>
                       <Wifi size={11} /> Requer internet
                     </>
                   ) : (
-                    <>Disponível no cache</>
+                    <>Disponível para operação local</>
                   )}
                 </small>
               </div>
@@ -717,8 +719,9 @@ export function ContentPage() {
               <h3>Arquivos continuam no seu Drive</h3>
               <p>
                 Navegue pelas pastas do Google Drive e escolha imagens ou vídeos.
-                A PontoView armazena apenas a referência e mantém uma cópia
-                temporária no Player para operação offline.
+                O arquivo original continua na sua conta Google. A PontoView guarda
+                na nuvem apenas a referência necessária e cada TV baixa sua própria
+                cópia local gerenciada quando o conteúdo entra na programação.
               </p>
               <div className="modal-actions">
                 <AsyncButton
