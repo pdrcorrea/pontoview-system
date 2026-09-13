@@ -93,6 +93,8 @@ public class NativeMediaBridge {
     private final File videoTempDir;
     private final SimpleCache videoCache;
     private final CacheDataSource.Factory cacheDataSourceFactory;
+    private final PlayerCoreStore coreStore;
+    private final PlayerSyncEngine syncEngine;
 
     private ExoPlayer player;
     private AspectRatioFrameLayout videoFrame;
@@ -108,6 +110,10 @@ public class NativeMediaBridge {
         this.activity = activity;
         this.webView = webView;
         this.nativeLayer = nativeLayer;
+
+        coreStore = new PlayerCoreStore(activity);
+        syncEngine = new PlayerSyncEngine(activity, coreStore);
+        syncEngine.start();
 
         imageCacheDir = new File(activity.getFilesDir(), "pv-image-library");
         imageTempDir = new File(activity.getCacheDir(), "pv-image-temp");
@@ -126,7 +132,7 @@ public class NativeMediaBridge {
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/2.0.0-beta10")
+                .setUserAgent("PontoViewTV/3.0.0-beta1")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -143,7 +149,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta10";
+        return "3.0.0-beta1";
     }
 
     @JavascriptInterface
@@ -207,6 +213,48 @@ public class NativeMediaBridge {
 
 
     @JavascriptInterface
+    public void saveDeviceCredentials(String session, String screenId, String token) {
+        if (!validSession(session) || empty(screenId) || empty(token)) return;
+        syncEngine.saveCredentials(screenId, token);
+    }
+
+    @JavascriptInterface
+    public void clearDeviceCredentials(String session) {
+        if (!validSession(session)) return;
+        syncEngine.clearCredentials();
+    }
+
+    @JavascriptInterface
+    public String getActiveManifest(String session) {
+        if (!validSession(session)) return "";
+        return coreStore.getActiveManifest();
+    }
+
+    @JavascriptInterface
+    public String getPlayerCoreStatus(String session) {
+        if (!validSession(session)) return "{}";
+        return syncEngine.statusJson();
+    }
+
+    @JavascriptInterface
+    public void requestPlayerCoreSync(String session) {
+        if (!validSession(session)) return;
+        syncEngine.requestSync();
+    }
+
+    @JavascriptInterface
+    public boolean hasCoreMedia(String session, String mediaId, String revision, String type) {
+        if (!validSession(session)) return false;
+        return coreStore.hasMedia(mediaId, revision, type);
+    }
+
+    @JavascriptInterface
+    public String getCoreMediaUrl(String session, String mediaId, String revision, String type) {
+        if (!validSession(session)) return "";
+        return coreStore.localUrl(mediaId, revision, type);
+    }
+
+    @JavascriptInterface
     public void syncManifest(String session, String screenId, String token, String manifestJson) {
         if (!validSession(session) || empty(screenId) || empty(token) || empty(manifestJson)) return;
         preloadExecutor.execute(() -> {
@@ -255,7 +303,7 @@ public class NativeMediaBridge {
         c.setRequestProperty("apikey", PUBLISHABLE_KEY);
         c.setRequestProperty("x-screen-id", screenId);
         c.setRequestProperty("x-screen-token", token);
-        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta10");
+        c.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta1");
         byte[] body = new JSONObject().put("mediaId", mediaId).put("action", "ticket")
                 .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }
@@ -296,7 +344,7 @@ public class NativeMediaBridge {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(120000);
-                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta10");
+                connection.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta1");
                 connection.connect();
 
                 int status = connection.getResponseCode();
@@ -357,14 +405,19 @@ public class NativeMediaBridge {
         Uri uri = request.getUrl();
         if (!"local.pontoview.invalid".equalsIgnoreCase(uri.getHost())) return null;
         String path = uri.getPath();
-        if (path == null || !path.matches("^/video/[a-f0-9]{64}\\.mp4$")) {
-            return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found",
-                    java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
+
+        File file = coreStore.resolveCoreFile(uri);
+        String mimeType = null;
+
+        if (file != null) {
+            mimeType = path != null && path.endsWith(".mp4") ? "video/mp4" : detectImageMime(file);
+        } else if (path != null && path.matches("^/video/[a-f0-9]{64}\\.mp4$")) {
+            String hash = path.substring("/video/".length(), path.length() - ".mp4".length());
+            file = new File(videoLibraryDir, hash + ".media");
+            mimeType = "video/mp4";
         }
 
-        String hash = path.substring("/video/".length(), path.length() - ".mp4".length());
-        File file = new File(videoLibraryDir, hash + ".media");
-        if (!file.exists() || file.length() <= 0) {
+        if (file == null || !file.exists() || file.length() <= 0) {
             return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found",
                     java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
         }
@@ -399,7 +452,7 @@ public class NativeMediaBridge {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("Content-Range", "bytes */" + total);
                 headers.put("Accept-Ranges", "bytes");
-                return new WebResourceResponse("video/mp4", null, 416, "Range Not Satisfiable",
+                return new WebResourceResponse(mimeType != null ? mimeType : "application/octet-stream", null, 416, "Range Not Satisfiable",
                         headers, new ByteArrayInputStream(new byte[0]));
             }
 
@@ -418,7 +471,7 @@ public class NativeMediaBridge {
             InputStream stream = new LimitedInputStream(raw, length);
             Map<String, String> headers = new HashMap<>();
             headers.put("Accept-Ranges", "bytes");
-            headers.put("Content-Type", "video/mp4");
+            headers.put("Content-Type", mimeType || "application/octet-stream");
             headers.put("Content-Length", String.valueOf(length));
             headers.put("Cache-Control", "private, max-age=31536000, immutable");
             headers.put("Access-Control-Allow-Origin", "*");
@@ -426,7 +479,7 @@ public class NativeMediaBridge {
 
             file.setLastModified(System.currentTimeMillis());
             return new WebResourceResponse(
-                    "video/mp4",
+                    mimeType != null ? mimeType : "application/octet-stream",
                     null,
                     partial ? 206 : 200,
                     partial ? "Partial Content" : "OK",
@@ -438,6 +491,22 @@ public class NativeMediaBridge {
             return new WebResourceResponse("text/plain", "UTF-8", 500, "Local Media Error",
                     java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
         }
+    }
+
+    private String detectImageMime(File file) {
+        try (FileInputStream input = new FileInputStream(file)) {
+            byte[] head = new byte[12];
+            int read = input.read(head);
+            if (read >= 8
+                    && (head[0] & 0xff) == 0x89
+                    && head[1] == 0x50 && head[2] == 0x4e && head[3] == 0x47) return "image/png";
+            if (read >= 3 && (head[0] & 0xff) == 0xff && (head[1] & 0xff) == 0xd8 && (head[2] & 0xff) == 0xff) return "image/jpeg";
+            if (read >= 12 && head[0] == 'R' && head[1] == 'I' && head[2] == 'F' && head[3] == 'F'
+                    && head[8] == 'W' && head[9] == 'E' && head[10] == 'B' && head[11] == 'P') return "image/webp";
+            if (read >= 6 && head[0] == 'G' && head[1] == 'I' && head[2] == 'F') return "image/gif";
+        } catch (Exception ignored) {
+        }
+        return "application/octet-stream";
     }
 
     private static final class LimitedInputStream extends FilterInputStream {
@@ -816,7 +885,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta10");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta1");
         connection.connect();
 
         int status = connection.getResponseCode();
@@ -1057,6 +1126,8 @@ public class NativeMediaBridge {
         });
         preloadExecutor.shutdownNow();
         imageExecutor.shutdownNow();
+        syncEngine.stop();
+        try { coreStore.close(); } catch (Exception ignored) {}
         try {
             videoCache.release();
         } catch (Exception ignored) {
