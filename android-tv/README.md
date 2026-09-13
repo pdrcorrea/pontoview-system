@@ -1,22 +1,19 @@
-# PontoView Telas Android TV 2.0.0 beta 9
+# PontoView Telas Android TV 3.0.0 beta 1
 
-Arquitetura de vídeo otimizada para sticks Android de baixo custo.
+## Player Core v3
 
-## Estratégia
-- O Android baixa vídeos do Google Drive por completo para armazenamento persistente.
-- O vídeo é servido internamente pela própria APK em uma origem privada HTTPS interceptada pelo WebView.
-- O servidor local suporta requisições HTTP Range, evitando carregar o MP4 inteiro em memória.
-- A reprodução usa o motor HTML5/WebView, que foi o caminho mais compatível observado no Pro Eletronic.
-- A rede não participa da reprodução depois que o arquivo foi preparado.
-- Apenas um decoder de vídeo fica ativo por vez.
-- O pré-carregamento baixa arquivos, mas não cria um segundo elemento <video>.
-- Se a rota local falhar, o Player ainda pode recorrer ao fluxo web tradicional.
+O Player separa sincronização de reprodução.
 
-## Conteúdo
-- Drive vídeo: arquivo local + WebView.
-- Drive imagem: biblioteca local otimizada.
-- YouTube, sites e painéis: WebView.
-- Start automático: configuração por tela persistida no Android.
+- Google Drive do cliente continua sendo a origem dos arquivos.
+- Supabase continua como plano de controle com metadados, playlists e configurações.
+- A APK mantém SQLite local com snapshot ativo e snapshot pendente.
+- Uma playlist nova só entra no ar quando todas as mídias do Drive necessárias estiverem baixadas.
+- A playlist anterior continua sendo reproduzida durante downloads ou falhas de sincronização.
+- Vídeos e imagens são servidos do armazenamento privado do aplicativo.
+- Conteúdo já sincronizado continua funcionando sem internet.
+- Clima preserva o último snapshot disponível.
+- YouTube e páginas externas continuam dependentes de conectividade.
+- Watchdogs de vídeo e runtime continuam ativos para autorrecuperação.
+- Inicialização automática permanece controlada por tela no painel.
 
-## Compatibilidade
-Para maior previsibilidade em hardware heterogêneo, o perfil recomendado continua sendo MP4 H.264/AAC, 1920x1080, 30 fps.
+Arquitetura detalhada: `docs/PLAYER_CORE_V3.md`.
