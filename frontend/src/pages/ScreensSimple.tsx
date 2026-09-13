@@ -246,33 +246,6 @@ export function ScreensSimplePage() {
     );
   }
 
-  const update = (status?.client_info?.playerUpdate || null) as {
-    state?: string;
-    installedVersion?: string;
-    availableVersion?: string;
-    downloadedVersion?: string;
-    lastCheckAt?: number;
-    lastError?: string;
-    pendingUserAction?: boolean;
-    canRequestPackageInstalls?: boolean;
-  } | null;
-
-  const updateLabel = update?.state === "downloading"
-    ? "Baixando atualização"
-    : update?.state === "downloaded"
-      ? `Versão ${update.downloadedVersion || update.availableVersion || ""} pronta`
-      : update?.state === "installing"
-        ? "Instalando atualização"
-        : update?.state === "permission_required"
-          ? "Permissão de instalação necessária"
-          : update?.state === "available"
-            ? `Versão ${update.availableVersion || ""} disponível`
-            : update?.state === "error"
-              ? "Falha ao verificar"
-              : update?.state === "up_to_date"
-                ? "Player atualizado"
-                : "Verificação automática";
-
   return (
     <>
       <PageHead
@@ -1388,6 +1361,33 @@ function AdvancedSettings({
   online: boolean;
   currentPlaylistName: string;
 }) {
+  const update = (status?.client_info?.playerUpdate || null) as {
+    state?: string;
+    installedVersion?: string;
+    availableVersion?: string;
+    downloadedVersion?: string;
+    lastCheckAt?: number;
+    lastError?: string;
+    pendingUserAction?: boolean;
+    canRequestPackageInstalls?: boolean;
+  } | null;
+
+  const updateLabel = update?.state === "downloading"
+    ? "Baixando atualização"
+    : update?.state === "downloaded"
+      ? `Versão ${update.downloadedVersion || update.availableVersion || ""} pronta`
+      : update?.state === "installing"
+        ? "Instalando atualização"
+        : update?.state === "permission_required"
+          ? "Permissão de instalação necessária"
+          : update?.state === "available"
+            ? `Versão ${update.availableVersion || ""} disponível`
+            : update?.state === "error"
+              ? "Falha ao verificar"
+              : update?.state === "up_to_date"
+                ? "Player atualizado"
+                : "Verificação automática";
+
   return (
     <>
       <ConfigIntro
