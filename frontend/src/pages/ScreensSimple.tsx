@@ -246,6 +246,33 @@ export function ScreensSimplePage() {
     );
   }
 
+  const update = (status?.client_info?.playerUpdate || null) as {
+    state?: string;
+    installedVersion?: string;
+    availableVersion?: string;
+    downloadedVersion?: string;
+    lastCheckAt?: number;
+    lastError?: string;
+    pendingUserAction?: boolean;
+    canRequestPackageInstalls?: boolean;
+  } | null;
+
+  const updateLabel = update?.state === "downloading"
+    ? "Baixando atualização"
+    : update?.state === "downloaded"
+      ? `Versão ${update.downloadedVersion || update.availableVersion || ""} pronta`
+      : update?.state === "installing"
+        ? "Instalando atualização"
+        : update?.state === "permission_required"
+          ? "Permissão de instalação necessária"
+          : update?.state === "available"
+            ? `Versão ${update.availableVersion || ""} disponível`
+            : update?.state === "error"
+              ? "Falha ao verificar"
+              : update?.state === "up_to_date"
+                ? "Player atualizado"
+                : "Verificação automática";
+
   return (
     <>
       <PageHead
@@ -1329,6 +1356,12 @@ function AdvancedSettings({
   setAutoStart,
   reloadBusy,
   requestReload,
+  autoUpdate,
+  setAutoUpdate,
+  updateChannel,
+  setUpdateChannel,
+  updateBusy,
+  requestPlayerUpdate,
   onDeactivate,
   onCopy,
   canCopy,
@@ -1342,6 +1375,12 @@ function AdvancedSettings({
   setAutoStart: (value: boolean) => void;
   reloadBusy: boolean;
   requestReload: () => Promise<void>;
+  autoUpdate: boolean;
+  setAutoUpdate: (value: boolean) => void;
+  updateChannel: "stable" | "beta";
+  setUpdateChannel: (value: "stable" | "beta") => void;
+  updateBusy: boolean;
+  requestPlayerUpdate: () => Promise<void>;
   onDeactivate: () => void;
   onCopy: () => void;
   canCopy: boolean;
@@ -1423,6 +1462,36 @@ function AdvancedSettings({
           <span><b>Iniciar PontoView ao ligar o dispositivo</b><small>{autoStart ? "Ativado. O app tentará abrir sozinho após reiniciar o Android." : "Desativado. O app só abre manualmente."}</small></span>
           <i className={autoStart ? "simple-switch on" : "simple-switch"}><b /></i>
         </button>
+      </div>
+
+      <div className="simple-setting-card">
+        <div className="simple-setting-heading no-number">
+          <div><h2>Atualizações do Player</h2><p>O Player pode baixar novas versões em segundo plano sem interromper a programação durante o download.</p></div>
+        </div>
+
+        <button className={autoUpdate ? "friendly-widget enabled" : "friendly-widget"} onClick={() => setAutoUpdate(!autoUpdate)}>
+          <span className="friendly-widget-icon"><Download /></span>
+          <span><b>Atualizações automáticas</b><small>{autoUpdate ? "Ativado. O Player baixa novas versões quando disponíveis." : "Desativado. A verificação pode ser iniciada manualmente."}</small></span>
+          <i className={autoUpdate ? "simple-switch on" : "simple-switch"}><b /></i>
+        </button>
+
+        <div className="update-channel-choice" role="group" aria-label="Canal de atualização">
+          <button className={updateChannel === "stable" ? "selected" : ""} onClick={() => setUpdateChannel("stable")}>
+            <ShieldCheck /><span><b>Estável</b><small>Versões recomendadas para uso diário</small></span>
+          </button>
+          <button className={updateChannel === "beta" ? "selected" : ""} onClick={() => setUpdateChannel("beta")}>
+            <Settings2 /><span><b>Beta</b><small>Novidades para telas de teste</small></span>
+          </button>
+        </div>
+
+        <div className="maintenance-action player-update-action">
+          <Download />
+          <span><b>{updateLabel}</b><small>Instalada: {status?.player_version || "não identificada"}{update?.availableVersion ? ` · disponível: ${update.availableVersion}` : ""}</small></span>
+          <AsyncButton busy={updateBusy} className="btn secondary" onClick={() => void requestPlayerUpdate()}>Verificar agora</AsyncButton>
+        </div>
+
+        {update?.pendingUserAction && <div className="update-permission-note">O Android precisa autorizar o PontoView a instalar atualizações neste dispositivo. A TV abrirá a tela de permissão quando necessário.</div>}
+        {update?.lastError && <div className="update-error-note">Último aviso: {update.lastError}</div>}
       </div>
 
       <div className="simple-setting-card">
