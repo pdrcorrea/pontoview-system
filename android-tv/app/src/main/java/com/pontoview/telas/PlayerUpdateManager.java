@@ -45,6 +45,7 @@ public final class PlayerUpdateManager {
     private volatile String downloadedVersion = "";
     private volatile File downloadedApk = null;
     private volatile boolean pendingUserAction = false;
+    private volatile boolean installRequested = false;
 
     public PlayerUpdateManager(Activity activity) {
         this.activity = activity;
@@ -92,6 +93,7 @@ public final class PlayerUpdateManager {
             json.put("availableVersionCode", availableVersionCode);
             json.put("downloadedVersion", downloadedVersion);
             json.put("pendingUserAction", pendingUserAction);
+            json.put("installRequested", installRequested);
             json.put("canRequestPackageInstalls", canRequestPackageInstalls());
             return json.toString();
         } catch (Exception ignored) {
@@ -106,6 +108,7 @@ public final class PlayerUpdateManager {
                     state = "idle";
                     return;
                 }
+                installRequested = false;
                 installApk(downloadedApk);
             } catch (Exception error) {
                 state = "error";
@@ -122,6 +125,7 @@ public final class PlayerUpdateManager {
                 state = "checking";
                 lastError = "";
                 pendingUserAction = false;
+                installRequested = false;
                 lastCheckAt = System.currentTimeMillis();
 
                 JSONObject manifest = fetchJson(UPDATE_MANIFEST_URL);
@@ -154,9 +158,7 @@ public final class PlayerUpdateManager {
                 downloadedVersion = versionName;
                 state = "downloaded";
 
-                if (required || autoUpdate || forced) {
-                    installApk(apk);
-                }
+                installRequested = required || autoUpdate || forced;
             } catch (Exception error) {
                 if (String.valueOf(error.getMessage()).contains("404")) {
                     state = "up_to_date";
