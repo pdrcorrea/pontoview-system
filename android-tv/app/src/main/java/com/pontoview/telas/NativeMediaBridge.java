@@ -95,6 +95,7 @@ public class NativeMediaBridge {
     private final CacheDataSource.Factory cacheDataSourceFactory;
     private final PlayerCoreStore coreStore;
     private final PlayerSyncEngine syncEngine;
+    private final PlayerUpdateManager updateManager;
 
     private ExoPlayer player;
     private AspectRatioFrameLayout videoFrame;
@@ -114,6 +115,8 @@ public class NativeMediaBridge {
         coreStore = new PlayerCoreStore(activity);
         syncEngine = new PlayerSyncEngine(activity, coreStore);
         syncEngine.start();
+        updateManager = new PlayerUpdateManager(activity);
+        updateManager.start();
 
         imageCacheDir = new File(activity.getFilesDir(), "pv-image-library");
         imageTempDir = new File(activity.getCacheDir(), "pv-image-temp");
@@ -157,6 +160,30 @@ public class NativeMediaBridge {
         if (!validSession(session)) return;
         SharedPreferences prefs = activity.getSharedPreferences("pontoview_player", Context.MODE_PRIVATE);
         prefs.edit().putBoolean("auto_start", enabled).apply();
+    }
+
+    @JavascriptInterface
+    public void setUpdatePolicy(String session, boolean autoUpdate, String channel, double requestRevision) {
+        if (!validSession(session)) return;
+        updateManager.setPolicy(autoUpdate, channel, Math.max(0L, (long) requestRevision));
+    }
+
+    @JavascriptInterface
+    public String getPlayerUpdateStatus(String session) {
+        if (!validSession(session)) return "{}";
+        return updateManager.statusJson();
+    }
+
+    @JavascriptInterface
+    public void checkForUpdate(String session) {
+        if (!validSession(session)) return;
+        updateManager.checkNow();
+    }
+
+    @JavascriptInterface
+    public void installDownloadedUpdate(String session) {
+        if (!validSession(session)) return;
+        updateManager.installDownloaded();
     }
 
     @JavascriptInterface
@@ -1127,6 +1154,7 @@ public class NativeMediaBridge {
         preloadExecutor.shutdownNow();
         imageExecutor.shutdownNow();
         syncEngine.stop();
+        updateManager.stop();
         try { coreStore.close(); } catch (Exception ignored) {}
         try {
             videoCache.release();
