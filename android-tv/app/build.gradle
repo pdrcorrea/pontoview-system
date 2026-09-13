@@ -4,6 +4,11 @@ plugins {
 
 android {
     namespace "com.pontoview.telas"
+
+    def releaseStorePath = System.getenv("PV_KEYSTORE_PATH")
+    def releaseStorePassword = System.getenv("PV_KEYSTORE_PASSWORD")
+    def releaseKeyAlias = System.getenv("PV_KEY_ALIAS")
+    def releaseKeyPassword = System.getenv("PV_KEY_PASSWORD")
     compileSdk 36
 
     defaultConfig {
@@ -14,12 +19,26 @@ android {
         versionName "3.0.0-beta3"
     }
 
+    signingConfigs {
+        release {
+            if (releaseStorePath && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
+                storeFile file(releaseStorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             minifyEnabled false
         }
         release {
             minifyEnabled false
+            if (releaseStorePath && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
