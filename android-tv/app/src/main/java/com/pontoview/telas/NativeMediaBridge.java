@@ -471,7 +471,7 @@ public class NativeMediaBridge {
             InputStream stream = new LimitedInputStream(raw, length);
             Map<String, String> headers = new HashMap<>();
             headers.put("Accept-Ranges", "bytes");
-            headers.put("Content-Type", mimeType || "application/octet-stream");
+            headers.put("Content-Type", mimeType != null ? mimeType : "application/octet-stream");
             headers.put("Content-Length", String.valueOf(length));
             headers.put("Cache-Control", "private, max-age=31536000, immutable");
             headers.put("Access-Control-Allow-Origin", "*");
