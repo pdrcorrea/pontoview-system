@@ -110,16 +110,24 @@ export function PlayerPage() {
   const newsFetch = useRef<{ key: string; at: number; items: PlayerManifest["news"] }>({ key: "", at: 0, items: [] });
   const routeScreenId = params.screenId;
   const activeDevice = device && (!routeScreenId || routeScreenId === device.screenId) ? device : null;
+  const nativeRuntime = useNativeBridgeContext();
+  const nativeMode = Boolean(nativeRuntime || navigator.userAgent.includes("PontoViewTV/"));
 
   useEffect(() => { const timer = window.setInterval(() => setRuntimeNow(new Date()), 15000); return () => window.clearInterval(timer); }, []);
   useEffect(() => {
-    if (!manifest) return;
-    const native = nativeBridgeContext();
-    if (!native) return;
+    if (!manifest || !nativeRuntime) return;
     try {
-      native.bridge.setAutoStart(native.session, manifest.settings?.auto_start !== false);
+      nativeRuntime.bridge.setAutoStart(nativeRuntime.session, manifest.settings?.auto_start !== false);
     } catch {}
-  }, [manifest?.settings?.auto_start, manifest?.screen?.id]);
+  }, [manifest?.settings?.auto_start, manifest?.screen?.id, nativeRuntime?.session]);
+
+  useEffect(() => {
+    if (!activeDevice || !nativeRuntime) return;
+    try {
+      nativeRuntime.bridge.saveDeviceCredentials(nativeRuntime.session, activeDevice.screenId, activeDevice.token);
+      nativeRuntime.bridge.requestPlayerCoreSync(nativeRuntime.session);
+    } catch {}
+  }, [activeDevice?.screenId, activeDevice?.token, nativeRuntime?.session]);
   useEffect(() => {
     const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener("resize", resize); window.addEventListener("orientationchange", resize);
@@ -165,6 +173,35 @@ export function PlayerPage() {
 
   const sync = useCallback(async (silent = false) => {
     if (!activeDevice) return;
+
+    if (nativeMode) {
+      if (!nativeRuntime) return;
+      try {
+        nativeRuntime.bridge.saveDeviceCredentials(nativeRuntime.session, activeDevice.screenId, activeDevice.token);
+        const raw = nativeRuntime.bridge.getActiveManifest(nativeRuntime.session);
+        if (!raw) {
+          setConnected(navigator.onLine);
+          if (!silent) setError(null);
+          return;
+        }
+
+        const next = JSON.parse(raw) as PlayerManifest;
+        localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next));
+        setManifest(next);
+        setConnected(true);
+        setError(null);
+        setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
+      } catch {
+        const cached = readManifest(activeDevice.screenId);
+        if (cached) {
+          setManifest(cached);
+          setConnected(false);
+        } else if (!silent) {
+          setError("O Player local está concluindo a primeira sincronização.");
+        }
+      }
+      return;
+    }
     const result = await supabase.rpc("get_player_manifest", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
     if (result.error) {
       const cached = readManifest(activeDevice.screenId);
@@ -205,14 +242,16 @@ export function PlayerPage() {
       try { native.bridge.syncManifest(native.session, activeDevice.screenId, activeDevice.token, JSON.stringify(next)); } catch {}
     }
     setManifest(next); setConnected(true); setError(null); setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
-  }, [activeDevice]);
+  }, [activeDevice, nativeMode, nativeRuntime?.session]);
 
   useEffect(() => {
-    void sync(); const timer = window.setInterval(() => void sync(true), 15000);
-    const online = () => { setConnected(true); void sync(true); }; const offline = () => setConnected(false);
+    void sync();
+    const timer = window.setInterval(() => void sync(true), nativeMode ? 3000 : 15000);
+    const online = () => { setConnected(true); if (nativeRuntime) { try { nativeRuntime.bridge.requestPlayerCoreSync(nativeRuntime.session); } catch {} } void sync(true); };
+    const offline = () => setConnected(nativeMode && Boolean(manifest));
     window.addEventListener("online", online); window.addEventListener("offline", offline);
     return () => { window.clearInterval(timer); window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
-  }, [sync]);
+  }, [sync, nativeMode, nativeRuntime?.session, Boolean(manifest)]);
 
   const operating = manifest ? isWithinOperatingHours(manifest.settings?.operating_hours, manifest.organization.timezone, runtimeNow) : true;
   const item = operating ? manifest?.items[index] || null : null;
@@ -221,7 +260,7 @@ export function PlayerPage() {
 
   useEffect(() => {
     if (!activeDevice || !manifest) return;
-    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null, nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null } });
+    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null, nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null, playerCore: playerCoreStatus(nativeRuntime) } });
     heartbeat(); const timer = window.setInterval(heartbeat, 30000); return () => window.clearInterval(timer);
   }, [activeDevice, manifest?.playlist?.id, manifest?.screen.orientation, operating, item?.media.id]);
 
@@ -379,6 +418,19 @@ function nativeBridgeContext(): NativeBridgeContext | null {
   return bridge && session ? { bridge, session } : null;
 }
 
+function playerCoreStatus(native: NativeBridgeContext | null) {
+  if (!native) return null;
+  try {
+    return JSON.parse(native.bridge.getPlayerCoreStatus(native.session) || "{}");
+  } catch {
+    return null;
+  }
+}
+
+function driveMediaRevision(media: ManifestItem["media"]) {
+  return media.driveChecksum || media.driveModifiedTime || "latest";
+}
+
 function useNativeBridgeContext() {
   const [, setGeneration] = useState(0);
   useEffect(() => {
@@ -479,6 +531,9 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
   useEffect(() => {
     let active = true;
     if (native) {
+      try {
+        if (native.bridge.getActiveManifest(native.session)) return () => { active = false; };
+      } catch {}
       const key = driveAssetKey(media, device);
       try {
         const alreadyCached = media.type === "drive_video"
@@ -531,138 +586,115 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
 function DriveStage({ media, duration, device, onEnd, onError }: { media: ManifestItem["media"]; duration: number; device: Device; onEnd: () => void; onError: (detail: string) => void; }) {
   const native = useNativeBridgeContext();
 
-  if (native && media.type === "drive_video") {
-    return <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />;
-  }
-
-  if (native && media.type === "drive_image") {
-    return <NativeDriveStage
-      media={media}
-      duration={duration}
-      device={device}
-      onEnd={onEnd}
-      onNativeFailure={() => onError("native_drive_image_failed")}
-      native={native}
-    />;
+  if (native) {
+    return <CoreDriveStage media={media} duration={duration} onEnd={onEnd} onError={onError} native={native} />;
   }
 
   return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
 }
 
-function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: {
+function CoreDriveStage({ media, duration, onEnd, onError, native }: {
   media: ManifestItem["media"];
-  device: Device;
+  duration: number;
   onEnd: () => void;
   onError: (detail: string) => void;
   native: NativeBridgeContext;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [fallback, setFallback] = useState(false);
-  const [autoplayMuted, setAutoplayMuted] = useState(true);
+  const revision = driveMediaRevision(media);
+  const [url, setUrl] = useState(() => {
+    try { return native.bridge.getCoreMediaUrl(native.session, media.id, revision, media.type) || ""; }
+    catch { return ""; }
+  });
+
+  useEffect(() => {
+    if (url) return;
+    let active = true;
+    let attempts = 0;
+    try { native.bridge.requestPlayerCoreSync(native.session); } catch {}
+
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      try {
+        const local = native.bridge.getCoreMediaUrl(native.session, media.id, revision, media.type);
+        if (local && active) {
+          setUrl(local);
+          window.clearInterval(timer);
+          return;
+        }
+      } catch {}
+      if (attempts >= 8) {
+        window.clearInterval(timer);
+        if (active) onError("player_core_media_missing");
+      }
+    }, 500);
+
+    return () => { active = false; window.clearInterval(timer); };
+  }, [url, media.id, media.type, revision, native.session, onError]);
+
+  if (!url) return <div className="player-standby" aria-hidden="true" />;
+
+  if (media.type === "drive_image") {
+    return <TimedStage seconds={duration} onEnd={onEnd}><img src={url} alt="" decoding="async" onError={() => onError("player_core_image_error")} /></TimedStage>;
+  }
+
+  return <CoreDriveVideo url={url} media={media} onEnd={onEnd} onError={onError} native={native} />;
+}
+
+function CoreDriveVideo({ url, media, onEnd, onError, native }: {
+  url: string;
+  media: ManifestItem["media"];
+  onEnd: () => void;
+  onError: (detail: string) => void;
+  native: NativeBridgeContext;
+}) {
+  const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const soundAttemptedRef = useRef(false);
-  const retryRef = useRef(false);
   const onErrorRef = useRef(onError);
+  const finishedRef = useRef(false);
+  const recoveryRef = useRef(0);
 
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
 
   useEffect(() => {
-    let active = true;
-    let timer: number | null = null;
-    const key = driveAssetKey(media, device);
-    const deadline = Date.now() + 4 * 60_000;
-
-    const useLocal = () => {
-      try {
-        if (!native.bridge.hasCachedVideo(native.session, key)) return false;
-        const localUrl = native.bridge.getLocalVideoUrl(native.session, key);
-        if (!localUrl) return false;
-        if (active) setUrl(localUrl);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
-    const poll = () => {
-      if (!active || useLocal()) return;
-      if (Date.now() >= deadline) {
-        if (active) setFallback(true);
-        return;
-      }
-      timer = window.setTimeout(poll, 650);
-    };
-
-    if (!useLocal()) {
-      void requestDriveStream(media, device).then(({ streamUrl }) => {
-        if (!active) return;
-        try {
-          native.bridge.preloadVideo(native.session, streamUrl, key);
-          poll();
-        } catch {
-          setFallback(true);
-        }
-      }).catch(() => {
-        if (active) setFallback(true);
-      });
-    }
-
-    return () => {
-      active = false;
-      if (timer !== null) window.clearTimeout(timer);
-    };
-  }, [media.id, media.driveChecksum, media.driveModifiedTime, device.screenId, device.token, native.session]);
-
-  useEffect(() => {
-    if (!url || fallback) return;
-
     let lastTime = -1;
     let lastProgressAt = Date.now();
     let lastFrameAt = Date.now();
-    let recoveryStep = 0;
-    let frameCallbackId: number | null = null;
+    let frameId: number | null = null;
     let hardDeadline = Date.now() + 30 * 60_000;
-    let failed = false;
 
-    const failAndAdvance = (detail: string) => {
-      if (failed) return;
-      failed = true;
+    const fail = (detail: string) => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       try { native.bridge.clearVideoPulse(native.session); } catch {}
       onErrorRef.current(detail);
     };
 
-    const armFrameWatch = () => {
-      const video = videoRef.current as (HTMLVideoElement & {
-        requestVideoFrameCallback?: (callback: (now: number, metadata: unknown) => void) => number;
-        cancelVideoFrameCallback?: (id: number) => void;
-      }) | null;
-      if (!video?.requestVideoFrameCallback) return;
+    const video = videoRef.current as (HTMLVideoElement & {
+      requestVideoFrameCallback?: (callback: () => void) => number;
+      cancelVideoFrameCallback?: (id: number) => void;
+    }) | null;
 
-      const onFrame = () => {
-        if (failed) return;
-        lastFrameAt = Date.now();
-        frameCallbackId = video.requestVideoFrameCallback?.(onFrame) ?? null;
-      };
-      frameCallbackId = video.requestVideoFrameCallback(onFrame);
+    const updateDeadline = () => {
+      const duration = Number(video?.duration);
+      if (Number.isFinite(duration) && duration > 0) {
+        hardDeadline = Date.now() + Math.max(60_000, (duration + 45) * 1000);
+      }
     };
+    video?.addEventListener("loadedmetadata", updateDeadline);
+    updateDeadline();
 
-    const video = videoRef.current;
-    if (video) {
-      const setDeadline = () => {
-        const duration = Number(video.duration);
-        if (Number.isFinite(duration) && duration > 0) {
-          hardDeadline = Date.now() + Math.max(60_000, (duration + 45) * 1000);
-        }
+    if (video?.requestVideoFrameCallback) {
+      const frame = () => {
+        if (finishedRef.current) return;
+        lastFrameAt = Date.now();
+        frameId = video.requestVideoFrameCallback?.(frame) ?? null;
       };
-      video.addEventListener("loadedmetadata", setDeadline);
-      setDeadline();
+      frameId = video.requestVideoFrameCallback(frame);
     }
-
-    armFrameWatch();
 
     const watchdog = window.setInterval(() => {
       const currentVideo = videoRef.current;
-      if (!currentVideo || currentVideo.ended || failed) return;
+      if (!currentVideo || currentVideo.ended || finishedRef.current) return;
 
       const now = Date.now();
       const current = Number(currentVideo.currentTime || 0);
@@ -671,35 +703,35 @@ function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: 
       if (current > lastTime + 0.12) {
         lastTime = current;
         lastProgressAt = now;
+        recoveryRef.current = 0;
       }
 
-      const supportsFrameWatch = typeof (currentVideo as HTMLVideoElement & { requestVideoFrameCallback?: unknown }).requestVideoFrameCallback === "function";
-      const visualProgressAt = supportsFrameWatch ? Math.max(lastProgressAt, lastFrameAt) : lastProgressAt;
-      const stalledFor = now - visualProgressAt;
+      const hasFrameWatch = typeof (currentVideo as HTMLVideoElement & { requestVideoFrameCallback?: unknown }).requestVideoFrameCallback === "function";
+      const stalledFor = now - (hasFrameWatch ? Math.max(lastProgressAt, lastFrameAt) : lastProgressAt);
 
       if (now >= hardDeadline) {
-        failAndAdvance("android_video_deadline_exceeded");
+        fail("player_core_video_deadline");
         return;
       }
 
-      if (stalledFor >= 6_000 && recoveryStep === 0) {
-        recoveryStep = 1;
+      if (stalledFor >= 6_000 && recoveryRef.current === 0) {
+        recoveryRef.current = 1;
         currentVideo.muted = true;
-        setAutoplayMuted(true);
+        setMuted(true);
         void currentVideo.play().catch(() => {});
         return;
       }
 
-      if (stalledFor >= 12_000 && recoveryStep === 1) {
-        recoveryStep = 2;
+      if (stalledFor >= 12_000 && recoveryRef.current === 1) {
+        recoveryRef.current = 2;
         const resumeAt = current;
         try {
           currentVideo.pause();
           const resume = () => {
             try {
-              if (Number.isFinite(resumeAt) && resumeAt > 0) currentVideo.currentTime = resumeAt;
+              if (resumeAt > 0) currentVideo.currentTime = resumeAt;
               currentVideo.muted = true;
-              setAutoplayMuted(true);
+              setMuted(true);
               void currentVideo.play().catch(() => {});
             } catch {}
           };
@@ -709,76 +741,46 @@ function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: 
         return;
       }
 
-      if (stalledFor >= 22_000) {
-        failAndAdvance("android_local_video_stalled");
-      }
+      if (stalledFor >= 22_000) fail("player_core_video_stalled");
     }, 2_000);
 
     return () => {
       window.clearInterval(watchdog);
+      video?.removeEventListener("loadedmetadata", updateDeadline);
+      if (frameId !== null) video?.cancelVideoFrameCallback?.(frameId);
       try { native.bridge.clearVideoPulse(native.session); } catch {}
-      const currentVideo = videoRef.current as (HTMLVideoElement & { cancelVideoFrameCallback?: (id: number) => void }) | null;
-      if (frameCallbackId !== null) currentVideo?.cancelVideoFrameCallback?.(frameCallbackId);
     };
-  }, [url, fallback, media.id, native.session]);
+  }, [url, media.id, native.session]);
 
   const start = () => {
     const video = videoRef.current;
     if (!video) return;
     video.controls = false;
     video.muted = true;
-    setAutoplayMuted(true);
+    setMuted(true);
     void video.play().catch(() => {});
   };
 
-  const handlePlaying = () => {
+  const playing = () => {
     const video = videoRef.current;
-    if (!video || soundAttemptedRef.current) return;
-    soundAttemptedRef.current = true;
+    if (!video || !muted) return;
     window.setTimeout(() => {
       const current = videoRef.current;
       if (!current || current.ended) return;
       current.muted = false;
-      setAutoplayMuted(false);
+      setMuted(false);
       void current.play().catch(() => {
         current.muted = true;
-        setAutoplayMuted(true);
-        void current.play().catch(() => {});
+        setMuted(true);
       });
-    }, 300);
+    }, 250);
   };
-
-  const handleError = () => {
-    if (!retryRef.current) {
-      retryRef.current = true;
-      const video = videoRef.current;
-      if (video) {
-        try {
-          video.muted = true;
-          setAutoplayMuted(true);
-          video.load();
-          void video.play().catch(() => {});
-          return;
-        } catch {}
-      }
-    }
-    try { native.bridge.clearVideoPulse(native.session); } catch {}
-    onErrorRef.current("android_local_video_error");
-  };
-
-  if (fallback) {
-    return <WebDriveStage media={media} duration={media.durationSeconds || 15} device={device} onEnd={onEnd} onError={onError} />;
-  }
-
-  if (!url) {
-    return <div className="drive-stage player-loading"><Loader2 className="spin" /><small>Preparando {media.name}</small></div>;
-  }
 
   return <video
     ref={videoRef}
     src={url}
     autoPlay
-    muted={autoplayMuted}
+    muted={muted}
     playsInline
     preload="auto"
     controls={false}
@@ -787,12 +789,22 @@ function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: 
     onLoadedMetadata={start}
     onLoadedData={start}
     onCanPlay={start}
-    onPlaying={handlePlaying}
+    onPlaying={playing}
     onEnded={() => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       try { native.bridge.clearVideoPulse(native.session); } catch {}
       onEnd();
     }}
-    onError={handleError}
+    onError={() => {
+      if (recoveryRef.current < 1) {
+        recoveryRef.current = 1;
+        const video = videoRef.current;
+        try { video?.load(); void video?.play().catch(() => {}); } catch {}
+      } else {
+        onErrorRef.current("player_core_video_error");
+      }
+    }}
   />;
 }
 
@@ -1132,6 +1144,13 @@ declare global {
       stopImage: (session: string, playbackId: string) => void;
       getCacheStatus: (session: string) => string;
       getLocalVideoUrl: (session: string, cacheKey: string) => string;
+      saveDeviceCredentials: (session: string, screenId: string, token: string) => void;
+      clearDeviceCredentials: (session: string) => void;
+      getActiveManifest: (session: string) => string;
+      getPlayerCoreStatus: (session: string) => string;
+      requestPlayerCoreSync: (session: string) => void;
+      hasCoreMedia: (session: string, mediaId: string, revision: string, type: string) => boolean;
+      getCoreMediaUrl: (session: string, mediaId: string, revision: string, type: string) => string;
       runtimePulse: (session: string) => void;
       videoPulse: (session: string, mediaId: string, positionSeconds: number, active: boolean) => void;
       clearVideoPulse: (session: string) => void;
