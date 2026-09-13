@@ -1361,6 +1361,28 @@ function AdvancedSettings({
   online: boolean;
   currentPlaylistName: string;
 }) {
+  const core = (status?.client_info?.playerCore || null) as {
+    phase?: string;
+    lastError?: string;
+    lastSyncAt?: number;
+    readyMedia?: number;
+    totalMedia?: number;
+    libraryBytes?: number;
+    libraryLimitBytes?: number;
+  } | null;
+  const coreReady = core?.phase === "ready" || core?.phase === "error_using_previous";
+  const coreLabel = core?.phase === "downloading"
+    ? `Baixando ${core.readyMedia || 0}/${core.totalMedia || 0}`
+    : core?.phase === "activating"
+      ? "Ativando conteúdo"
+      : core?.phase === "error_using_previous"
+        ? "Exibindo última versão"
+        : core?.phase === "error_first_sync"
+          ? "Primeira sincronização pendente"
+          : core?.phase === "ready"
+            ? "Conteúdo local pronto"
+            : "Aguardando diagnóstico";
+
   const update = (status?.client_info?.playerUpdate || null) as {
     state?: string;
     installedVersion?: string;
