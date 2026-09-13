@@ -8,6 +8,10 @@ on:
     paths:
       - "android-tv/**"
       - "frontend/src/player/Player.tsx"
+      - "frontend/src/pages/ScreensSimple.tsx"
+      - "frontend/src/pages/Help.tsx"
+      - "frontend/src/types.ts"
+      - "frontend/src/screen-experience.css"
       - "frontend/src/lib/playerVersion.ts"
       - "frontend/src/App.tsx"
       - "frontend/vite.player.config.ts"
