@@ -313,6 +313,13 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        applyImmersiveMode();
+        if (nativeBridge != null) nativeBridge.onResume();
+    }
+
+    @Override
     protected void onDestroy() {
         playerWatchdogHandler.removeCallbacks(playerWatchdog);
         if (nativeBridge != null) nativeBridge.release();
