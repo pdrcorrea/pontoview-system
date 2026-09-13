@@ -50,6 +50,17 @@ public final class PlayerUpdateManager {
     public PlayerUpdateManager(Activity activity) {
         this.activity = activity;
         this.prefs = activity.getSharedPreferences("pontoview_player", Context.MODE_PRIVATE);
+
+        String savedPath = prefs.getString("update_apk_path", "");
+        if (savedPath != null && !savedPath.isEmpty()) {
+            File saved = new File(savedPath);
+            if (saved.exists() && saved.length() > 0) {
+                downloadedApk = saved;
+                downloadedVersion = prefs.getString("update_downloaded_version", "");
+                state = "downloaded";
+                installRequested = prefs.getBoolean("update_install_requested", false);
+            }
+        }
     }
 
     public void start() {
@@ -58,6 +69,13 @@ public final class PlayerUpdateManager {
 
     public void stop() {
         executor.shutdownNow();
+    }
+
+    public void onResume() {
+        if ("permission_required".equals(state) && canRequestPackageInstalls()
+                && downloadedApk != null && downloadedApk.exists()) {
+            installDownloaded();
+        }
     }
 
     public void setPolicy(boolean autoUpdate, String channel, long requestRevision) {
@@ -109,6 +127,7 @@ public final class PlayerUpdateManager {
                     return;
                 }
                 installRequested = false;
+                prefs.edit().putBoolean("update_install_requested", false).apply();
                 installApk(downloadedApk);
             } catch (Exception error) {
                 state = "error";
@@ -159,6 +178,11 @@ public final class PlayerUpdateManager {
                 state = "downloaded";
 
                 installRequested = required || autoUpdate || forced;
+                prefs.edit()
+                        .putString("update_apk_path", apk.getAbsolutePath())
+                        .putString("update_downloaded_version", versionName)
+                        .putBoolean("update_install_requested", installRequested)
+                        .apply();
             } catch (Exception error) {
                 if (String.valueOf(error.getMessage()).contains("404")) {
                     state = "up_to_date";
