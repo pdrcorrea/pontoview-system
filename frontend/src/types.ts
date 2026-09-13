@@ -84,6 +84,7 @@ export interface ScreenStatus {
   player_version: string | null;
   screenshot_url: string | null;
   screenshot_at: string | null;
+  client_info?: Record<string, unknown> | null;
 }
 
 export interface OperatingHours {
