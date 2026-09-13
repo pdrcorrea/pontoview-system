@@ -191,10 +191,8 @@ public final class PlayerSyncEngine {
                 .toString()
                 .getBytes(StandardCharsets.UTF_8);
 
-        try (FileOutputStream ignored = null) {
-            connection.getOutputStream().write(body);
-        } catch (NullPointerException ignored) {
-            connection.getOutputStream().write(body);
+        try (java.io.OutputStream output = connection.getOutputStream()) {
+            output.write(body);
         }
 
         int status = connection.getResponseCode();
@@ -293,7 +291,9 @@ public final class PlayerSyncEngine {
                 .put("action", "ticket")
                 .toString()
                 .getBytes(StandardCharsets.UTF_8);
-        connection.getOutputStream().write(body);
+        try (java.io.OutputStream output = connection.getOutputStream()) {
+            output.write(body);
+        }
 
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) {
