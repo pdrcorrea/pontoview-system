@@ -121,3 +121,34 @@ jobs:
           else
             gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 3.0.0 beta 3"               --notes "Player Core v3: snapshots atômicos, biblioteca local, Google Drive como origem, operação offline e watchdog. Sem armazenamento central de mídia."               --prerelease
           fi
+
+      - name: Publish update feed
+        if: steps.signing.outputs.signed == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/player-core-v3')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CHANNEL="stable"
+          if [ "$GITHUB_REF" = "refs/heads/player-core-v3" ]; then
+            CHANNEL="beta"
+          fi
+
+          VERSION_NAME="3.0.0-beta3"
+          VERSION_CODE="30003"
+          TAG="android-v3.0.0-beta3"
+          APK="PontoView-Telas-v3.0.0-beta3.apk"
+          SUM="PontoView-Telas-v3.0.0-beta3.sha256"
+          SHA256="$(awk '{print $1}' "$SUM")"
+          APK_URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$APK"
+          PUBLISHED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          if ! gh release view android-updates >/dev/null 2>&1; then
+            gh release create android-updates --title "PontoView Android Update Feed" --notes "Feed utilizado pelos Players PontoView para atualização segura."
+          fi
+
+          echo '{"schema":1}' > update-manifest.json
+          gh release download android-updates -p update-manifest.json --clobber >/dev/null 2>&1 || true
+
+          jq --arg channel "$CHANNEL" --arg versionName "$VERSION_NAME" --argjson versionCode "$VERSION_CODE" --arg url "$APK_URL" --arg sha256 "$SHA256" --arg publishedAt "$PUBLISHED_AT" '.schema = 1 | .[$channel] = {versionCode:$versionCode,versionName:$versionName,url:$url,sha256:$sha256,required:false,publishedAt:$publishedAt}' update-manifest.json > update-manifest.tmp
+          mv update-manifest.tmp update-manifest.json
+          gh release upload android-updates update-manifest.json --clobber
