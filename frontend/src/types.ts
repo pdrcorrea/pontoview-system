@@ -111,6 +111,9 @@ export interface ScreenSettings {
   transition: "fade" | "cut";
   image_duration_seconds: number;
   auto_start: boolean;
+  auto_update: boolean;
+  update_channel: "stable" | "beta";
+  update_request_revision: number;
   operating_hours: OperatingHours;
 }
 
