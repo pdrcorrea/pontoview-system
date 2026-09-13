@@ -122,6 +122,24 @@ export function PlayerPage() {
   }, [manifest?.settings?.auto_start, manifest?.screen?.id, nativeRuntime?.session]);
 
   useEffect(() => {
+    if (!manifest || !nativeRuntime) return;
+    try {
+      nativeRuntime.bridge.setUpdatePolicy(
+        nativeRuntime.session,
+        manifest.settings?.auto_update !== false,
+        manifest.settings?.update_channel || "stable",
+        Number(manifest.settings?.update_request_revision || 0),
+      );
+    } catch {}
+  }, [
+    manifest?.settings?.auto_update,
+    manifest?.settings?.update_channel,
+    manifest?.settings?.update_request_revision,
+    manifest?.screen?.id,
+    nativeRuntime?.session,
+  ]);
+
+  useEffect(() => {
     if (!activeDevice || !nativeRuntime) return;
     try {
       nativeRuntime.bridge.saveDeviceCredentials(nativeRuntime.session, activeDevice.screenId, activeDevice.token);
@@ -260,7 +278,7 @@ export function PlayerPage() {
 
   useEffect(() => {
     if (!activeDevice || !manifest) return;
-    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null, nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null, playerCore: playerCoreStatus(nativeRuntime) } });
+    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null, nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null, playerCore: playerCoreStatus(nativeRuntime), playerUpdate: playerUpdateStatus(nativeRuntime) } });
     heartbeat(); const timer = window.setInterval(heartbeat, 30000); return () => window.clearInterval(timer);
   }, [activeDevice, manifest?.playlist?.id, manifest?.screen.orientation, operating, item?.media.id]);
 
@@ -272,12 +290,34 @@ export function PlayerPage() {
   const advance = useCallback((failed = false, detail?: string) => {
     const current = playbackRef.current; if (!current.manifest || !activeDevice || !current.item) return;
     void supabase.rpc("player_event", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_event_type: failed ? "media_error" : "content_ended", p_media_id: current.item.media.id, p_playlist_id: current.manifest.playlist?.id || null, p_payload: failed ? { detail: detail || "playback_error" } : { position: current.index } });
+
+    if (nativeRuntime) {
+      try {
+        const update = playerUpdateStatus(nativeRuntime);
+        if (update?.state === "downloaded" && update?.installRequested) {
+          nativeRuntime.bridge.installDownloadedUpdate(nativeRuntime.session);
+        }
+      } catch {}
+    }
+
     const itemCount = Math.max(1, current.manifest.items.length);
     setPlaybackCycle((cycle) => cycle + 1);
     setIndex((position) => (position + 1) % itemCount);
-  }, [activeDevice]);
+  }, [activeDevice, nativeRuntime?.session]);
   const handleEnd = useCallback(() => advance(false), [advance]);
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
+  useEffect(() => {
+    if (!nativeRuntime || item) return;
+    const timer = window.setInterval(() => {
+      try {
+        const update = playerUpdateStatus(nativeRuntime);
+        if (update?.state === "downloaded" && update?.installRequested) {
+          nativeRuntime.bridge.installDownloadedUpdate(nativeRuntime.session);
+        }
+      } catch {}
+    }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [nativeRuntime?.session, item?.itemId]);
   useEffect(() => { if (!operating) return; if (item?.media.onlineRequired && !navigator.onLine) { const timer = window.setTimeout(() => advance(true, "offline_content_skipped"), 500); return () => window.clearTimeout(timer); } }, [operating, item?.itemId, advance]);
 
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
@@ -422,6 +462,15 @@ function playerCoreStatus(native: NativeBridgeContext | null) {
   if (!native) return null;
   try {
     return JSON.parse(native.bridge.getPlayerCoreStatus(native.session) || "{}");
+  } catch {
+    return null;
+  }
+}
+
+function playerUpdateStatus(native: NativeBridgeContext | null) {
+  if (!native) return null;
+  try {
+    return JSON.parse(native.bridge.getPlayerUpdateStatus(native.session) || "{}");
   } catch {
     return null;
   }
@@ -1206,6 +1255,10 @@ declare global {
       videoPulse: (session: string, mediaId: string, positionSeconds: number, active: boolean) => void;
       clearVideoPulse: (session: string) => void;
       setAutoStart: (session: string, enabled: boolean) => void;
+      setUpdatePolicy: (session: string, autoUpdate: boolean, channel: string, requestRevision: number) => void;
+      getPlayerUpdateStatus: (session: string) => string;
+      checkForUpdate: (session: string) => void;
+      installDownloadedUpdate: (session: string) => void;
       syncManifest: (session: string, screenId: string, token: string, manifestJson: string) => void;
     };
   }
