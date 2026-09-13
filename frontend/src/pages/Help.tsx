@@ -7,6 +7,7 @@ import {
   Check,
   ChevronRight,
   Cloud,
+  Download,
   Eye,
   HeartPulse,
   Image,
@@ -246,6 +247,20 @@ const guides: HelpGuide[] = [
       "Acompanhe o status das solicitações na própria página.",
     ],
     icon: ShieldCheck,
+  },
+  {
+    title: "Atualizações do aplicativo da TV",
+    summary: "O Player pode verificar, baixar e preparar novas versões sem interromper o download da programação.",
+    intro: "As atualizações do aplicativo são configuradas individualmente em cada tela.",
+    steps: [
+      "Abra Telas → Configurar esta tela → Avançado → Atualizações do Player.",
+      "Mantenha Atualizações automáticas ativado para receber novas versões sem precisar baixar o APK manualmente.",
+      "Use o canal Estável nas TVs de uso diário. O canal Beta é indicado para uma tela de teste antes de liberar novidades para as demais.",
+      "O download acontece em segundo plano. Quando a atualização está pronta, o Player aguarda um ponto seguro entre conteúdos para iniciar a instalação.",
+      "Na primeira atualização, alguns dispositivos Android podem pedir autorização para que o PontoView instale aplicativos. Essa permissão é concedida no próprio dispositivo.",
+      "Depois que a assinatura oficial estiver instalada, versões futuras preservam o aplicativo, o pareamento e a biblioteca local durante a atualização.",
+    ],
+    icon: Download,
   },
   {
     title: "Operação offline",
