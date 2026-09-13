@@ -81,6 +81,8 @@ public final class PlayerUpdateManager {
     public void setPolicy(boolean autoUpdate, String channel, long requestRevision) {
         String normalized = "beta".equalsIgnoreCase(channel) ? "beta" : "stable";
         long previousRequest = prefs.getLong("update_request_revision", 0L);
+        String previousChannel = prefs.getString("update_channel", "");
+        boolean previousAutoUpdate = prefs.getBoolean("auto_update", true);
 
         prefs.edit()
                 .putBoolean("auto_update", autoUpdate)
@@ -88,8 +90,12 @@ public final class PlayerUpdateManager {
                 .putLong("update_request_revision", requestRevision)
                 .apply();
 
-        if (requestRevision > previousRequest) {
-            checkForUpdate(true);
+        boolean forced = requestRevision > previousRequest;
+        boolean policyChanged = !normalized.equals(previousChannel) || autoUpdate != previousAutoUpdate;
+        boolean stale = lastCheckAt == 0L || System.currentTimeMillis() - lastCheckAt > 60L * 60L * 1000L;
+
+        if (forced || policyChanged || stale) {
+            checkForUpdate(forced);
         }
     }
 
