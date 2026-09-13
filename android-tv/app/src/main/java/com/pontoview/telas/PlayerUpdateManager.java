@@ -64,6 +64,10 @@ public final class PlayerUpdateManager {
     }
 
     public void start() {
+        if (isPlayDistribution()) {
+            state = "managed_by_play";
+            return;
+        }
         executor.scheduleWithFixedDelay(() -> checkForUpdate(false), 45, PERIODIC_CHECK_HOURS, TimeUnit.HOURS);
     }
 
@@ -79,6 +83,10 @@ public final class PlayerUpdateManager {
     }
 
     public void setPolicy(boolean autoUpdate, String channel, long requestRevision) {
+        if (isPlayDistribution()) {
+            state = "managed_by_play";
+            return;
+        }
         String normalized = "beta".equalsIgnoreCase(channel) ? "beta" : "stable";
         long previousRequest = prefs.getLong("update_request_revision", 0L);
         String previousChannel = prefs.getString("update_channel", "");
@@ -100,6 +108,10 @@ public final class PlayerUpdateManager {
     }
 
     public void checkNow() {
+        if (isPlayDistribution()) {
+            state = "managed_by_play";
+            return;
+        }
         checkForUpdate(true);
     }
 
@@ -119,6 +131,7 @@ public final class PlayerUpdateManager {
             json.put("pendingUserAction", pendingUserAction);
             json.put("installRequested", installRequested);
             json.put("canRequestPackageInstalls", canRequestPackageInstalls());
+            json.put("distribution", BuildConfig.DISTRIBUTION);
             return json.toString();
         } catch (Exception ignored) {
             return "{}";
@@ -126,6 +139,10 @@ public final class PlayerUpdateManager {
     }
 
     public void installDownloaded() {
+        if (isPlayDistribution()) {
+            state = "managed_by_play";
+            return;
+        }
         executor.execute(() -> {
             try {
                 if (downloadedApk == null || !downloadedApk.exists()) {
@@ -377,6 +394,10 @@ public final class PlayerUpdateManager {
         }
 
         return new JSONObject(body.toString());
+    }
+
+    private boolean isPlayDistribution() {
+        return "play".equalsIgnoreCase(BuildConfig.DISTRIBUTION);
     }
 
     private String currentChannel() {
