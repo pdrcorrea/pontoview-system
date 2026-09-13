@@ -19,6 +19,18 @@ android {
         versionName "3.0.0-beta4"
     }
 
+    flavorDimensions "distribution"
+    productFlavors {
+        direct {
+            dimension "distribution"
+            buildConfigField "String", "DISTRIBUTION", "\"direct\""
+        }
+        play {
+            dimension "distribution"
+            buildConfigField "String", "DISTRIBUTION", "\"play\""
+        }
+    }
+
     signingConfigs {
         release {
             if (releaseStorePath && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
