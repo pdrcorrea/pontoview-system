@@ -70,7 +70,7 @@ export function DashboardPage() {
       supabase
         .from("screens")
         .select(
-          "id,organization_id,name,slug,orientation,default_playlist_id,is_active,settings_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(layout_mode)",
+          "id,organization_id,name,slug,orientation,default_playlist_id,is_active,settings_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at,client_info),screen_settings(layout_mode)",
         )
         .eq("organization_id", organization.id)
         .eq("is_active", true)
