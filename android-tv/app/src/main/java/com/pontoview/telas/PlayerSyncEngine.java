@@ -183,7 +183,7 @@ public final class PlayerSyncEngine {
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("apikey", PUBLISHABLE_KEY);
         connection.setRequestProperty("Authorization", "Bearer " + PUBLISHABLE_KEY);
-        connection.setRequestProperty("User-Agent", "PontoViewPlayerCore/3.0.0-beta2");
+        connection.setRequestProperty("User-Agent", "PontoViewPlayerCore/3.0.0-beta3");
 
         byte[] body = new JSONObject()
                 .put("p_screen_id", screenId)
@@ -229,7 +229,7 @@ public final class PlayerSyncEngine {
             connection.setInstanceFollowRedirects(true);
             connection.setConnectTimeout(20000);
             connection.setReadTimeout(120000);
-            connection.setRequestProperty("User-Agent", "PontoViewPlayerCore/3.0.0-beta2");
+            connection.setRequestProperty("User-Agent", "PontoViewPlayerCore/3.0.0-beta3");
             connection.connect();
 
             int status = connection.getResponseCode();
@@ -284,7 +284,7 @@ public final class PlayerSyncEngine {
         connection.setRequestProperty("Authorization", "Bearer " + PUBLISHABLE_KEY);
         connection.setRequestProperty("x-screen-id", screenId);
         connection.setRequestProperty("x-screen-token", token);
-        connection.setRequestProperty("User-Agent", "PontoViewPlayerCore/3.0.0-beta2");
+        connection.setRequestProperty("User-Agent", "PontoViewPlayerCore/3.0.0-beta3");
 
         byte[] body = new JSONObject()
                 .put("mediaId", mediaId)
