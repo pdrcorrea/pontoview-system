@@ -188,7 +188,7 @@ export function PlayerPage() {
         const next = JSON.parse(raw) as PlayerManifest;
         localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next));
         setManifest(next);
-        setConnected(true);
+        setConnected(navigator.onLine);
         setError(null);
         setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
       } catch {
@@ -1103,8 +1103,28 @@ type ForecastDay = { date: string; weather_code: number | null; condition?: stri
 type WeatherData = { temperature: number | null; apparent_temperature?: number | null; humidity?: number | null; wind_speed?: number | null; weather_code?: number | null; condition?: string; name?: string; forecast?: ForecastDay[]; };
 
 function WeatherWidget({ screenId, token, location }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; }) {
-  const [data, setData] = useState<WeatherData | null>(null); const locationKey = JSON.stringify(location || {});
-  useEffect(() => { let active = true; const load = () => void fetch(`${functionsUrl}/screens-weather`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": screenId, "x-screen-token": token }, body: "{}" }).then((response) => response.ok ? response.json() : null).then((result) => { if (active && result) setData(result); }).catch(() => {}); load(); const timer = window.setInterval(load, 10 * 60_000); return () => { active = false; window.clearInterval(timer); }; }, [screenId, token, locationKey]);
+  const locationKey = JSON.stringify(location || {});
+  const cacheKey = `pv-weather:${screenId}:${locationKey}`;
+  const [data, setData] = useState<WeatherData | null>(() => {
+    try { return JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { return null; }
+  });
+
+  useEffect(() => {
+    let active = true;
+    const load = () => void fetch(`${functionsUrl}/screens-weather`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": screenId, "x-screen-token": token },
+      body: "{}",
+    }).then((response) => response.ok ? response.json() : null).then((result) => {
+      if (!result) return;
+      try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch {}
+      if (active) setData(result);
+    }).catch(() => {});
+    load();
+    const timer = window.setInterval(load, 10 * 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [screenId, token, locationKey, cacheKey]);
+
   const forecast = Array.isArray(data?.forecast) ? data.forecast.slice(1, 4) : [];
   return <div className="live-weather"><div className="weather-current"><WeatherGlyph code={data?.weather_code} /><span><b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b><small className="condition">{data?.condition || "Clima"}</small><small>{data?.name || String(location?.name || "Configure a cidade")}</small>{(data?.apparent_temperature != null || data?.wind_speed != null) && <span className="weather-detail">{data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}{data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}</span>}</span></div>{forecast.length > 0 && <div className="weather-forecast">{forecast.map((day) => <div className="weather-day" key={day.date} title={day.condition || "Previsão"}><small>{forecastLabel(day.date)}</small><WeatherGlyph code={day.weather_code} /><span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span></div>)}</div>}</div>;
 }
