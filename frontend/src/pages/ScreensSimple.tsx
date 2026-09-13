@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Clock3,
   Copy,
+  Download,
   HardDrive,
   CloudSun,
   MessageSquareText,
@@ -66,6 +67,9 @@ const defaultSettings: ScreenSettings = {
   transition: "fade",
   image_duration_seconds: 15,
   auto_start: true,
+  auto_update: true,
+  update_channel: "stable",
+  update_request_revision: 0,
   operating_hours: defaultOperatingHours,
 };
 
@@ -421,6 +425,7 @@ function ScreenEditor({
   }));
   const [busy, setBusy] = useState(false);
   const [reloadBusy, setReloadBusy] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
   const [copyBusy, setCopyBusy] = useState(false);
   const [copyModal, setCopyModal] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -565,6 +570,36 @@ function ScreenEditor({
     else setSuccess("Comando enviado. A TV será recarregada em até 15 segundos.");
   };
 
+  const requestPlayerUpdate = async () => {
+    if (!confirm(`Verificar atualizações do Player “${name}” agora?`)) return;
+    setUpdateBusy(true);
+    setError(null);
+    setSuccess(null);
+
+    const nextRequest = Number(settings.update_request_revision || 0) + 1;
+    const result = await supabase
+      .from("screen_settings")
+      .update({ update_request_revision: nextRequest })
+      .eq("screen_id", screen.id);
+
+    setUpdateBusy(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+
+    setSettings((current) => ({ ...current, update_request_revision: nextRequest }));
+    setSavedFingerprint(screenConfigFingerprint({
+      name,
+      playlist,
+      orientation,
+      rotation,
+      settings: { ...settings, update_request_revision: nextRequest },
+    }));
+    setSuccess("Comando enviado. O Player verificará a versão disponível automaticamente.");
+    await onRefresh();
+  };
+
   const copyConfiguration = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (dirty) {
@@ -681,6 +716,12 @@ function ScreenEditor({
               setAutoStart={(value) => setSettings((current) => ({ ...current, auto_start: value }))}
               reloadBusy={reloadBusy}
               requestReload={requestReload}
+              autoUpdate={settings.auto_update !== false}
+              setAutoUpdate={(value) => setSettings((current) => ({ ...current, auto_update: value }))}
+              updateChannel={settings.update_channel || "stable"}
+              setUpdateChannel={(value) => setSettings((current) => ({ ...current, update_channel: value }))}
+              updateBusy={updateBusy}
+              requestPlayerUpdate={requestPlayerUpdate}
               onDeactivate={onDeactivate}
               onCopy={() => {
                 if (dirty) {
@@ -1494,6 +1535,9 @@ function screenSettingsPayload(settings: ScreenSettings) {
     transition: settings.transition,
     image_duration_seconds: settings.image_duration_seconds,
     auto_start: settings.auto_start !== false,
+    auto_update: settings.auto_update !== false,
+    update_channel: settings.update_channel || "stable",
+    update_request_revision: Number(settings.update_request_revision || 0),
     operating_hours: settings.operating_hours,
   };
 }
