@@ -10,8 +10,8 @@ android {
         applicationId "com.pontoview.telas"
         minSdk 24
         targetSdk 35
-        versionCode 20010
-        versionName "2.0.0-beta10"
+        versionCode 30001
+        versionName "3.0.0-beta1"
     }
 
     buildTypes {
