@@ -132,7 +132,7 @@ public class NativeMediaBridge {
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/3.0.0-beta2")
+                .setUserAgent("PontoViewTV/3.0.0-beta3")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -149,7 +149,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "3.0.0-beta2";
+        return "3.0.0-beta3";
     }
 
     @JavascriptInterface
@@ -303,7 +303,7 @@ public class NativeMediaBridge {
         c.setRequestProperty("apikey", PUBLISHABLE_KEY);
         c.setRequestProperty("x-screen-id", screenId);
         c.setRequestProperty("x-screen-token", token);
-        c.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta2");
+        c.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta3");
         byte[] body = new JSONObject().put("mediaId", mediaId).put("action", "ticket")
                 .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }
@@ -344,7 +344,7 @@ public class NativeMediaBridge {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(120000);
-                connection.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta2");
+                connection.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta3");
                 connection.connect();
 
                 int status = connection.getResponseCode();
@@ -885,7 +885,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta2");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/3.0.0-beta3");
         connection.connect();
 
         int status = connection.getResponseCode();
