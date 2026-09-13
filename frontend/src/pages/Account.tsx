@@ -223,7 +223,7 @@ export function AccountPage() {
           ))}
 
           <div id="google-drive" className="panel-title integration-title">
-            <div><h2>Google Drive</h2><p>Arquivos conectados à PontoView.</p></div>
+            <div><h2>Google Drive</h2><p>Origem dos arquivos usados nas suas telas. Os Players sincronizam cópias locais para reprodução.</p></div>
           </div>
 
           {drives.map((drive) => (
@@ -342,7 +342,7 @@ export function SettingsPage() {
             <Cloud />
             <span>
               <b>Google Drive</b>
-              <small>Credenciais protegidas no servidor.</small>
+              <small>Credenciais protegidas no servidor; arquivos originais permanecem na sua conta Google.</small>
             </span>
             <span className="status active">Protegido</span>
           </div>
@@ -415,7 +415,7 @@ export function OnboardingPage() {
       "Conectar Google Drive",
       steps.drive,
       Cloud,
-      "Use seus próprios arquivos sem reenviar tudo.",
+      "Use seus próprios arquivos como origem; cada TV sincroniza apenas o que precisa.",
       "/empresa",
     ],
     [
