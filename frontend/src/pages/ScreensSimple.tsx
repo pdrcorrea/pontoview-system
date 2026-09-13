@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Clock3,
   Copy,
+  HardDrive,
   CloudSun,
   MessageSquareText,
   Monitor,
@@ -761,6 +762,28 @@ function GeneralSettings({
   setOrientation: (value: "landscape" | "portrait") => void;
   onAdvanced: () => void;
 }) {
+  const core = (status?.client_info?.playerCore || null) as {
+    phase?: string;
+    lastError?: string;
+    lastSyncAt?: number;
+    readyMedia?: number;
+    totalMedia?: number;
+    libraryBytes?: number;
+    libraryLimitBytes?: number;
+  } | null;
+  const coreReady = core?.phase === "ready" || core?.phase === "error_using_previous";
+  const coreLabel = core?.phase === "downloading"
+    ? `Baixando ${core.readyMedia || 0}/${core.totalMedia || 0}`
+    : core?.phase === "activating"
+      ? "Ativando conteúdo"
+      : core?.phase === "error_using_previous"
+        ? "Exibindo última versão"
+        : core?.phase === "error_first_sync"
+          ? "Primeira sincronização pendente"
+          : core?.phase === "ready"
+            ? "Conteúdo local pronto"
+            : "Aguardando diagnóstico";
+
   return (
     <>
       <ConfigIntro
@@ -1310,13 +1333,20 @@ function AdvancedSettings({
             <Play />
             <span><small>Conteúdo</small><b>{currentPlaylistName}</b></span>
           </div>
+          <div className={coreReady ? "diagnostic-item ok" : "diagnostic-item"}>
+            <HardDrive />
+            <span><small>Biblioteca local</small><b>{coreLabel}</b></span>
+          </div>
         </div>
         <details className="diagnostic-details">
           <summary>Detalhes técnicos</summary>
           <dl>
             <div><dt>Versão instalada</dt><dd>{status?.player_version || "Não identificada"}</dd></div>
             <div><dt>Versão atual</dt><dd>{CURRENT_PLAYER_VERSION}</dd></div>
-            <div><dt>Última sincronização</dt><dd>{timeAgo(status?.last_seen)}</dd></div>
+            <div><dt>Última comunicação</dt><dd>{timeAgo(status?.last_seen)}</dd></div>
+            <div><dt>Core local</dt><dd>{coreLabel}</dd></div>
+            {core?.libraryBytes != null && <div><dt>Biblioteca local</dt><dd>{formatCoreBytes(core.libraryBytes)}</dd></div>}
+            {core?.lastError && <div><dt>Último aviso</dt><dd>{core.lastError}</dd></div>}
             <div><dt>Giro</dt><dd>{rotationLabels[rotation]}</dd></div>
           </dl>
         </details>
@@ -1360,8 +1390,8 @@ function AdvancedSettings({
         </div>
         <div className="maintenance-action">
           <RefreshCw />
-          <span><b>Limpar cache e recarregar</b><small>O pareamento é mantido.</small></span>
-          <AsyncButton busy={reloadBusy} className="btn secondary" onClick={() => void requestReload()}>Recarregar</AsyncButton>
+          <span><b>Sincronizar novamente</b><small>O pareamento é mantido e a programação atual continua até a nova versão ficar pronta.</small></span>
+          <AsyncButton busy={reloadBusy} className="btn secondary" onClick={() => void requestReload()}>Sincronizar</AsyncButton>
         </div>
       </div>
 
@@ -1373,6 +1403,13 @@ function AdvancedSettings({
       </div>
     </>
   );
+}
+
+function formatCoreBytes(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return "0 MB";
+  const gb = value / (1024 ** 3);
+  if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
+  return `${Math.max(1, Math.round(value / (1024 ** 2)))} MB`;
 }
 
 function ConfigIntro({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
