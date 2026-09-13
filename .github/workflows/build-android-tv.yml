@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - player-core-v3
     paths:
       - "android-tv/**"
       - "frontend/src/player/Player.tsx"
@@ -52,28 +53,28 @@ jobs:
 
       - name: Prepare artifact
         run: |
-          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v2.0.0-beta10.apk
-          sha256sum PontoView-Telas-v2.0.0-beta10.apk > PontoView-Telas-v2.0.0-beta10.sha256
+          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v3.0.0-beta1.apk
+          sha256sum PontoView-Telas-v3.0.0-beta1.apk > PontoView-Telas-v3.0.0-beta1.sha256
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PontoView-Telas-v2.0.0-beta10
+          name: PontoView-Telas-v3.0.0-beta1
           path: |
-            PontoView-Telas-v2.0.0-beta10.apk
-            PontoView-Telas-v2.0.0-beta10.sha256
+            PontoView-Telas-v3.0.0-beta1.apk
+            PontoView-Telas-v3.0.0-beta1.sha256
           retention-days: 30
 
       - name: Publish testing release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/player-core-v3'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-v2.0.0-beta10"
-          APK="PontoView-Telas-v2.0.0-beta10.apk"
-          SUM="PontoView-Telas-v2.0.0-beta10.sha256"
+          TAG="android-v3.0.0-beta1"
+          APK="PontoView-Telas-v3.0.0-beta1.apk"
+          SUM="PontoView-Telas-v3.0.0-beta1.sha256"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" "$SUM" --clobber
           else
-            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 2.0.0 beta 10"               --notes "APK de testes com Media3/ExoPlayer, cache local, otimização local de imagens e identidade oficial PontoView. Sem Cloudflare R2."               --prerelease
+            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 3.0.0 beta 1"               --notes "Player Core v3: snapshots atômicos, biblioteca local, Google Drive como origem, operação offline e watchdog. Sem armazenamento central de mídia."               --prerelease
           fi
