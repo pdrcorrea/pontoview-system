@@ -18,14 +18,17 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
+import androidx.webkit.WebViewAssetLoader;
+
 import org.json.JSONObject;
 
 public class MainActivity extends Activity {
-    private static final String HOME_URL = "https://tv.pontoview.com.br/";
+    private static final String HOME_URL = "https://appassets.androidplatform.net/index.html";
     private WebView webView;
     private FrameLayout root;
     private FrameLayout nativeLayer;
     private NativeMediaBridge nativeBridge;
+    private WebViewAssetLoader assetLoader;
     private final Handler playerWatchdogHandler = new Handler(Looper.getMainLooper());
     private long watchdogReloadStartedAt = 0L;
     private final Runnable playerWatchdog = new Runnable() {
@@ -108,15 +111,23 @@ public class MainActivity extends Activity {
         settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/3.0.0-beta1");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
+        assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
         webView.addJavascriptInterface(nativeBridge, "PontoViewNative");
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                if (request != null && request.getUrl() != null
-                        && "local.pontoview.invalid".equalsIgnoreCase(request.getUrl().getHost())) {
-                    android.webkit.WebResourceResponse response = nativeBridge.serveLocalVideo(request);
-                    if (response != null) return response;
+                if (request != null && request.getUrl() != null) {
+                    if ("local.pontoview.invalid".equalsIgnoreCase(request.getUrl().getHost())) {
+                        android.webkit.WebResourceResponse response = nativeBridge.serveLocalVideo(request);
+                        if (response != null) return response;
+                    }
+                    if ("appassets.androidplatform.net".equalsIgnoreCase(request.getUrl().getHost()) && assetLoader != null) {
+                        android.webkit.WebResourceResponse response = assetLoader.shouldInterceptRequest(request.getUrl());
+                        if (response != null) return response;
+                    }
                 }
                 return super.shouldInterceptRequest(view, request);
             }
@@ -166,7 +177,9 @@ public class MainActivity extends Activity {
         String host = uri.getHost();
         if (host == null) return false;
         host = host.toLowerCase();
-        return host.equals("pontoview.com.br") || host.endsWith(".pontoview.com.br");
+        return host.equals("appassets.androidplatform.net")
+                || host.equals("pontoview.com.br")
+                || host.endsWith(".pontoview.com.br");
     }
 
     private void injectNativeRuntime() {
