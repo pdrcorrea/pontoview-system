@@ -265,7 +265,16 @@ export function PlayerPage() {
   useEffect(() => {
     void sync();
     const timer = window.setInterval(() => void sync(true), nativeMode ? 3000 : 15000);
-    const online = () => { setConnected(true); if (nativeRuntime) { try { nativeRuntime.bridge.requestPlayerCoreSync(nativeRuntime.session); } catch {} } void sync(true); };
+    const online = () => {
+      setConnected(true);
+      if (nativeRuntime) {
+        try {
+          nativeRuntime.bridge.requestPlayerCoreSync(nativeRuntime.session);
+          nativeRuntime.bridge.checkForUpdate(nativeRuntime.session);
+        } catch {}
+      }
+      void sync(true);
+    };
     const offline = () => setConnected(nativeMode && Boolean(manifest));
     window.addEventListener("online", online); window.addEventListener("offline", offline);
     return () => { window.clearInterval(timer); window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
