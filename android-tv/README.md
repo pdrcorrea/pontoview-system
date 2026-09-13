@@ -1,4 +1,4 @@
-# PontoView Telas Android TV 3.0.0 beta 1
+# PontoView Telas Android TV 3.0.0 beta 2
 
 ## Player Core v3
 
