@@ -1628,7 +1628,6 @@ function screenSettingsPayload(settings: ScreenSettings) {
     auto_start: settings.auto_start !== false,
     auto_update: settings.auto_update !== false,
     update_channel: settings.update_channel || "stable",
-    update_request_revision: Number(settings.update_request_revision || 0),
     operating_hours: settings.operating_hours,
   };
 }
