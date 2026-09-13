@@ -38,7 +38,8 @@ import "./panelThumbs";
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 
 function isDedicatedPlayerHost() {
-  return PLAYER_HOSTS.has(window.location.hostname.toLowerCase());
+  const host = window.location.hostname.toLowerCase();
+  return PLAYER_HOSTS.has(host) || host === "appassets.androidplatform.net";
 }
 
 function Protected() {
