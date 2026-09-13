@@ -125,7 +125,12 @@ public class MainActivity extends Activity {
                         if (response != null) return response;
                     }
                     if ("appassets.androidplatform.net".equalsIgnoreCase(request.getUrl().getHost()) && assetLoader != null) {
-                        android.webkit.WebResourceResponse response = assetLoader.shouldInterceptRequest(request.getUrl());
+                        android.net.Uri assetUri = request.getUrl();
+                        String assetPath = assetUri.getPath();
+                        if (assetPath != null && assetPath.startsWith("/paineis/") && assetPath.endsWith("/")) {
+                            assetUri = assetUri.buildUpon().path(assetPath + "index.html").build();
+                        }
+                        android.webkit.WebResourceResponse response = assetLoader.shouldInterceptRequest(assetUri);
                         if (response != null) return response;
                     }
                 }
