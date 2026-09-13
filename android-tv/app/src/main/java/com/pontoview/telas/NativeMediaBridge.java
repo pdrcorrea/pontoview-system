@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -76,6 +77,11 @@ public class NativeMediaBridge {
     private final FrameLayout nativeLayer;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final String sessionToken = UUID.randomUUID().toString();
+    private volatile long lastRuntimePulseAtMs = SystemClock.elapsedRealtime();
+    private volatile long lastVideoProgressAtMs = SystemClock.elapsedRealtime();
+    private volatile String watchdogMediaId = "";
+    private volatile double watchdogVideoPosition = -1d;
+    private volatile boolean watchdogVideoActive = false;
     private final ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
     private final ExecutorService preloadExecutor = Executors.newSingleThreadExecutor();
     private final Set<String> preloadingVideos = ConcurrentHashMap.newKeySet();
@@ -120,7 +126,7 @@ public class NativeMediaBridge {
         );
 
         DefaultHttpDataSource.Factory upstream = new DefaultHttpDataSource.Factory()
-                .setUserAgent("PontoViewTV/2.0.0-beta9")
+                .setUserAgent("PontoViewTV/2.0.0-beta10")
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(60000)
                 .setAllowCrossProtocolRedirects(true);
@@ -137,7 +143,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta9";
+        return "2.0.0-beta10";
     }
 
     @JavascriptInterface
@@ -145,6 +151,58 @@ public class NativeMediaBridge {
         if (!validSession(session)) return;
         SharedPreferences prefs = activity.getSharedPreferences("pontoview_player", Context.MODE_PRIVATE);
         prefs.edit().putBoolean("auto_start", enabled).apply();
+    }
+
+    @JavascriptInterface
+    public void runtimePulse(String session) {
+        if (!validSession(session)) return;
+        lastRuntimePulseAtMs = SystemClock.elapsedRealtime();
+    }
+
+    @JavascriptInterface
+    public void videoPulse(String session, String mediaId, double positionSeconds, boolean active) {
+        if (!validSession(session)) return;
+        long now = SystemClock.elapsedRealtime();
+        lastRuntimePulseAtMs = now;
+
+        if (!active || empty(mediaId)) {
+            watchdogVideoActive = false;
+            watchdogMediaId = "";
+            watchdogVideoPosition = -1d;
+            lastVideoProgressAtMs = now;
+            return;
+        }
+
+        boolean changedMedia = !mediaId.equals(watchdogMediaId);
+        boolean restarted = !changedMedia && watchdogVideoPosition > 2d && positionSeconds + 1d < watchdogVideoPosition;
+        boolean progressed = positionSeconds > watchdogVideoPosition + 0.12d;
+
+        watchdogVideoActive = true;
+        if (changedMedia || restarted || progressed) {
+            watchdogMediaId = mediaId;
+            watchdogVideoPosition = positionSeconds;
+            lastVideoProgressAtMs = now;
+        }
+    }
+
+    @JavascriptInterface
+    public void clearVideoPulse(String session) {
+        if (!validSession(session)) return;
+        resetVideoWatchdog();
+    }
+
+    String watchdogReason() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastRuntimePulseAtMs > 55_000L) return "runtime_stalled";
+        if (watchdogVideoActive && now - lastVideoProgressAtMs > 45_000L) return "video_stalled";
+        return null;
+    }
+
+    void resetVideoWatchdog() {
+        watchdogVideoActive = false;
+        watchdogMediaId = "";
+        watchdogVideoPosition = -1d;
+        lastVideoProgressAtMs = SystemClock.elapsedRealtime();
     }
 
 
@@ -197,7 +255,7 @@ public class NativeMediaBridge {
         c.setRequestProperty("apikey", PUBLISHABLE_KEY);
         c.setRequestProperty("x-screen-id", screenId);
         c.setRequestProperty("x-screen-token", token);
-        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta9");
+        c.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta10");
         byte[] body = new JSONObject().put("mediaId", mediaId).put("action", "ticket")
                 .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }
@@ -238,7 +296,7 @@ public class NativeMediaBridge {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(120000);
-                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta9");
+                connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta10");
                 connection.connect();
 
                 int status = connection.getResponseCode();
@@ -758,7 +816,7 @@ public class NativeMediaBridge {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(60000);
-        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta9");
+        connection.setRequestProperty("User-Agent", "PontoViewTV/2.0.0-beta10");
         connection.connect();
 
         int status = connection.getResponseCode();

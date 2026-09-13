@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.RenderProcessGoneDetail;
@@ -23,6 +26,37 @@ public class MainActivity extends Activity {
     private FrameLayout root;
     private FrameLayout nativeLayer;
     private NativeMediaBridge nativeBridge;
+    private final Handler playerWatchdogHandler = new Handler(Looper.getMainLooper());
+    private long watchdogReloadStartedAt = 0L;
+    private final Runnable playerWatchdog = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                if (nativeBridge != null && webView != null) {
+                    String reason = nativeBridge.watchdogReason();
+                    long now = SystemClock.elapsedRealtime();
+
+                    if (reason == null) {
+                        watchdogReloadStartedAt = 0L;
+                    } else if (watchdogReloadStartedAt == 0L) {
+                        watchdogReloadStartedAt = now;
+                        if ("video_stalled".equals(reason)) nativeBridge.resetVideoWatchdog();
+                        webView.post(() -> {
+                            if (webView != null) {
+                                webView.stopLoading();
+                                webView.reload();
+                            }
+                        });
+                    } else if (now - watchdogReloadStartedAt > 30_000L) {
+                        restartActivity();
+                        return;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            playerWatchdogHandler.postDelayed(this, 10_000L);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +64,7 @@ public class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         applyImmersiveMode();
         buildPlayer();
+        playerWatchdogHandler.postDelayed(playerWatchdog, 15_000L);
     }
 
     private void buildPlayer() {
@@ -70,7 +105,7 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta9");
+        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta10");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
         webView.addJavascriptInterface(nativeBridge, "PontoViewNative");
@@ -139,8 +174,8 @@ public class MainActivity extends Activity {
         String script =
                 "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
-                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta9';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta9'}}));" +
+                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta10';" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta10'}}));" +
                 "})();";
         webView.evaluateJavascript(script, null);
         injectPlaybackCompatibility();
@@ -261,6 +296,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        playerWatchdogHandler.removeCallbacks(playerWatchdog);
         if (nativeBridge != null) nativeBridge.release();
         if (webView != null) {
             webView.removeJavascriptInterface("PontoViewNative");
