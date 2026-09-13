@@ -93,19 +93,19 @@ jobs:
           SIGNED_BUILD: ${{ steps.signing.outputs.signed }}
         run: |
           if [ "$SIGNED_BUILD" = "true" ]; then
-            cp android-tv/app/build/outputs/apk/release/app-release.apk PontoView-Telas-v3.0.0-beta3.apk
+            cp android-tv/app/build/outputs/apk/release/app-release.apk PontoView-Telas-v3.0.0-beta4.apk
           else
-            cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v3.0.0-beta3.apk
+            cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v3.0.0-beta4.apk
           fi
-          sha256sum PontoView-Telas-v3.0.0-beta3.apk > PontoView-Telas-v3.0.0-beta3.sha256
+          sha256sum PontoView-Telas-v3.0.0-beta4.apk > PontoView-Telas-v3.0.0-beta4.sha256
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PontoView-Telas-v3.0.0-beta3
+          name: PontoView-Telas-v3.0.0-beta4
           path: |
-            PontoView-Telas-v3.0.0-beta3.apk
-            PontoView-Telas-v3.0.0-beta3.sha256
+            PontoView-Telas-v3.0.0-beta4.apk
+            PontoView-Telas-v3.0.0-beta4.sha256
           retention-days: 30
 
       - name: Publish testing release
@@ -113,13 +113,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-v3.0.0-beta3"
-          APK="PontoView-Telas-v3.0.0-beta3.apk"
-          SUM="PontoView-Telas-v3.0.0-beta3.sha256"
+          TAG="android-v3.0.0-beta4"
+          APK="PontoView-Telas-v3.0.0-beta4.apk"
+          SUM="PontoView-Telas-v3.0.0-beta4.sha256"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" "$SUM" --clobber
           else
-            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 3.0.0 beta 3"               --notes "Player Core v3: snapshots atômicos, biblioteca local, Google Drive como origem, operação offline e watchdog. Sem armazenamento central de mídia."               --prerelease
+            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 3.0.0 beta 4"               --notes "Player Core v3: snapshots atômicos, biblioteca local, Google Drive como origem, operação offline e watchdog. Sem armazenamento central de mídia."               --prerelease
           fi
 
       - name: Publish update feed
@@ -133,11 +133,11 @@ jobs:
             CHANNEL="beta"
           fi
 
-          VERSION_NAME="3.0.0-beta3"
-          VERSION_CODE="30003"
-          TAG="android-v3.0.0-beta3"
-          APK="PontoView-Telas-v3.0.0-beta3.apk"
-          SUM="PontoView-Telas-v3.0.0-beta3.sha256"
+          VERSION_NAME="3.0.0-beta4"
+          VERSION_CODE="30004"
+          TAG="android-v3.0.0-beta4"
+          APK="PontoView-Telas-v3.0.0-beta4.apk"
+          SUM="PontoView-Telas-v3.0.0-beta4.sha256"
           SHA256="$(awk '{print $1}' "$SUM")"
           APK_URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$APK"
           PUBLISHED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
