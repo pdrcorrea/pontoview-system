@@ -41,10 +41,10 @@
   margin:0;
   width:100%;
   max-width:none;
-  font-size:clamp(24px,2vw,52px);
-  font-weight:700;
-  line-height:1.04;
-  letter-spacing:-.038em;
+  font-size:clamp(46px,5.1vw,84px);
+  font-weight:650;
+  line-height:.99;
+  letter-spacing:-.05em;
   text-wrap:pretty;
   overflow-wrap:normal;
   word-break:normal;
@@ -54,8 +54,8 @@
 .desc{
   margin:clamp(12px,1.5vh,22px) 0 0;
   max-width:58ch;
-  font-size:clamp(13px,.92vw,20px);
-  line-height:1.44;
+  font-size:clamp(17px,1.45vw,23px);
+  line-height:1.58;
   color:var(--pv-soft);
   text-wrap:pretty;
   overflow-wrap:normal;
@@ -102,7 +102,7 @@
 }
 
 .source-label{
-  font-size:clamp(9px,.58vw,20px);
+  font-size:clamp(10px,.72vw,14px);
   font-weight:600;
   letter-spacing:.12em;
   text-transform:uppercase;
@@ -111,7 +111,7 @@
 
 .source-name{
   max-width:100%;
-  font-size:clamp(11px,.78vw,28px);
+  font-size:clamp(13px,.95vw,18px);
   font-weight:650;
   color:var(--pv-sky);
   white-space:nowrap;
@@ -229,8 +229,8 @@
 
 @media (max-width:1100px) and (orientation:landscape){
   .news-stage{grid-template-columns:minmax(0,60%) minmax(0,40%);gap:18px}
-  .headline{font-size:clamp(22px,2.15vw,32px);max-width:none}
-  .desc{font-size:clamp(12px,1.05vw,15px);-webkit-line-clamp:2}
+  .headline{font-size:clamp(34px,4.2vw,54px);max-width:none}
+  .desc{font-size:clamp(15px,1.7vw,20px);-webkit-line-clamp:2}
   .source-row{margin-top:12px;padding-top:10px}
   .qr-copy{display:none}
 }
@@ -242,16 +242,16 @@
     gap:clamp(18px,2.2vh,30px)
   }
   .copy{justify-content:center;padding:0}
-  .headline{max-width:none;font-size:clamp(26px,4.7vw,48px);line-height:1.04}
-  .desc{font-size:clamp(13px,2vw,18px);-webkit-line-clamp:3}
+  .headline{max-width:none;font-size:clamp(44px,8vw,72px);line-height:.99}
+  .desc{font-size:clamp(16px,2.6vw,21px);line-height:1.5;-webkit-line-clamp:3}
   .source-row{margin-top:clamp(16px,2vh,28px);padding-top:clamp(12px,1.4vh,20px)}
   .media{min-height:0}
 }
 
 @media(max-width:560px) and (orientation:portrait){
   .news-stage{grid-template-rows:minmax(0,53%) minmax(0,47%);gap:16px}
-  .headline{font-size:clamp(23px,5.2vw,34px)}
-  .desc{font-size:clamp(12px,2.8vw,15px);-webkit-line-clamp:2}
+  .headline{font-size:clamp(34px,7vw,48px)}
+  .desc{font-size:clamp(15px,3vw,19px);-webkit-line-clamp:2}
   .source-row{margin-top:14px;padding-top:12px}
   .qr-copy{display:none}
 }
@@ -413,23 +413,23 @@ function preferredHeadlineSize(){
   const length=(title.textContent||'').trim().length;
   const portrait=matchMedia('(orientation: portrait)').matches;
   const viewportLimit=portrait
-    ?Math.max(26,Math.min(48,window.innerWidth*.052))
-    :Math.max(24,Math.min(48,window.innerWidth*.024));
+    ?Math.max(38,Math.min(72,window.innerWidth*.08))
+    :Math.max(40,Math.min(84,window.innerWidth*.051));
 
   let byLength;
   if(portrait){
-    if(length>130)byLength=27;
-    else if(length>100)byLength=30;
-    else if(length>75)byLength=34;
-    else if(length>50)byLength=38;
-    else byLength=44
+    if(length>130)byLength=34;
+    else if(length>100)byLength=38;
+    else if(length>75)byLength=44;
+    else if(length>50)byLength=52;
+    else byLength=62
   }else{
-    if(length>130)byLength=23;
-    else if(length>100)byLength=26;
-    else if(length>75)byLength=29;
-    else if(length>55)byLength=32;
-    else if(length>38)byLength=36;
-    else byLength=42
+    if(length>130)byLength=36;
+    else if(length>100)byLength=40;
+    else if(length>75)byLength=44;
+    else if(length>55)byLength=50;
+    else if(length>38)byLength=58;
+    else byLength=68
   }
 
   return Math.min(viewportLimit,byLength)
@@ -441,12 +441,12 @@ function fitCopy(){
   cancelAnimationFrame(fitFrame);
   fitFrame=requestAnimationFrame(()=>{
     const portrait=matchMedia('(orientation: portrait)').matches;
-    const minFont=portrait?21:19;
+    const minFont=portrait?30:30;
     const maxLines=maxHeadlineLines();
     let size=preferredHeadlineSize();
 
     title.style.fontSize=size+'px';
-    title.style.lineHeight='1.04';
+    title.style.lineHeight='.99';
     desc.style.fontSize='';
     desc.style.display=desc.textContent?'-webkit-box':'none';
     desc.style.webkitLineClamp=portrait?'3':'3';
