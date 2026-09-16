@@ -11,7 +11,7 @@ type NormalizedNews = {
 
 type EditorialResult = {
   allowed: boolean;
-  reason?: "advertising" | "clickbait" | "sensitive" | "controversial" | "blocked_source" | "broken_encoding";
+  reason?: "advertising" | "clickbait" | "sensationalism" | "sensitive" | "controversial" | "blocked_source" | "broken_encoding";
 };
 
 function clean(value: unknown, max = 1000) {
@@ -100,6 +100,14 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
   } catch {}
 
   let clickbaitScore = 0;
+  const titlePlain = plain(title).trim();
+
+  const engagementLeads = [
+    "veja", "saiba", "descubra", "confira", "entenda", "assista", "clique", "leia",
+    "conheca", "aprenda", "relembre", "veja por que", "saiba por que", "entenda por que",
+  ];
+  if (engagementLeads.some((term) => titlePlain === term || titlePlain.startsWith(term + " "))) clickbaitScore += 2;
+
   const strongClickbaitPhrases = [
     "voce nao vai acreditar", "nao vai acreditar", "ninguem esperava", "ninguem te conta",
     "chocou a internet", "surpreendeu a todos", "veja o que aconteceu", "veja quem",
@@ -108,25 +116,40 @@ function editorialCheck(item: Record<string, unknown>): EditorialResult {
     "nao perca", "urgente!", "segredo revelado", "segredo que", "isso vai te surpreender",
     "voce precisa saber", "tudo o que voce precisa saber", "esse e o motivo", "este e o motivo",
     "fotos mostram", "antes e depois", "viraliza nas redes", "viralizou nas redes",
+    "o final surpreende", "final inesperado", "reacao surpreende", "web reage",
   ];
-  if (strongClickbaitPhrases.some((term) => text.includes(term))) clickbaitScore += 2;
+  if (strongClickbaitPhrases.some((term) => text.includes(term))) clickbaitScore += 3;
 
   const clickInducingPhrases = [
-    "saiba mais", "veja mais", "confira", "confira agora", "confira detalhes", "veja detalhes",
-    "veja como", "saiba como", "descubra", "entenda", "entenda o motivo", "entenda por que",
-    "saiba o motivo", "saiba por que", "clique aqui", "assista", "veja o video",
+    "saiba mais", "veja mais", "confira agora", "confira detalhes", "veja detalhes",
+    "veja como", "saiba como", "entenda o motivo", "entenda por que", "saiba o motivo",
+    "saiba por que", "clique aqui", "assista ao video", "assista o video", "veja o video",
     "leia mais", "continue lendo", "veja a lista", "confira a lista", "descubra quem", "veja quem",
     "o que se sabe", "o que sabemos", "saiba tudo", "veja tudo", "entenda tudo",
+    "quem e", "qual e o motivo", "por que isso aconteceu", "o que aconteceu",
   ];
-  if (clickInducingPhrases.some((term) => text.includes(term))) clickbaitScore += 1;
+  if (clickInducingPhrases.some((term) => titlePlain.includes(term))) clickbaitScore += 1;
+
   if (/\?\s*$/.test(title)) clickbaitScore += 1;
   if ((title.match(/!/g) || []).length >= 1) clickbaitScore += 1;
   if (/\.{3,}\s*$/.test(title)) clickbaitScore += 1;
-  if (/^(veja|saiba|descubra|entenda|confira|assista|clique|leia)\b/i.test(plain(title))) clickbaitScore += 1;
+
   const letters = title.replace(/[^A-Za-zÀ-ÿ]/g, "");
   const uppercase = title.replace(/[^A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇ]/g, "");
   if (letters.length >= 12 && uppercase.length / letters.length > 0.72) clickbaitScore += 2;
+
   if (clickbaitScore >= 2) return { allowed: false, reason: "clickbait" };
+
+  const sensationalTerms = [
+    "chocante", "bombastico", "bombastica", "estarrecedor", "estarrecedora", "impressionante",
+    "absurdo", "escandalo", "caos", "panico", "terror", "apocaliptico", "apocalipse",
+    "gera revolta", "causa indignacao", "revolta internautas", "deixa web em choque",
+    "web em choque", "viral", "viraliza", "viralizou", "polemica explode", "sem precedentes",
+  ];
+  const sensationalHits = sensationalTerms.filter((term) => titlePlain.includes(term)).length;
+  if (sensationalHits >= 1 && (/!/.test(title) || strongClickbaitPhrases.some((term) => text.includes(term)))) {
+    return { allowed: false, reason: "sensationalism" };
+  }
 
   const sensitiveTerms = [
     "estupro", "estuprada", "abuso sexual", "violencia sexual", "pornografia", "nudez",
