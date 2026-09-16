@@ -476,19 +476,19 @@ function render(x){
 
   source.textContent=x.source||x.sourceDomain||'Fonte';
 
-  const f=faviconUrl(x.link||x.sourceUrl||'');
+  const f=faviconUrl(x.link||x.url||x.sourceUrl||'');
   favicon.src=f;
   favicon.style.display=f?'block':'none';
   favicon.onerror=()=>favicon.style.display='none';
 
-  setImage(x.image);
+  setImage(x.image||x.image_url||x.imageUrl);
 
-  const link=x.link||x.sourceUrl||'';
+  const link=x.link||x.url||x.sourceUrl||'';
   if(link){
     qrImg.src=PV.qrUrl(link);
     qr.classList.remove('hidden');
-    qrTitle.textContent=x.link?'Leia a matéria':'Acesse a fonte';
-    qrHint.textContent=x.link?'Aponte a câmera do celular':'Abra o portal da fonte'
+    qrTitle.textContent=(x.link||x.url)?'Leia a matéria':'Acesse a fonte';
+    qrHint.textContent=(x.link||x.url)?'Aponte a câmera do celular':'Abra o portal da fonte'
   }else{
     qr.classList.add('hidden');
     qrImg.removeAttribute('src')
@@ -535,7 +535,7 @@ async function load(){
     const d=await fetchNews();
     const items=PV.filterSafeNews(Array.isArray(d.items)?d.items:[]).filter(safeItem);
     if(!items.length)throw new Error('Sem notícias seguras');
-    const item=PV.pickForRefresh(items,'noticias',x=>String(x.link||x.title));
+    const item=PV.pickForRefresh(items,'noticias',x=>String(x.link||x.url||x.title));
     render(item)
   }catch{
     title.textContent='Novas notícias em breve';
