@@ -301,7 +301,7 @@
   <footer class="pv-footer"><div class="pv-footer-brand">PontoView</div></footer>
 </div>
 
-<script src="../shared/pv.js?v=8"></script>
+<script src="../shared/pv.js?v=9"></script>
 <script>
 const WORKER='https://pontoview-api.pedrhc258.workers.dev/api/news';
 const copy=document.getElementById('copy'),
@@ -320,30 +320,8 @@ function clean(t){
   return PV.clean(t).replace(/📲|👉|🔗/g,'')
 }
 
-function brokenText(v){
-  const s=String(v||'');
-  return s.includes('\uFFFD')||/(Ã[\x80-\xBF]|Â[\x80-\xBF]|â(?:€|€™|€œ|€�|€“|€”|€¦|„|†)|ðŸ|ï¿½)/.test(s)
-}
-
-function blockedSource(x){
-  const s=String(x.source||x.sourceDomain||'')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase();
-  const u=String(x.link||x.url||x.sourceUrl||'').toLowerCase();
-  return s.includes('folha de s.paulo')||
-    s.includes('folha de s. paulo')||
-    s.includes('folha de sao paulo')||
-    s.includes('folha s.paulo')||
-    u.includes('folha.uol.com.br')
-}
-
 function safeItem(x){
-  return !!(x&&x.title)&&
-    !blockedSource(x)&&
-    !brokenText(x.title)&&
-    !brokenText(x.description||x.summary)&&
-    !brokenText(x.source||x.sourceDomain)
+  return !!(x&&x.title)&&PV.newsEditorialCheck(x).allowed
 }
 
 function summary(t){
@@ -519,14 +497,43 @@ function render(x){
   requestAnimationFrame(()=>requestAnimationFrame(fitCopy))
 }
 
+function newsFromPlayer(timeout=1400){
+  return new Promise((resolve,reject)=>{
+    if(window.parent===window){reject(new Error('standalone'));return}
+    const requestId='pv-news-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+    let done=false;
+    const finish=(fn,value)=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      window.removeEventListener('message',onMessage);
+      fn(value)
+    };
+    const onMessage=(event)=>{
+      if(event.origin!==location.origin)return;
+      const data=event.data||{};
+      if(data.type!=='pv-news-response'||data.requestId!==requestId)return;
+      finish(resolve,{items:PV.filterSafeNews(data.items||[]),source:'PontoView',fromPlayer:true})
+    };
+    const timer=setTimeout(()=>finish(reject,new Error('timeout')),timeout);
+    window.addEventListener('message',onMessage);
+    window.parent.postMessage({type:'pv-news-request',requestId},location.origin)
+  })
+}
+
 async function fetchNews(){
-  return PV.fromApi('/api/noticias',()=>PV.fetchJSON(WORKER))
+  try{
+    const playerNews=await newsFromPlayer();
+    if(Array.isArray(playerNews.items)&&playerNews.items.length)return playerNews
+  }catch{}
+  const data=await PV.fromApi('/api/noticias',()=>PV.fetchJSON(WORKER));
+  return {...data,items:PV.filterSafeNews(Array.isArray(data?.items)?data.items:Array.isArray(data)?data:[])}
 }
 
 async function load(){
   try{
     const d=await fetchNews();
-    const items=Array.isArray(d.items)?d.items.filter(safeItem):[];
+    const items=PV.filterSafeNews(Array.isArray(d.items)?d.items:[]).filter(safeItem);
     if(!items.length)throw new Error('Sem notícias seguras');
     const item=PV.pickForRefresh(items,'noticias',x=>String(x.link||x.title));
     render(item)
