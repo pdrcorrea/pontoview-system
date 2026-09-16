@@ -78,6 +78,93 @@ window.PV = (() => {
     });
   }
 
+  function newsPlain(value){
+    return clean(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+  function hasBrokenNewsEncoding(value){
+    const text = clean(value);
+    return text.includes("\uFFFD") || /(Ã[\x80-\xBF]|Â[\x80-\xBF]|â(?:€|€™|€œ|€�|€“|€”|€¦|„|†)|ðŸ|ï¿½)/.test(text);
+  }
+  function newsEditorialCheck(item){
+    const x = item || {};
+    const title = clean(x.title);
+    const summary = clean(x.summary || x.description);
+    const source = clean(x.source || x.sourceDomain);
+    const url = clean(x.url || x.link || x.sourceUrl);
+
+    if(!title) return { allowed:false, reason:"missing_title" };
+    if(hasBrokenNewsEncoding(title) || hasBrokenNewsEncoding(summary) || hasBrokenNewsEncoding(source)) return { allowed:false, reason:"broken_encoding" };
+
+    const text = newsPlain(title + " " + summary + " " + source + " " + url);
+    const titlePlain = newsPlain(title);
+    const sourcePlain = newsPlain(source);
+    const urlPlain = newsPlain(url);
+
+    const blockedSources = ["folha de s.paulo","folha de s. paulo","folha de sao paulo","folha s.paulo","folha.uol.com.br","www1.folha.uol.com.br"];
+    if(blockedSources.some(term => sourcePlain.includes(term) || urlPlain.includes(term))) return { allowed:false, reason:"blocked_source" };
+
+    const advertisingTerms = [
+      "publieditorial","publipost","conteudo patrocinado","conteudo publicitario","informe publicitario",
+      "oferta","ofertas","promocao","promocoes","cupom","cupons","desconto","descontos",
+      "compre agora","aproveite","black friday","liquidacao","imperdivel","melhor preco",
+      "a partir de r$","por apenas r$","assine agora","clique e compre","link de compra",
+      "patrocinado por","parceria paga","shopping","vitrine","guia de compras"
+    ];
+    if(advertisingTerms.some(term => text.includes(term))) return { allowed:false, reason:"advertising" };
+
+    let clickbaitScore = 0;
+    const engagementLeads = ["veja","saiba","descubra","confira","entenda","assista","clique","leia","conheca","aprenda","relembre"];
+    if(engagementLeads.some(term => titlePlain === term || titlePlain.startsWith(term + " "))) clickbaitScore += 2;
+
+    const strongClickbait = [
+      "voce nao vai acreditar","nao vai acreditar","ninguem esperava","ninguem te conta",
+      "chocou a internet","surpreendeu a todos","veja o que aconteceu","descubra agora",
+      "motivo vai te surpreender","revelacao bombastica","bombou na web","internet vai a loucura",
+      "de cair o queixo","de arrepiar","esta dando o que falar","nao perca","urgente!",
+      "segredo revelado","isso vai te surpreender","voce precisa saber","tudo o que voce precisa saber",
+      "esse e o motivo","este e o motivo","o final surpreende","final inesperado","reacao surpreende","web reage"
+    ];
+    if(strongClickbait.some(term => text.includes(term))) clickbaitScore += 3;
+
+    const clickInducing = [
+      "saiba mais","veja mais","confira agora","confira detalhes","veja detalhes","veja como","saiba como",
+      "entenda o motivo","entenda por que","saiba o motivo","saiba por que","clique aqui","assista ao video",
+      "assista o video","veja o video","leia mais","continue lendo","veja a lista","confira a lista",
+      "descubra quem","veja quem","o que se sabe","o que sabemos","saiba tudo","veja tudo","entenda tudo",
+      "quem e","qual e o motivo","por que isso aconteceu","o que aconteceu"
+    ];
+    if(clickInducing.some(term => titlePlain.includes(term))) clickbaitScore += 1;
+    if(/\?\s*$/.test(title)) clickbaitScore += 1;
+    if((title.match(/!/g) || []).length >= 1) clickbaitScore += 1;
+    if(/\.{3,}\s*$/.test(title)) clickbaitScore += 1;
+
+    const letters = title.replace(/[^A-Za-zÀ-ÿ]/g,"");
+    const uppercase = title.replace(/[^A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇ]/g,"");
+    if(letters.length >= 12 && uppercase.length / letters.length > .72) clickbaitScore += 2;
+    if(clickbaitScore >= 2) return { allowed:false, reason:"clickbait" };
+
+    const sensitiveTerms = [
+      "estupro","estuprada","abuso sexual","violencia sexual","pornografia","nudez",
+      "esquartejado","decapitado","decapitada","corpo carbonizado","corpo mutilado","cadaver",
+      "suicidio","se matou","automutilacao","massacre","chacina","tortura",
+      "tiroteio deixa","morre apos ser baleado","morta a tiros","morto a tiros"
+    ];
+    if(sensitiveTerms.some(term => text.includes(term))) return { allowed:false, reason:"sensitive" };
+
+    const controversialTerms = [
+      "barraco","treta","detona","humilha","esculacha","lacrou","cancelado","cancelada",
+      "guerra nas redes","troca de farpas","climao","polemica nas redes","revolta internautas",
+      "gera revolta","causa indignacao","ataque pessoal","xinga","xingou","fofoca","amante",
+      "traicao","separacao bombastica"
+    ];
+    if(controversialTerms.some(term => text.includes(term))) return { allowed:false, reason:"controversial" };
+
+    return { allowed:true };
+  }
+  function filterSafeNews(items){
+    return (Array.isArray(items) ? items : []).filter(item => newsEditorialCheck(item).allowed);
+  }
+
   function signatureOf(item){
     if(item == null) return "";
     if(typeof item === "string") return item;
@@ -127,5 +214,5 @@ window.PV = (() => {
     img.onerror = () => { media.classList.remove("has-image"); img.removeAttribute("src"); img.onerror = null; };
     img.src = url;
   }
-  return { sleep, qs, clean, clamp, formatNumber, formatMoney, formatDate, titleCase, fetchJSON, cachedJSON, cached, fromApi, pickForRefresh, transition, startProgress, qrUrl, setImage };
+  return { sleep, qs, clean, clamp, formatNumber, formatMoney, formatDate, titleCase, fetchJSON, cachedJSON, cached, fromApi, newsEditorialCheck, filterSafeNews, pickForRefresh, transition, startProgress, qrUrl, setImage };
 })();
