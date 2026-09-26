@@ -1,5 +1,48 @@
 /* PontoView Telas: correções de navegação mobile e identidade visual. */
 
+
+/* A navegação usa somente o símbolo PontoView, centralizado no topo. */
+.sidebar .brand.brand-icon-only {
+  position: relative;
+  justify-content: center;
+  gap: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.sidebar-brand-icon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 50px;
+}
+
+.sidebar-brand-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.sidebar-brand-icon > b {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+.sidebar .brand.brand-icon-only .mobile-close {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+}
+
 /* Loading: usa o ícone oficial em vez da letra P. */
 .loading-screen .player-mark {
   color: transparent !important;
