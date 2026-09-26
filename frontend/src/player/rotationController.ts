@@ -1,8 +1,8 @@
-import { supabase } from "../lib/supabase";
 import type { ScreenRotation } from "../types";
 
 const DEVICE_KEY = "pontoview_player_device_v1";
 const ROTATION_KEY = "pontoview_player_rotation_v1";
+const MANIFEST_KEY_PREFIX = "pv_manifest_";
 const PLAYER_PATH = "/player";
 const DEDICATED_PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 
@@ -25,17 +25,26 @@ function normalizeRotation(value: unknown): ScreenRotation {
   return value === "right" || value === "left" || value === "180" ? value : "standard";
 }
 
+function cacheRotation(screenId: string, rotation: ScreenRotation) {
+  try { localStorage.setItem(ROTATION_KEY, JSON.stringify({ screenId, rotation })); } catch { /* sem armazenamento */ }
+}
+
 function readCachedRotation(screenId: string): ScreenRotation {
+  try {
+    const manifest = JSON.parse(localStorage.getItem(`${MANIFEST_KEY_PREFIX}${screenId}`) || "null");
+    if (manifest?.screen) {
+      const rotation = normalizeRotation(manifest.screen.rotation);
+      cacheRotation(screenId, rotation);
+      return rotation;
+    }
+  } catch { /* usa o cache legado abaixo */ }
+
   try {
     const value = JSON.parse(localStorage.getItem(ROTATION_KEY) || "null");
     return value?.screenId === screenId ? normalizeRotation(value.rotation) : "standard";
   } catch {
     return "standard";
   }
-}
-
-function cacheRotation(screenId: string, rotation: ScreenRotation) {
-  try { localStorage.setItem(ROTATION_KEY, JSON.stringify({ screenId, rotation })); } catch { /* sem armazenamento */ }
 }
 
 function setImportant(element: HTMLElement, property: string, value: string) {
@@ -68,24 +77,11 @@ function applyRotation(rotation: ScreenRotation) {
   setImportant(runtime, "transform", rotation === "180" ? "rotate(180deg)" : "none");
 }
 
-async function refreshRotation(device: Device) {
-  const result = await supabase.rpc("get_player_manifest", {
-    p_screen_id: device.screenId,
-    p_token: device.token,
-  });
-  if (result.error || !result.data) return null;
-  const rotation = normalizeRotation((result.data as any)?.screen?.rotation);
-  cacheRotation(device.screenId, rotation);
-  applyRotation(rotation);
-  return rotation;
-}
-
 function startRotationController() {
   if (!isPlayerSurface()) return;
 
   let device: Device | null = null;
   let rotation: ScreenRotation = "standard";
-  let refreshing = false;
 
   const syncDevice = () => {
     const nextDevice = readDevice();
@@ -98,39 +94,19 @@ function startRotationController() {
     const changedDevice = !device || device.screenId !== nextDevice.screenId || device.token !== nextDevice.token;
     device = nextDevice;
 
-    if (changedDevice) {
-      rotation = readCachedRotation(device.screenId);
-      applyRotation(rotation);
-      void refresh();
-      return;
-    }
-
     const cached = readCachedRotation(device.screenId);
-    if (cached !== rotation) rotation = cached;
+    if (changedDevice || cached !== rotation) rotation = cached;
     applyRotation(rotation);
-  };
-
-  const refresh = async () => {
-    if (!device || refreshing) return;
-    refreshing = true;
-    try {
-      const next = await refreshRotation(device);
-      if (next) rotation = next;
-    } finally {
-      refreshing = false;
-    }
   };
 
   syncDevice();
   const applyTimer = window.setInterval(syncDevice, 1000);
-  const syncTimer = window.setInterval(() => void refresh(), 15000);
   const onResize = () => applyRotation(rotation);
   window.addEventListener("resize", onResize);
   window.addEventListener("orientationchange", onResize);
 
   window.addEventListener("beforeunload", () => {
     window.clearInterval(applyTimer);
-    window.clearInterval(syncTimer);
     window.removeEventListener("resize", onResize);
     window.removeEventListener("orientationchange", onResize);
   }, { once: true });
