@@ -27,6 +27,7 @@ import type { PlayerManifest } from "../types";
 const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
+const PLAYER_SYNC_MS = 60_000;
 const PLAYER_RUNTIME_STYLE = `
   .pv-orientation-canvas { position: fixed; left: 50%; top: 50%; overflow: hidden; background: #000; transform-origin: center center; }
   .pv-orientation-canvas .player-fullscreen, .pv-orientation-canvas .player-lframe { width: 100% !important; height: 100% !important; min-width: 0; min-height: 0; }
@@ -107,6 +108,7 @@ export function PlayerPage() {
   const [runtimeNow, setRuntimeNow] = useState(new Date());
   const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const activationStarted = useRef(false);
+  const syncInFlight = useRef(false);
   const newsFetch = useRef<{ key: string; at: number; items: PlayerManifest["news"] }>({ key: "", at: 0, items: [] });
   const routeScreenId = params.screenId;
   const activeDevice = device && (!routeScreenId || routeScreenId === device.screenId) ? device : null;
@@ -164,51 +166,53 @@ export function PlayerPage() {
   }, [activation, startActivation]);
 
   const sync = useCallback(async (silent = false) => {
-    if (!activeDevice) return;
-    const result = await supabase.rpc("get_player_manifest", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
-    if (result.error) {
-      const cached = readManifest(activeDevice.screenId);
-      if (cached) { setManifest(cached); setConnected(false); } else if (!silent) setError("Não foi possível sincronizar este Player.");
-      if (result.error.message.includes("INVALID_DEVICE_TOKEN")) { localStorage.removeItem(DEVICE_KEY); setDevice(null); activationStarted.current = false; }
-      return;
-    }
-
-    const next = result.data as PlayerManifest;
-    const reloadRevision = Number(next.screen.reloadRevision || 0);
-    const reloadKey = `pv_reload_revision_${activeDevice.screenId}`;
-    const previousReload = localStorage.getItem(reloadKey);
-    if (previousReload === null) localStorage.setItem(reloadKey, String(reloadRevision));
-    else if (reloadRevision > Number(previousReload || 0)) {
-      localStorage.setItem(reloadKey, String(reloadRevision)); await clearPlayerCache(activeDevice.screenId);
-      const reloadUrl = new URL(window.location.href); reloadUrl.searchParams.set("pv_reload", String(reloadRevision)); window.location.replace(reloadUrl.toString()); return;
-    }
-
-    const messageResult = await supabase.rpc("get_player_messages", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
-    if (!messageResult.error && Array.isArray(messageResult.data)) next.messages = messageResult.data as PlayerManifest["messages"];
-
-    if (next.settings?.widgets?.news) {
-      const categories = (next.settings.news_categories || ["general"]).join(",");
-      const shouldRefresh = newsFetch.current.key !== categories || Date.now() - newsFetch.current.at >= NEWS_REFRESH_MS || !newsFetch.current.items.length;
-      if (shouldRefresh) {
-        try {
-          const news = await fetch(`${functionsUrl}/screens-news`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": activeDevice.screenId, "x-screen-token": activeDevice.token }, body: "{}" }).then((response) => response.ok ? response.json() : null);
-          if (Array.isArray(news?.items) && news.items.length) newsFetch.current = { key: categories, at: Date.now(), items: news.items };
-          else newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() };
-        } catch { newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() }; }
+    if (!activeDevice || syncInFlight.current) return;
+    syncInFlight.current = true;
+    try {
+      const result = await supabase.rpc("get_player_manifest", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
+      if (result.error) {
+        const cached = readManifest(activeDevice.screenId);
+        if (cached) { setManifest(cached); setConnected(false); } else if (!silent) setError("Não foi possível sincronizar este Player.");
+        if (result.error.message.includes("INVALID_DEVICE_TOKEN")) { localStorage.removeItem(DEVICE_KEY); setDevice(null); activationStarted.current = false; }
+        return;
       }
-      if (newsFetch.current.items.length) next.news = newsFetch.current.items;
-    } else next.news = [];
 
-    localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next));
-    const native = nativeBridgeContext();
-    if (native) {
-      try { native.bridge.syncManifest(native.session, activeDevice.screenId, activeDevice.token, JSON.stringify(next)); } catch {}
+      const next = result.data as PlayerManifest;
+      const reloadRevision = Number(next.screen.reloadRevision || 0);
+      const reloadKey = `pv_reload_revision_${activeDevice.screenId}`;
+      const previousReload = localStorage.getItem(reloadKey);
+      if (previousReload === null) localStorage.setItem(reloadKey, String(reloadRevision));
+      else if (reloadRevision > Number(previousReload || 0)) {
+        localStorage.setItem(reloadKey, String(reloadRevision)); await clearPlayerCache(activeDevice.screenId);
+        const reloadUrl = new URL(window.location.href); reloadUrl.searchParams.set("pv_reload", String(reloadRevision)); window.location.replace(reloadUrl.toString()); return;
+      }
+
+      if (next.settings?.widgets?.news) {
+        const categories = (next.settings.news_categories || ["general"]).join(",");
+        const shouldRefresh = newsFetch.current.key !== categories || Date.now() - newsFetch.current.at >= NEWS_REFRESH_MS || !newsFetch.current.items.length;
+        if (shouldRefresh) {
+          try {
+            const news = await fetch(`${functionsUrl}/screens-news`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": activeDevice.screenId, "x-screen-token": activeDevice.token }, body: "{}" }).then((response) => response.ok ? response.json() : null);
+            if (Array.isArray(news?.items) && news.items.length) newsFetch.current = { key: categories, at: Date.now(), items: news.items };
+            else newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() };
+          } catch { newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() }; }
+        }
+        if (newsFetch.current.items.length) next.news = newsFetch.current.items;
+      } else next.news = [];
+
+      localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next));
+      const native = nativeBridgeContext();
+      if (native) {
+        try { native.bridge.syncManifest(native.session, activeDevice.screenId, activeDevice.token, JSON.stringify(next)); } catch {}
+      }
+      setManifest(next); setConnected(true); setError(null); setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
+    } finally {
+      syncInFlight.current = false;
     }
-    setManifest(next); setConnected(true); setError(null); setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
   }, [activeDevice]);
 
   useEffect(() => {
-    void sync(); const timer = window.setInterval(() => void sync(true), 15000);
+    void sync(); const timer = window.setInterval(() => void sync(true), PLAYER_SYNC_MS);
     const online = () => { setConnected(true); void sync(true); }; const offline = () => setConnected(false);
     window.addEventListener("online", online); window.addEventListener("offline", offline);
     return () => { window.clearInterval(timer); window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
