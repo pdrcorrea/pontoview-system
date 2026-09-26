@@ -41,7 +41,6 @@ const account = [
 export function AppShell() {
   const { organization, profile, role, signOut } = useAuth();
   const [open, setOpen] = useState(false);
-  const [brandLogoFailed, setBrandLogoFailed] = useState(false);
   const [brandIconFailed, setBrandIconFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,29 +75,18 @@ export function AppShell() {
     <div className="shell">
       {open && <button className="sidebar-scrim" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
       <aside id="main-sidebar" className={`sidebar ${open ? "open" : ""}`} aria-hidden={!open && undefined}>
-        <div className="brand">
-          {!brandLogoFailed ? (
-            <img
-              src="/assets/logo.png"
-              alt="PontoView Telas"
-              style={{ width: 154, maxWidth: "calc(100% - 34px)", height: 38, objectFit: "contain", objectPosition: "left center", display: "block", marginRight: "auto" }}
-              onError={() => setBrandLogoFailed(true)}
-            />
-          ) : (
-            <>
-              <b>
-                {brandIconFailed ? "PV" : (
-                  <img
-                    src="/assets/icon.png"
-                    alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-                    onError={() => setBrandIconFailed(true)}
-                  />
-                )}
-              </b>
-              <span><strong>PontoView</strong><small>Telas</small></span>
-            </>
-          )}
+        <div className="brand brand-icon-only">
+          <span className="sidebar-brand-icon" aria-label="PontoView">
+            {brandIconFailed ? (
+              <b>PV</b>
+            ) : (
+              <img
+                src="/assets/icon.png"
+                alt="PontoView"
+                onError={() => setBrandIconFailed(true)}
+              />
+            )}
+          </span>
           <button className="mobile-close" aria-label="Fechar menu" onClick={() => setOpen(false)}><X size={18} /></button>
         </div>
         <div className="nav-label">PontoView Telas</div>
