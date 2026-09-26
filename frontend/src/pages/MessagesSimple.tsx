@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
-  AlertTriangle,
   Check,
   Clock3,
-  Info,
   MessageSquareText,
   Monitor,
   Pencil,
@@ -339,8 +337,6 @@ function MessageComposer({
           )}
         </section>
 
-        <MessagePreview body={body} location={location} priority={priority} />
-
         <details className="message-more-options">
           <summary>Mais opções</summary>
           <div className="message-more-body">
@@ -386,15 +382,6 @@ function MessageComposer({
         </div>
       </form>
     </Modal>
-  );
-}
-
-function MessagePreview({ body, location, priority }: { body: string; location: MessageDisplayLocation; priority: MessagePriority }) {
-  return (
-    <div className={`message-simple-preview ${location} priority-${priority}`}>
-      <span>{priority === "urgent" ? <AlertTriangle /> : priority === "important" ? <Info /> : <MessageSquareText />}</span>
-      <p>{body || "Sua mensagem aparecerá aqui."}</p>
-    </div>
   );
 }
 
