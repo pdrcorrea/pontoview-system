@@ -1,9 +1,26 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 
+const buildId =
+  process.env.CF_PAGES_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  new Date().toISOString();
+
 export default defineConfig({
-  plugins: [react()],
-  define: { __APP_VERSION__: JSON.stringify("1.0.0") },
+  plugins: [
+    react(),
+    {
+      name: "pontoview-build-version",
+      generateBundle() {
+        this.emitFile({
+          type: "asset",
+          fileName: "build-version.json",
+          source: JSON.stringify({ version: buildId }),
+        });
+      },
+    },
+  ],
+  define: { __APP_VERSION__: JSON.stringify(buildId) },
   build: {
     sourcemap: true,
     rollupOptions: {
