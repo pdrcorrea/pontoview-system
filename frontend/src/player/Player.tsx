@@ -281,6 +281,59 @@ export function PlayerPage() {
     };
   }, [activeDevice, sync]);
 
+  const newsCategoriesKey = (manifest?.settings?.news_categories || ["general"]).join(",");
+
+  useEffect(() => {
+    if (!activeDevice || !manifest?.settings?.widgets?.news) return;
+    let active = true;
+
+    const refreshNews = async () => {
+      try {
+        const response = await fetch(`${functionsUrl}/screens-news`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabasePublishableKey || "",
+            "x-screen-id": activeDevice.screenId,
+            "x-screen-token": activeDevice.token,
+          },
+          body: "{}",
+        });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!active || !Array.isArray(result?.items) || !result.items.length) return;
+
+        newsFetch.current = {
+          key: newsCategoriesKey,
+          at: Date.now(),
+          items: result.items as PlayerManifest["news"],
+        };
+
+        setManifest((current) => {
+          if (!current) return current;
+          const next = { ...current, news: result.items as PlayerManifest["news"] };
+          try { localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next)); } catch {}
+          return next;
+        });
+      } catch {
+        // Mantém as últimas notícias válidas sem afetar a reprodução.
+      }
+    };
+
+    const elapsed = Math.max(0, Date.now() - newsFetch.current.at);
+    const firstDelay = Math.max(5_000, NEWS_REFRESH_MS - elapsed);
+    const first = window.setTimeout(() => {
+      void refreshNews();
+    }, firstDelay);
+    const timer = window.setInterval(() => void refreshNews(), NEWS_REFRESH_MS);
+
+    return () => {
+      active = false;
+      window.clearTimeout(first);
+      window.clearInterval(timer);
+    };
+  }, [activeDevice, manifest?.settings?.widgets?.news, newsCategoriesKey]);
+
   useEffect(() => {
     if (!manifest) return;
     const onPanelMessage = (event: MessageEvent) => {
