@@ -525,12 +525,14 @@ function MediaStage({ item, device, organization, cacheRevision, onEnd, onError 
 
 function TimedStage({ seconds, onEnd, children }: { seconds: number; onEnd: () => void; children: React.ReactNode }) { useEffect(() => { const timer = window.setTimeout(onEnd, Math.max(1, seconds) * 1000); return () => window.clearTimeout(timer); }, [seconds, onEnd]); return <div className="timed-stage">{children}</div>; }
 
-type DrivePreloadEntry = { promise: Promise<string>; createdAt: number };
-const drivePreloads = new Map<string, DrivePreloadEntry>();
-const DRIVE_PRELOAD_TTL_MS = 2 * 60_000;
+const driveCacheWarms = new Map<string, Promise<void>>();
 
 function driveAssetKey(media: ManifestItem["media"], device: Device) {
   return `${device.screenId}:${media.id}:${media.driveChecksum || media.driveModifiedTime || "latest"}`;
+}
+
+function driveCacheRequest(media: ManifestItem["media"], device: Device) {
+  return new Request(`${location.origin}/__pv_cache/${device.screenId}/${media.id}/${media.driveChecksum || media.driveModifiedTime || "latest"}`);
 }
 
 type NativeBridgeContext = {
@@ -611,31 +613,53 @@ async function requestDriveStream(media: ManifestItem["media"], device: Device) 
   return payload as { streamUrl: string; mimeType?: string; expiresAt?: string };
 }
 
-function preloadDriveAsset(media: ManifestItem["media"], device: Device) {
-  const key = driveAssetKey(media, device);
-  const now = Date.now();
-  for (const [entryKey, entry] of drivePreloads) {
-    if (now - entry.createdAt > DRIVE_PRELOAD_TTL_MS) drivePreloads.delete(entryKey);
-  }
-  const existing = drivePreloads.get(key);
-  if (existing) return existing.promise;
-  const promise = fetchDriveAsset(media, device).catch((error) => {
-    const current = drivePreloads.get(key);
-    if (current?.promise === promise) drivePreloads.delete(key);
-    throw error;
+async function warmDriveCache(media: ManifestItem["media"], device: Device) {
+  if (!navigator.onLine || !("caches" in window)) return;
+  const warmKey = driveAssetKey(media, device);
+  const existing = driveCacheWarms.get(warmKey);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    const cache = await caches.open("pontoview-media-v1");
+    const request = driveCacheRequest(media, device);
+    if (await cache.match(request)) return;
+
+    const response = await fetch(`${functionsUrl}/drive-media`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: supabasePublishableKey || "",
+        "x-screen-id": device.screenId,
+        "x-screen-token": device.token,
+      },
+      body: JSON.stringify({ mediaId: media.id, action: "cache" }),
+    });
+    if (!response.ok) return;
+
+    const size = Number(response.headers.get("content-length") || 0);
+    try {
+      const estimate = await navigator.storage?.estimate?.();
+      if (size > 0 && estimate?.quota && estimate?.usage != null && estimate.usage + size > estimate.quota * 0.85) return;
+    } catch {}
+
+    await cache.put(request, response.clone());
+
+    const prefix = `${location.origin}/__pv_cache/${device.screenId}/${media.id}/`;
+    const keys = await cache.keys();
+    await Promise.all(
+      keys
+        .filter((candidate) => candidate.url.startsWith(prefix) && candidate.url !== request.url)
+        .map((candidate) => cache.delete(candidate)),
+    );
+  })().catch(() => {}).finally(() => {
+    driveCacheWarms.delete(warmKey);
   });
-  drivePreloads.set(key, { promise, createdAt: now });
+
+  driveCacheWarms.set(warmKey, promise);
   return promise;
 }
 
 function consumeDriveAsset(media: ManifestItem["media"], device: Device) {
-  const key = driveAssetKey(media, device);
-  const existing = drivePreloads.get(key);
-  if (existing && Date.now() - existing.createdAt <= DRIVE_PRELOAD_TTL_MS) {
-    drivePreloads.delete(key);
-    return existing.promise;
-  }
-  drivePreloads.delete(key);
   return fetchDriveAsset(media, device);
 }
 
@@ -659,35 +683,9 @@ function DrivePreloader({ media, device }: { media: ManifestItem["media"]; devic
       return () => { active = false; };
     }
 
-    let warmVideo: HTMLVideoElement | null = null;
-    let warmImage: HTMLImageElement | null = null;
-    void preloadDriveAsset(media, device).then((url) => {
-      if (!active) return;
-      if (media.type === "drive_video") {
-        warmVideo = document.createElement("video");
-        warmVideo.preload = "auto";
-        warmVideo.muted = true;
-        warmVideo.playsInline = true;
-        warmVideo.setAttribute("aria-hidden", "true");
-        warmVideo.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10000px;top:-10000px";
-        warmVideo.src = url;
-        document.body.appendChild(warmVideo);
-        warmVideo.load();
-      } else {
-        warmImage = new Image();
-        warmImage.decoding = "async";
-        warmImage.src = url;
-      }
-    }).catch(() => {});
+    void warmDriveCache(media, device);
     return () => {
       active = false;
-      if (warmVideo) {
-        warmVideo.pause();
-        warmVideo.removeAttribute("src");
-        warmVideo.load();
-        warmVideo.remove();
-      }
-      if (warmImage) warmImage.src = "";
     };
   }, [media.id, media.driveChecksum, media.type, device.screenId, device.token, native?.session]);
   return null;
@@ -1178,9 +1176,29 @@ function WebDriveStage({ media, duration, device, onEnd, onError }: { media: Man
 }
 
 async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
-  const cache = await caches.open("pontoview-media-v1"); const key = new Request(`${location.origin}/__pv_cache/${device.screenId}/${media.id}/${media.driveChecksum || "latest"}`); const cached = await cache.match(key); if (cached) return URL.createObjectURL(await cached.blob()); if (!navigator.onLine) throw new Error("offline");
-  const response = await fetch(`${functionsUrl}/drive-media`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": device.screenId, "x-screen-token": device.token }, body: JSON.stringify({ mediaId: media.id }) });
-  if (!response.ok) throw new Error("drive_media_error"); await cache.put(key, response.clone()); return URL.createObjectURL(await response.blob());
+  const cache = await caches.open("pontoview-media-v1");
+  const key = driveCacheRequest(media, device);
+  const cached = await cache.match(key);
+  if (cached) return URL.createObjectURL(await cached.blob());
+  if (!navigator.onLine) throw new Error("offline");
+
+  if (media.type === "drive_video") void warmDriveCache(media, device);
+
+  const response = await fetch(`${functionsUrl}/drive-media`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabasePublishableKey || "",
+      "x-screen-id": device.screenId,
+      "x-screen-token": device.token,
+    },
+    body: JSON.stringify({ mediaId: media.id }),
+  });
+  if (!response.ok) throw new Error("drive_media_error");
+
+  const isStreamTicket = response.headers.get("X-PontoView-Stream-Ticket") === "1";
+  if (!isStreamTicket) await cache.put(key, response.clone());
+  return URL.createObjectURL(await response.blob());
 }
 
 function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; options: Record<string, unknown>; onEnd: () => void; onError: (detail: string) => void }) {
