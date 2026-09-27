@@ -9,8 +9,8 @@
   const activeStreamUrls = new Set();
   const autoplayTimers = new WeakMap();
 
-  // PontoView reads Drive media on demand. Never retain a local media cache.
-  if (window.caches?.delete) void window.caches.delete(MEDIA_CACHE).catch(() => {});
+  // Keep successfully downloaded Drive assets in Cache Storage.
+  // Streaming ticket placeholders are never persisted (see patched cache.put below).
 
   // Retire the previous Service Worker bridge. Native <video> Range requests are
   // more reliable on Smart TVs, Chromium kiosks and Android WebViews.
@@ -119,8 +119,12 @@
       if (name !== MEDIA_CACHE) return cache;
       return new Proxy(cache, {
         get(target, prop) {
-          if (prop === "match") return async () => undefined;
-          if (prop === "put" || prop === "add" || prop === "addAll") return async () => undefined;
+          if (prop === "put") {
+            return async (request, response) => {
+              if (response?.headers?.get?.("X-PontoView-Stream-Ticket") === "1") return;
+              return target.put(request, response);
+            };
+          }
           const value = Reflect.get(target, prop, target);
           return typeof value === "function" ? value.bind(target) : value;
         },
@@ -136,7 +140,7 @@
     try {
       const originalBody = typeof init?.body === "string" ? JSON.parse(init.body) : null;
       const mediaId = String(originalBody?.mediaId || "");
-      if (!mediaId || originalBody?.action === "ticket") return nativeFetch(input, init);
+      if (!mediaId || originalBody?.action === "ticket" || originalBody?.action === "cache") return nativeFetch(input, init);
 
       const headers = requestHeaders(input, init);
       const ticketResponse = await nativeFetch(url, {
@@ -163,6 +167,7 @@
         headers: {
           "Content-Type": `${MIME_PREFIX}; key=${key}`,
           "Cache-Control": "no-store",
+          "X-PontoView-Stream-Ticket": "1",
         },
       });
     } catch {
