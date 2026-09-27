@@ -1,1 +1,1 @@
-export const CURRENT_PLAYER_VERSION = "2.9.0";\n
+export const CURRENT_PLAYER_VERSION = "2.10.0";\n
