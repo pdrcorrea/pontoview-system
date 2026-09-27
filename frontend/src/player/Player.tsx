@@ -305,10 +305,37 @@ export function PlayerPage() {
   useEffect(() => { playbackRef.current = { manifest, item, index }; }, [manifest, item, index]);
 
   useEffect(() => {
-    if (!activeDevice || !manifest) return;
-    const heartbeat = () => void supabase.rpc("player_heartbeat", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_media_id: operating ? item?.media.id || null : null, p_playlist_id: operating ? manifest.playlist?.id || null : null, p_player_version: PLAYER_VERSION, p_client_info: { userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, online: navigator.onLine, orientation: manifest.screen.orientation, operating, nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null, nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null } });
-    heartbeat(); const timer = window.setInterval(heartbeat, 30000); return () => window.clearInterval(timer);
-  }, [activeDevice, manifest?.playlist?.id, manifest?.screen.orientation, operating, item?.media.id]);
+    if (!activeDevice) return;
+    const heartbeat = () => {
+      const current = playbackRef.current;
+      if (!current.manifest) return;
+      const currentOperating = isWithinOperatingHours(
+        current.manifest.settings?.operating_hours,
+        current.manifest.organization.timezone,
+        new Date(),
+      );
+      const currentItem = currentOperating ? current.item : null;
+      void supabase.rpc("player_heartbeat", {
+        p_screen_id: activeDevice.screenId,
+        p_token: activeDevice.token,
+        p_media_id: currentItem?.media.id || null,
+        p_playlist_id: currentOperating ? current.manifest.playlist?.id || null : null,
+        p_player_version: PLAYER_VERSION,
+        p_client_info: {
+          userAgent: navigator.userAgent,
+          viewport: `${innerWidth}x${innerHeight}`,
+          online: navigator.onLine,
+          orientation: current.manifest.screen.orientation,
+          operating: currentOperating,
+          nativeAppVersion: window.__PV_NATIVE_APP_VERSION || null,
+          nativeDiagnostics: window.__PV_NATIVE_DIAGNOSTICS || null,
+        },
+      });
+    };
+    heartbeat();
+    const timer = window.setInterval(heartbeat, 60_000);
+    return () => window.clearInterval(timer);
+  }, [activeDevice]);
 
   useEffect(() => {
     if (!operating || !activeDevice || !manifest || !item) return;
