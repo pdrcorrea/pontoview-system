@@ -125,7 +125,7 @@ export async function requirePlayer(req: Request) {
   const screenId = req.headers.get("x-screen-id") || "";
   const token = req.headers.get("x-screen-token") || "";
   if (!screenId || !token) throw new HttpError(401, "PLAYER_AUTH_REQUIRED");
-  const { data, error } = await admin.rpc("get_player_manifest", { p_screen_id: screenId, p_token: token });
+  const { data, error } = await admin.rpc("get_player_context", { p_screen_id: screenId, p_token: token });
   if (error || !data) throw new HttpError(401, "INVALID_PLAYER_TOKEN");
   return data as Record<string, any>;
 }
