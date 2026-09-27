@@ -27,7 +27,7 @@ import type { PlayerManifest } from "../types";
 const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
-const PLAYER_SYNC_MS = 60_000;
+const PLAYER_STATE_CHECK_MS = 60_000;\nconst BUILD_CHECK_MS = 60_000;
 const PLAYER_RUNTIME_STYLE = `
   .pv-orientation-canvas { position: fixed; left: 50%; top: 50%; overflow: hidden; background: #000; transform-origin: center center; }
   .pv-orientation-canvas .player-fullscreen, .pv-orientation-canvas .player-lframe { width: 100% !important; height: 100% !important; min-width: 0; min-height: 0; }
@@ -140,6 +140,31 @@ export function PlayerPage() {
     return () => { active = false; window.clearInterval(timer); };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const checkBuild = async () => {
+      if (!active || buildCheckInFlight.current) return;
+      buildCheckInFlight.current = true;
+      try {
+        const response = await fetch(`/build-version.json?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json() as { version?: string };
+        const remoteVersion = String(payload?.version || "");
+        if (!remoteVersion || remoteVersion === __APP_VERSION__ || !active) return;
+        const reloadUrl = new URL(window.location.href);
+        reloadUrl.searchParams.set("pv_build", remoteVersion.slice(0, 16));
+        window.location.replace(reloadUrl.toString());
+      } catch {
+        // Falha silenciosa: o Player continua operando e tenta novamente no próximo ciclo.
+      } finally {
+        buildCheckInFlight.current = false;
+      }
+    };
+    const startup = window.setTimeout(() => void checkBuild(), 10_000);
+    const timer = window.setInterval(() => void checkBuild(), BUILD_CHECK_MS);
+    return () => { active = false; window.clearTimeout(startup); window.clearInterval(timer); };
+  }, []);
+
   const startActivation = useCallback(async () => {
     if (activationStarted.current) return;
     activationStarted.current = true;
@@ -206,17 +231,55 @@ export function PlayerPage() {
         try { native.bridge.syncManifest(native.session, activeDevice.screenId, activeDevice.token, JSON.stringify(next)); } catch {}
       }
       setManifest(next); setConnected(true); setError(null); setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
+      const stateResult = await supabase.rpc("get_player_state", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
+      if (!stateResult.error && stateResult.data && typeof (stateResult.data as { stateKey?: unknown }).stateKey === "string") {
+        stateKeyRef.current = String((stateResult.data as { stateKey: string }).stateKey);
+      }
     } finally {
       syncInFlight.current = false;
     }
   }, [activeDevice]);
 
   useEffect(() => {
-    void sync(); const timer = window.setInterval(() => void sync(true), PLAYER_SYNC_MS);
-    const online = () => { setConnected(true); void sync(true); }; const offline = () => setConnected(false);
-    window.addEventListener("online", online); window.addEventListener("offline", offline);
-    return () => { window.clearInterval(timer); window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
-  }, [sync]);
+    void sync();
+
+    const checkState = async () => {
+      if (!activeDevice || syncInFlight.current || stateCheckInFlight.current) return;
+      stateCheckInFlight.current = true;
+      try {
+        const result = await supabase.rpc("get_player_state", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
+        if (result.error) {
+          if (result.error.message.includes("INVALID_DEVICE_TOKEN")) {
+            localStorage.removeItem(DEVICE_KEY);
+            setDevice(null);
+            activationStarted.current = false;
+          }
+          return;
+        }
+
+        const nextKey = String((result.data as { stateKey?: string } | null)?.stateKey || "");
+        if (!nextKey) return;
+        if (stateKeyRef.current === null) {
+          stateKeyRef.current = nextKey;
+          return;
+        }
+        if (nextKey !== stateKeyRef.current) await sync(true);
+      } finally {
+        stateCheckInFlight.current = false;
+      }
+    };
+
+    const timer = window.setInterval(() => void checkState(), PLAYER_STATE_CHECK_MS);
+    const online = () => { setConnected(true); void sync(true); };
+    const offline = () => setConnected(false);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, [activeDevice, sync]);
 
   useEffect(() => {
     if (!manifest) return;
