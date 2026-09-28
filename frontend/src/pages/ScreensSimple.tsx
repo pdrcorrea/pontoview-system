@@ -9,6 +9,7 @@ import {
   CloudSun,
   MessageSquareText,
   Monitor,
+  Moon,
   Newspaper,
   PanelBottom,
   PanelRight,
@@ -62,6 +63,14 @@ const defaultSettings: ScreenSettings = {
   },
   weather_location: null,
   news_categories: ["general"],
+  theme: "light",
+  widget_settings: {
+    clock: { preset: "classic" },
+    weather: { preset: "complete" },
+    news: { preset: "editorial" },
+    messages: { preset: "highlight" },
+    business: { preset: "logo", position: "side_footer" },
+  },
   transition: "fade",
   image_duration_seconds: 15,
   auto_start: true,
@@ -401,6 +410,15 @@ function ScreenEditor({
     ...defaultSettings,
     ...initial,
     widgets: { ...defaultSettings.widgets, ...initial?.widgets },
+    widget_settings: {
+      ...defaultSettings.widget_settings,
+      ...initial?.widget_settings,
+      clock: { ...defaultSettings.widget_settings.clock, ...initial?.widget_settings?.clock },
+      weather: { ...defaultSettings.widget_settings.weather, ...initial?.widget_settings?.weather },
+      news: { ...defaultSettings.widget_settings.news, ...initial?.widget_settings?.news },
+      messages: { ...defaultSettings.widget_settings.messages, ...initial?.widget_settings?.messages },
+      business: { ...defaultSettings.widget_settings.business, ...initial?.widget_settings?.business },
+    },
     operating_hours: normalizeOperatingHours(initial?.operating_hours || defaultOperatingHours),
   };
 
@@ -824,6 +842,16 @@ function VisualSettings({
   toggleNewsCategory: (category: string) => void;
 }) {
   const weatherInputRef = useRef<HTMLInputElement>(null);
+  const [activeConfig, setActiveConfig] = useState<"clock" | "weather" | "news" | "messages" | "business" | null>(null);
+  const updateWidgetSettings = (key: keyof ScreenSettings["widget_settings"], patch: Record<string, string>) => {
+    setSettings((current) => ({
+      ...current,
+      widget_settings: {
+        ...current.widget_settings,
+        [key]: { ...(current.widget_settings?.[key] || {}), ...patch },
+      },
+    }));
+  };
   const activePreset = settings.layout_mode === "fullscreen"
     ? "clean"
     : settings.widgets.clock && settings.widgets.news && settings.widgets.business && !settings.widgets.weather && !settings.widgets.messages
@@ -934,38 +962,109 @@ function VisualSettings({
 
           <div className="simple-setting-card">
             <div className="simple-setting-heading no-number">
-              <div><h2>Informações exibidas</h2></div>
+              <div><h2>Aparência do player</h2><p>Escolha o tema usado nas áreas informativas.</p></div>
+            </div>
+            <div className="theme-choice-grid">
+              <button className={settings.theme === "light" ? "selected" : ""} onClick={() => setSettings((current) => ({ ...current, theme: "light" }))}>
+                <Sun /><span><b>Claro</b><small>Visual leve e luminoso</small></span>{settings.theme === "light" && <Check />}
+              </button>
+              <button className={settings.theme === "dark" ? "selected" : ""} onClick={() => setSettings((current) => ({ ...current, theme: "dark" }))}>
+                <Moon /><span><b>Escuro</b><small>Mais confortável em ambientes escuros</small></span>{settings.theme === "dark" && <Check />}
+              </button>
+            </div>
+          </div>
+
+          <div className="simple-setting-card">
+            <div className="simple-setting-heading no-number">
+              <div><h2>Informações exibidas</h2><p>Ative os módulos e use a engrenagem para personalizar cada um.</p></div>
             </div>
             <div className="friendly-widget-list">
-              <FriendlyWidget icon={Clock3} label="Relógio e data" hint="Hora e data na coluna lateral" checked={settings.widgets.clock} onClick={() => toggleWidget("clock")} />
-              <FriendlyWidget icon={CloudSun} label="Clima" hint="Temperatura e previsão" checked={settings.widgets.weather} onClick={() => toggleWidget("weather")} />
-              <FriendlyWidget icon={Newspaper} label="Notícias" hint="Manchetes na faixa informativa" checked={settings.widgets.news} onClick={() => toggleWidget("news")} />
-              <FriendlyWidget icon={MessageSquareText} label="Mensagens" hint="Avisos cadastrados no sistema" checked={settings.widgets.messages} onClick={() => toggleWidget("messages")} />
-              <FriendlyWidget icon={Building2} label="Sua marca" hint="Nome ou logo do estabelecimento" checked={settings.widgets.business} onClick={() => toggleWidget("business")} />
+              <FriendlyWidget icon={Clock3} label="Relógio e data" hint="Hora e data na coluna lateral" checked={settings.widgets.clock} onClick={() => toggleWidget("clock")} onSettings={() => setActiveConfig(activeConfig === "clock" ? null : "clock")} settingsOpen={activeConfig === "clock"} />
+              {activeConfig === "clock" && (
+                <WidgetConfig title="Estilo do relógio">
+                  <PresetChoices value={settings.widget_settings.clock?.preset || "classic"} onChange={(value) => updateWidgetSettings("clock", { preset: value })} options={[
+                    ["classic", "Clássico", "Hora grande e data abaixo"],
+                    ["minimal", "Minimal", "Somente a hora"],
+                    ["editorial", "Editorial", "Hora, dia da semana e data"],
+                  ]} />
+                </WidgetConfig>
+              )}
+
+              <FriendlyWidget icon={CloudSun} label="Clima" hint="Temperatura, previsão e alertas" checked={settings.widgets.weather} onClick={() => toggleWidget("weather")} onSettings={() => setActiveConfig(activeConfig === "weather" ? null : "weather")} settingsOpen={activeConfig === "weather"} />
+              {activeConfig === "weather" && (
+                <WidgetConfig title="Configuração do clima">
+                  <PresetChoices value={settings.widget_settings.weather?.preset || "complete"} onChange={(value) => updateWidgetSettings("weather", { preset: value })} options={[
+                    ["complete", "Completo", "Atual, sensação, vento e previsão"],
+                    ["essential", "Essencial", "Temperatura e condição"],
+                    ["forecast", "Previsão", "Atual e próximos dias"],
+                  ]} />
+                  <label className="simple-field widget-config-field">Cidade do clima<input ref={weatherInputRef} value={String(settings.weather_location?.name || "")} onChange={(event) => setWeatherName(event.target.value)} placeholder="Ex.: Colatina, ES" /></label>
+                  <small>Alertas meteorológicos continuam automáticos e aparecem junto ao clima.</small>
+                </WidgetConfig>
+              )}
+
+              <FriendlyWidget icon={Newspaper} label="Notícias" hint="Manchetes na faixa informativa" checked={settings.widgets.news} onClick={() => toggleWidget("news")} onSettings={() => setActiveConfig(activeConfig === "news" ? null : "news")} settingsOpen={activeConfig === "news"} />
+              {activeConfig === "news" && (
+                <WidgetConfig title="Configuração das notícias">
+                  <PresetChoices value={settings.widget_settings.news?.preset || "editorial"} onChange={(value) => updateWidgetSettings("news", { preset: value })} options={[
+                    ["editorial", "Editorial", "Fonte e manchete em até duas linhas"],
+                    ["compact", "Compacto", "Uma linha e menos elementos"],
+                    ["highlight", "Destaque", "Manchete maior e fonte secundária"],
+                  ]} />
+                  <div className="widget-config-group">
+                    <b>Categorias das notícias</b>
+                    <div className="weekday-picker simple-category-picker">
+                      {[
+                        ["general", "Geral"], ["economy", "Economia"], ["sports", "Esportes"],
+                        ["technology", "Tecnologia"], ["health", "Saúde"], ["local", "Local"],
+                      ].map(([id, label]) => (
+                        <label key={id}>
+                          <input type="checkbox" checked={settings.news_categories.includes(id)} onChange={() => toggleNewsCategory(id)} />
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </WidgetConfig>
+              )}
+
+              <FriendlyWidget icon={MessageSquareText} label="Informações" hint="Mensagens, informações do local e eventos" checked={settings.widgets.messages} onClick={() => toggleWidget("messages")} onSettings={() => setActiveConfig(activeConfig === "messages" ? null : "messages")} settingsOpen={activeConfig === "messages"} />
+              {activeConfig === "messages" && (
+                <WidgetConfig title="Estilo das informações">
+                  <PresetChoices value={settings.widget_settings.messages?.preset || "highlight"} onChange={(value) => updateWidgetSettings("messages", { preset: value })} options={[
+                    ["highlight", "Destaque", "Mais presença e tipografia grande"],
+                    ["balanced", "Equilibrado", "Informação clara sem competir com a notícia"],
+                    ["compact", "Compacto", "Mais conteúdo em menos espaço"],
+                  ]} />
+                </WidgetConfig>
+              )}
+
+              <FriendlyWidget icon={Building2} label="Sua marca" hint="Nome ou logo do estabelecimento" checked={settings.widgets.business} onClick={() => toggleWidget("business")} onSettings={() => setActiveConfig(activeConfig === "business" ? null : "business")} settingsOpen={activeConfig === "business"} />
+              {activeConfig === "business" && (
+                <WidgetConfig title="Configuração da marca">
+                  <PresetChoices value={settings.widget_settings.business?.preset || "logo"} onChange={(value) => updateWidgetSettings("business", { preset: value })} options={[
+                    ["logo", "Logo", "Exibe somente o logotipo"],
+                    ["logo_name", "Logo + nome", "Marca acompanhada do nome"],
+                    ["discreet", "Discreto", "Marca em tamanho reduzido"],
+                  ]} />
+                  <div className="widget-config-group">
+                    <b>Posição da marca</b>
+                    <div className="brand-position-grid">
+                      {[
+                        ["side_header", "Barra lateral · cabeçalho"],
+                        ["side_footer", "Barra lateral · rodapé"],
+                        ["bar_left", "Barra inferior · esquerda"],
+                        ["bar_right", "Barra inferior · direita"],
+                      ].map(([id, label]) => (
+                        <button key={id} className={(settings.widget_settings.business?.position || "side_footer") === id ? "selected" : ""} onClick={() => updateWidgetSettings("business", { position: id })}>
+                          <span>{label}</span>{(settings.widget_settings.business?.position || "side_footer") === id && <Check />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </WidgetConfig>
+              )}
             </div>
-
-            {settings.widgets.weather && (
-              <div className="nested-setting">
-                <label className="simple-field">Cidade do clima<input ref={weatherInputRef} value={String(settings.weather_location?.name || "")} onChange={(event) => setWeatherName(event.target.value)} placeholder="Ex.: Colatina, ES" /></label>
-              </div>
-            )}
-
-            {settings.widgets.news && (
-              <div className="nested-setting">
-                <b>Categorias das notícias</b>
-                <div className="weekday-picker simple-category-picker">
-                  {[
-                    ["general", "Geral"], ["economy", "Economia"], ["sports", "Esportes"],
-                    ["technology", "Tecnologia"], ["health", "Saúde"], ["local", "Local"],
-                  ].map(([id, label]) => (
-                    <label key={id}>
-                      <input type="checkbox" checked={settings.news_categories.includes(id)} onChange={() => toggleNewsCategory(id)} />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}
@@ -1384,13 +1483,32 @@ function ConfigIntro({ icon, title, text }: { icon: React.ReactNode; title: stri
   );
 }
 
-function FriendlyWidget({ icon: Icon, label, hint, checked, onClick }: { icon: typeof Clock3; label: string; hint: string; checked?: boolean; onClick: () => void }) {
+function FriendlyWidget({ icon: Icon, label, hint, checked, onClick, onSettings, settingsOpen }: { icon: typeof Clock3; label: string; hint: string; checked?: boolean; onClick: () => void; onSettings?: () => void; settingsOpen?: boolean }) {
   return (
-    <button className={checked ? "friendly-widget enabled" : "friendly-widget"} onClick={onClick}>
+    <div className={checked ? "friendly-widget enabled" : "friendly-widget"}>
       <span className="friendly-widget-icon"><Icon /></span>
-      <span><b>{label}</b><small>{hint}</small></span>
-      <i className={checked ? "simple-switch on" : "simple-switch"}><b /></i>
-    </button>
+      <button className="friendly-widget-copy" onClick={onClick}><b>{label}</b><small>{hint}</small></button>
+      <span className="friendly-widget-actions">
+        {onSettings && <button className={settingsOpen ? "widget-settings-button active" : "widget-settings-button"} title={`Configurar ${label}`} onClick={onSettings}><Settings2 /></button>}
+        <button className={checked ? "simple-switch on" : "simple-switch"} aria-label={checked ? `Desativar ${label}` : `Ativar ${label}`} onClick={onClick}><b /></button>
+      </span>
+    </div>
+  );
+}
+
+function WidgetConfig({ title, children }: { title: string; children: React.ReactNode }) {
+  return <div className="widget-config-panel"><div className="widget-config-title"><Settings2 /><b>{title}</b></div>{children}</div>;
+}
+
+function PresetChoices({ value, options, onChange }: { value: string; options: string[][]; onChange: (value: string) => void }) {
+  return (
+    <div className="widget-preset-grid">
+      {options.map(([id, label, hint]) => (
+        <button key={id} className={value === id ? "selected" : ""} onClick={() => onChange(id)}>
+          <span><b>{label}</b><small>{hint}</small></span>{value === id && <Check />}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -1454,6 +1572,8 @@ function screenSettingsPayload(settings: ScreenSettings) {
     widgets: settings.widgets,
     weather_location: settings.weather_location,
     news_categories: settings.news_categories,
+    theme: settings.theme,
+    widget_settings: settings.widget_settings,
     transition: settings.transition,
     image_duration_seconds: settings.image_duration_seconds,
     auto_start: settings.auto_start !== false,
