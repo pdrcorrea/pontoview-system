@@ -178,8 +178,7 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe.theme-dark .weather-day .min,
   .player-lframe.theme-dark .weather-detail,
   .player-lframe.theme-dark .live-weather small,
-  .player-lframe.theme-dark .live-business span,
-  .player-lframe.theme-dark .side-message-label { color: #d5e3ed; }
+  .player-lframe.theme-dark .live-business span { color: #d5e3ed; }
   .player-lframe.theme-dark .news-source-icon img { background: #fff; border-radius: inherit; }
   /* Em retrato, a coluna informativa tem largura mínima legível e o restante fica livre para a mídia. */
   .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: minmax(0, 1fr) clamp(220px, 23%, 320px); }
@@ -637,7 +636,7 @@ function SideMessage({ message }: { message: PlayerMessage }) {
   const priority = message.priority || "normal";
   const Icon = variant === "attention" ? AlertTriangle : variant === "info" ? Info : variant === "success" ? CheckCircle2 : MessageSquareText;
   return <div className={`side-message variant-${variant} priority-${priority} ${message.isExclusive ? "exclusive" : ""}`}>
-    <span className="side-message-label"><Icon /> {message.isExclusive ? "DESTAQUE" : priority === "urgent" ? "URGENTE" : priority === "important" ? "IMPORTANTE" : "MENSAGEM"}</span>
+    <span className="side-message-label"><Icon /> {message.isExclusive ? "DESTAQUE" : messageStyleLabel(message)}</span>
     {message.title && <h2>{message.title}</h2>}<p>{message.body}</p>
   </div>;
 }
@@ -655,10 +654,21 @@ function footerLengthClass(message: PlayerMessage) {
   return "content-normal";
 }
 
+function messageStyleLabel(message: PlayerMessage) {
+  if (message.priority === "urgent") return "URGENTE";
+  if (message.styleVariant === "attention") return "ATENÇÃO";
+  if (message.styleVariant === "info") return "INFORMATIVO";
+  if (message.styleVariant === "success") return "POSITIVO";
+  if (message.priority === "important") return "IMPORTANTE";
+  return "MENSAGEM";
+}
+
 function footerInfoLabel(message: PlayerMessage) {
-  if (message.contentType === "local_info") return "INFORMAÇÃO";
   if (message.contentType === "event") return "AGENDA";
-  return message.priority === "urgent" ? "URGENTE" : message.priority === "important" ? "IMPORTANTE" : "AVISO";
+  if (message.contentType === "local_info" && (!message.styleVariant || message.styleVariant === "standard")) return "INFORMAÇÃO";
+  if (message.contentType === "message") return messageStyleLabel(message);
+  if (message.styleVariant && message.styleVariant !== "standard") return messageStyleLabel(message);
+  return "INFORMAÇÃO";
 }
 
 function formatEventDate(value: string) {
