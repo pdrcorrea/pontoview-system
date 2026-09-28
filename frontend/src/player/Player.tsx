@@ -79,6 +79,8 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-headline { overflow: hidden; text-overflow: ellipsis; }
   .player-lframe > footer { display: grid !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); align-content: stretch; }
   .player-lframe > footer.news-only { grid-template-rows: 1fr; }
+  .player-lframe > footer.has-service-info.content-long { grid-template-rows: minmax(0, .72fr) minmax(0, 1.28fr); }
+  .player-lframe > footer.has-service-info.content-very-long { grid-template-rows: minmax(0, .52fr) minmax(0, 1.48fr); }
   .footer-news-row, .footer-service-row { min-width: 0; min-height: 0; display: flex; align-items: center; overflow: hidden; }
   .footer-news-row { gap: .75em; }
   .footer-service-row { gap: .8em; margin: .12em 0; padding: .45em .65em; box-sizing: border-box; border: 1px solid rgba(45,76,103,.10); border-radius: .6em; background: #f6f4ef; font-size: .92em; color: #314b62; overflow: visible; }
@@ -613,7 +615,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       </div>}
       {settings.widgets?.business && brandPosition === "side_footer" && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} position="footer" />}
     </aside>
-    <footer className={`${currentInfo ? "has-service-info" : "news-only"} ${settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") ? `has-bar-brand ${brandPosition}` : ""}`}>
+    <footer className={`${currentInfo ? `has-service-info ${footerLengthClass(currentInfo)}` : "news-only"} ${settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") ? `has-bar-brand ${brandPosition}` : ""}`}>
       {settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") && <div className={`footer-brand-slot ${brandPosition}`}><CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /></div>}
       <div className="footer-news-row">
         {currentNews ? <><SourceBadge source={currentNews.source} url={currentNews.url} /><span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span></>
