@@ -360,3 +360,116 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Central de Informações */
+.simple-message-kind {
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f2f5f7;
+  color: #607588;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.simple-message-card.type-local_info .simple-message-icon {
+  background: #edf6f2;
+  color: #34705b;
+}
+
+.simple-message-card.type-event .simple-message-icon {
+  background: #f5f0e8;
+  color: #87642e;
+}
+
+.message-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.message-type-grid button {
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 16px;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 11px;
+  border: 1px solid #dfe6ec;
+  border-radius: 11px;
+  background: #fff;
+  color: #40576d;
+  cursor: pointer;
+}
+
+.message-type-grid button.selected {
+  border-color: #6888a5;
+  background: #f2f7fa;
+}
+
+.message-type-grid button > svg:first-child {
+  width: 19px;
+  color: #315f86;
+}
+
+.message-type-grid button > svg:last-child {
+  width: 15px;
+  color: #2e7858;
+}
+
+.message-type-grid strong,
+.message-type-grid small {
+  display: block;
+}
+
+.message-type-grid strong {
+  color: #2e455a;
+  font-size: 9px;
+}
+
+.message-type-grid small {
+  margin-top: 3px;
+  color: #7b8b99;
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+.message-main-field > input {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  border: 1px solid #dce4eb;
+  border-radius: 11px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #263d52;
+  font: inherit;
+}
+
+.message-helper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #758696;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.message-helper svg {
+  width: 13px;
+  height: 13px;
+}
+
+@media (max-width: 900px) {
+  .message-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .message-type-grid button {
+    min-height: 68px;
+  }
+}
