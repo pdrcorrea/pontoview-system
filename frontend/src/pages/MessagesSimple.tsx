@@ -198,7 +198,10 @@ export function MessagesSimplePage() {
                 <span className="simple-message-icon">{informationIcon(message.content_type)}</span>
                 <span className={message.is_active ? "status active" : "status offline-status"}>{message.is_active ? "Ativa" : "Pausada"}</span>
               </div>
-              <div className="simple-message-kind">{informationTypeLabel(message.content_type)}</div>
+              <div className="simple-message-badges">
+                <div className="simple-message-kind">{informationTypeLabel(message.content_type)}</div>
+                <span className={`simple-message-style variant-${message.style_variant || "standard"}`}>{styleVariantLabel(message.style_variant)}</span>
+              </div>
               <h2>{message.title || informationTypeLabel(message.content_type)}</h2>
               <p>{message.body}</p>
               <div className="simple-message-meta">
@@ -481,4 +484,12 @@ function toLocalDateTimeInput(value: string) {
   if (Number.isNaN(date.getTime())) return "";
   const pad = (part: number) => String(part).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+
+function styleVariantLabel(variant: MessageStyleVariant | undefined) {
+  if (variant === "attention") return "Atenção";
+  if (variant === "info") return "Informativo";
+  if (variant === "success") return "Positivo";
+  return "Padrão";
 }
