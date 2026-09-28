@@ -1399,3 +1399,182 @@
     width: 100%;
   }
 }
+
+
+/* Widget configuration controls */
+.friendly-widget {
+  cursor: default;
+}
+.friendly-widget-copy {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.friendly-widget-copy b,
+.friendly-widget-copy small {
+  display: block;
+}
+.friendly-widget-copy b {
+  font-size: 10px;
+  color: #2a4054;
+}
+.friendly-widget-copy small {
+  margin-top: 3px;
+  font-size: 8px;
+  color: #7b8a99;
+}
+.friendly-widget-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.widget-settings-button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dbe3ea;
+  border-radius: 9px;
+  background: #fff;
+  color: #526d84;
+  cursor: pointer;
+}
+.widget-settings-button:hover,
+.widget-settings-button.active {
+  border-color: #8ea8be;
+  background: #eef5f9;
+  color: #214f75;
+}
+.widget-settings-button svg {
+  width: 15px;
+}
+.widget-config-panel {
+  margin: -2px 0 4px 48px;
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #dfe6ec;
+  border-radius: 11px;
+  background: #f8fafb;
+}
+.widget-config-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #344d63;
+}
+.widget-config-title svg {
+  width: 14px;
+}
+.widget-config-title b,
+.widget-config-group > b {
+  font-size: 9px;
+}
+.widget-preset-grid,
+.theme-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.theme-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.widget-preset-grid button,
+.theme-choice-grid button,
+.brand-position-grid button {
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15px;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 10px;
+  border: 1px solid #dfe6ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #40576d;
+  cursor: pointer;
+}
+.theme-choice-grid button {
+  grid-template-columns: 24px minmax(0, 1fr) 15px;
+}
+.theme-choice-grid button > svg:first-child {
+  width: 19px;
+  color: #315f86;
+}
+.widget-preset-grid button.selected,
+.theme-choice-grid button.selected,
+.brand-position-grid button.selected {
+  border-color: #6e8da8;
+  background: #f1f6fa;
+}
+.widget-preset-grid span,
+.widget-preset-grid b,
+.widget-preset-grid small,
+.theme-choice-grid span,
+.theme-choice-grid b,
+.theme-choice-grid small {
+  display: block;
+}
+.widget-preset-grid b,
+.theme-choice-grid b {
+  font-size: 9px;
+  color: #2d465b;
+}
+.widget-preset-grid small,
+.theme-choice-grid small {
+  margin-top: 3px;
+  font-size: 7px;
+  line-height: 1.35;
+  color: #788998;
+}
+.widget-preset-grid button > svg,
+.theme-choice-grid button > svg:last-child,
+.brand-position-grid button > svg {
+  width: 14px;
+  color: #2e7858;
+}
+.widget-config-group {
+  display: grid;
+  gap: 8px;
+}
+.widget-config-field {
+  margin-top: 0;
+}
+.widget-config-panel > small {
+  color: #738394;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.brand-position-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.brand-position-grid button {
+  min-height: 44px;
+}
+.brand-position-grid button span {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .friendly-widget {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+  }
+  .widget-config-panel {
+    margin-left: 0;
+  }
+  .widget-preset-grid,
+  .theme-choice-grid,
+  .brand-position-grid {
+    grid-template-columns: 1fr;
+  }
+}
