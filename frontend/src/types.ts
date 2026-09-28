@@ -4,6 +4,7 @@ export type MessageDisplayLocation = "footer" | "sidebar";
 export type MessagePriority = "normal" | "important" | "urgent";
 export type MessageDurationMode = "auto" | "manual";
 export type MessageStyleVariant = "standard" | "attention" | "info" | "success";
+export type InformationType = "message" | "local_info" | "event";
 export type MediaType =
   | "drive_image"
   | "drive_video"
@@ -180,6 +181,8 @@ export interface PlayerManifest {
     durationSeconds?: number | null;
     styleVariant?: MessageStyleVariant;
     isExclusive?: boolean;
+    contentType?: InformationType;
+    eventAt?: string | null;
   }>;
   news: Array<{
     id: string;
