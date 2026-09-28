@@ -24,6 +24,7 @@ import {
   RotateCw,
   Save,
   Settings2,
+  Sun,
   ShieldCheck,
   Trash2,
   Users,
