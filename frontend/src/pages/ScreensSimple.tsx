@@ -1057,7 +1057,10 @@ function VisualSettings({
                         ["bar_left", "Barra inferior · esquerda"],
                         ["bar_right", "Barra inferior · direita"],
                       ].map(([id, label]) => (
-                        <button key={id} className={(settings.widget_settings.business?.position || "side_footer") === id ? "selected" : ""} onClick={() => updateWidgetSettings("business", { position: id })}>
+                        <button key={id} className={(settings.widget_settings.business?.position || "side_footer") === id ? "selected" : ""} onClick={() => {
+                          updateWidgetSettings("business", { position: id });
+                          if (id === "bar_left" || id === "bar_right") setSettings((current) => ({ ...current, bar_position: "bottom" }));
+                        }}>
                           <span>{label}</span>{(settings.widget_settings.business?.position || "side_footer") === id && <Check />}
                         </button>
                       ))}
