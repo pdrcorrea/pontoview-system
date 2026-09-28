@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
+  Building2,
+  CalendarDays,
   Check,
   Clock3,
+  Info,
   MessageSquareText,
   Monitor,
   Pencil,
@@ -20,6 +23,8 @@ import type {
   Screen,
 } from "../types";
 
+type InformationType = "message" | "local_info" | "event";
+
 type MessageRow = {
   id: string;
   title: string | null;
@@ -36,6 +41,8 @@ type MessageRow = {
   duration_seconds: number | null;
   style_variant: MessageStyleVariant;
   is_exclusive: boolean;
+  content_type: InformationType;
+  event_at: string | null;
   message_screens: Array<{ screen_id: string }>;
 };
 
@@ -58,7 +65,7 @@ export function MessagesSimplePage() {
     if (!organization) return;
     const [messageResult, screenResult] = await Promise.all([
       supabase.from("messages")
-        .select("id,title,body,starts_at,ends_at,weekdays,start_time,end_time,is_active,display_location,priority,duration_mode,duration_seconds,style_variant,is_exclusive,message_screens(screen_id)")
+        .select("id,title,body,starts_at,ends_at,weekdays,start_time,end_time,is_active,display_location,priority,duration_mode,duration_seconds,style_variant,is_exclusive,content_type,event_at,message_screens(screen_id)")
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false }),
       supabase.from("screens")
@@ -103,6 +110,12 @@ export function MessagesSimplePage() {
     }
 
     const durationMode = (values.duration_mode || "auto") as MessageDurationMode;
+    const contentType = (values.content_type || "message") as InformationType;
+    if (contentType === "event" && !values.event_at) {
+      setBusy(false);
+      setError("Informe a data e o horário do evento.");
+      return;
+    }
     const payload = {
       organization_id: organization.id,
       title: values.title || null,
@@ -112,12 +125,14 @@ export function MessagesSimplePage() {
       weekdays: scheduleMode === "always" ? weekdays.map(([day]) => day) : selectedDays,
       start_time: scheduleMode === "always" ? "00:00" : values.start_time || "08:00",
       end_time: scheduleMode === "always" ? "23:59" : values.end_time || "18:00",
-      display_location: (values.display_location || "footer") as MessageDisplayLocation,
+      display_location: (contentType === "message" ? values.display_location || "footer" : "footer") as MessageDisplayLocation,
+      content_type: contentType,
+      event_at: contentType === "event" && values.event_at ? new Date(values.event_at).toISOString() : null,
       priority: (values.priority || "normal") as MessagePriority,
       duration_mode: durationMode,
       duration_seconds: durationMode === "manual" ? Math.max(5, Math.min(120, Number(values.duration_seconds || 12))) : null,
       style_variant: (values.style_variant || "standard") as MessageStyleVariant,
-      is_exclusive: raw.has("is_exclusive"),
+      is_exclusive: contentType === "message" && raw.has("is_exclusive"),
       is_active: editing ? editing.is_active : true,
       created_by: user.id,
     };
@@ -169,9 +184,9 @@ export function MessagesSimplePage() {
     <>
       <PageHead
         eyebrow="Comunicação"
-        title="Mensagens"
-        text="Crie avisos para suas telas em poucos passos."
-        action="Nova mensagem"
+        title="Central de informações"
+        text="Organize avisos, informações do local e próximos eventos que aparecem nas suas telas."
+        action="Nova informação"
         onAction={() => { setError(null); setEditing(null); }}
       />
       <FormMessage error={error} />
@@ -179,16 +194,17 @@ export function MessagesSimplePage() {
       {messages.length ? (
         <div className="simple-message-grid">
           {messages.map((message) => (
-            <article className={`simple-message-card priority-${message.priority}`} key={message.id}>
+            <article className={`simple-message-card priority-${message.priority} type-${message.content_type || "message"}`} key={message.id}>
               <div className="simple-message-top">
-                <span className="simple-message-icon"><MessageSquareText /></span>
+                <span className="simple-message-icon">{informationIcon(message.content_type)}</span>
                 <span className={message.is_active ? "status active" : "status offline-status"}>{message.is_active ? "Ativa" : "Pausada"}</span>
               </div>
-              <h2>{message.title || "Mensagem"}</h2>
+              <div className="simple-message-kind">{informationTypeLabel(message.content_type)}</div>
+              <h2>{message.title || informationTypeLabel(message.content_type)}</h2>
               <p>{message.body}</p>
               <div className="simple-message-meta">
                 <span><Monitor /> {locationLabel(message.display_location)}</span>
-                <span><Clock3 /> {scheduleLabel(message)}</span>
+                <span><Clock3 /> {message.content_type === "event" ? eventLabel(message.event_at) : scheduleLabel(message)}</span>
               </div>
               <small>{targetLabel(message, screens)}</small>
               <div className="simple-message-actions">
@@ -202,9 +218,9 @@ export function MessagesSimplePage() {
       ) : (
         <EmptyState
           icon={<MessageSquareText />}
-          title="Nenhuma mensagem"
-          text="Crie um aviso e escolha onde ele deve aparecer."
-          action="Criar mensagem"
+          title="Sua central ainda está vazia"
+          text="Adicione uma mensagem, uma informação útil do local ou um próximo evento."
+          action="Adicionar informação"
           onAction={() => setEditing(null)}
         />
       )}
@@ -243,6 +259,7 @@ function MessageComposer({
     || (!message.starts_at && !message.ends_at && message.weekdays.length === 7 && message.start_time.slice(0, 5) === "00:00" && message.end_time.slice(0, 5) === "23:59");
 
   const [body, setBody] = useState(message?.body || "");
+  const [contentType, setContentType] = useState<InformationType>(message?.content_type || "message");
   const [location, setLocation] = useState<MessageDisplayLocation>(message?.display_location || "footer");
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>(initialAlways ? "always" : "scheduled");
   const [targetMode, setTargetMode] = useState<TargetMode>(targeted.size ? "selected" : "all");
@@ -252,8 +269,9 @@ function MessageComposer({
   const [duration, setDuration] = useState(message?.duration_seconds || 12);
 
   return (
-    <Modal eyebrow="MENSAGEM" title={message ? "Editar mensagem" : "Nova mensagem"} onClose={onClose}>
+    <Modal eyebrow="CENTRAL DE INFORMAÇÕES" title={message ? "Editar informação" : "Nova informação"} onClose={onClose}>
       <form className="message-composer" onSubmit={onSubmit}>
+        <input type="hidden" name="content_type" value={contentType} />
         <input type="hidden" name="display_location" value={location} />
         <input type="hidden" name="schedule_mode" value={scheduleMode} />
         <input type="hidden" name="target_mode" value={targetMode} />
@@ -261,22 +279,52 @@ function MessageComposer({
         <input type="hidden" name="style_variant" value={variant} />
         <input type="hidden" name="duration_mode" value={durationMode} />
 
+        <section className="message-simple-section">
+          <b>O que você quer publicar?</b>
+          <div className="message-type-grid">
+            <button type="button" className={contentType === "message" ? "selected" : ""} onClick={() => setContentType("message")}>
+              <MessageSquareText /><span><strong>Mensagem</strong><small>Avisos e comunicados</small></span>{contentType === "message" && <Check />}
+            </button>
+            <button type="button" className={contentType === "local_info" ? "selected" : ""} onClick={() => setContentType("local_info")}>
+              <Building2 /><span><strong>Informação do local</strong><small>Horários, Wi-Fi, serviços e orientações</small></span>{contentType === "local_info" && <Check />}
+            </button>
+            <button type="button" className={contentType === "event" ? "selected" : ""} onClick={() => setContentType("event")}>
+              <CalendarDays /><span><strong>Próximo evento</strong><small>Agenda e acontecimentos futuros</small></span>{contentType === "event" && <Check />}
+            </button>
+          </div>
+        </section>
+
         <label className="message-main-field">
-          Mensagem
+          {contentType === "event" ? "Nome do evento" : contentType === "local_info" ? "Título" : "Título opcional"}
+          <input name="title" defaultValue={message?.title || ""} required={contentType !== "message"} maxLength={80} autoFocus />
+        </label>
+
+        <label className="message-main-field">
+          {contentType === "event" ? "Detalhes do evento" : contentType === "local_info" ? "Informação" : "Mensagem"}
           <textarea
             name="body"
             rows={4}
             required
-            autoFocus
             maxLength={420}
             value={body}
             onChange={(event) => setBody(event.target.value)}
-            placeholder="Digite o aviso que aparecerá na TV"
+            placeholder={contentType === "event" ? "Ex.: Auditório principal · Entrada gratuita" : contentType === "local_info" ? "Ex.: Atendimento de segunda a sexta, das 8h às 18h" : "Digite o aviso que aparecerá na TV"}
           />
           <small>{body.length}/420</small>
         </label>
 
-        <section className="message-simple-section">
+        {contentType === "event" && (
+          <section className="message-simple-section">
+            <b>Quando acontece?</b>
+            <label className="message-main-field">
+              Data e horário
+              <input name="event_at" type="datetime-local" required defaultValue={message?.event_at ? toLocalDateTimeInput(message.event_at) : ""} />
+            </label>
+            <small className="message-helper"><CalendarDays /> O evento poderá aparecer na faixa inferior até 30 dias antes.</small>
+          </section>
+        )}
+
+        {contentType === "message" && <section className="message-simple-section">
           <b>Onde aparece?</b>
           <div className="message-choice-grid">
             <button type="button" className={location === "footer" ? "selected" : ""} onClick={() => setLocation("footer")}>
@@ -286,9 +334,9 @@ function MessageComposer({
               <Monitor /><span><strong>Destaque lateral</strong><small>Mais espaço na tela</small></span>{location === "sidebar" && <Check />}
             </button>
           </div>
-        </section>
+        </section>}
 
-        <section className="message-simple-section">
+        {contentType !== "event" && <section className="message-simple-section">
           <b>Quando?</b>
           <div className="message-segmented">
             <button type="button" className={scheduleMode === "always" ? "selected" : ""} onClick={() => setScheduleMode("always")}>Sempre</button>
@@ -317,7 +365,7 @@ function MessageComposer({
               </details>
             </div>
           )}
-        </section>
+        </section>}
 
         <section className="message-simple-section">
           <b>Em quais telas?</b>
@@ -340,7 +388,6 @@ function MessageComposer({
         <details className="message-more-options">
           <summary>Mais opções</summary>
           <div className="message-more-body">
-            <label>Título opcional<input name="title" defaultValue={message?.title || ""} maxLength={80} /></label>
             <label>Prioridade
               <select value={priority} onChange={(event) => setPriority(event.target.value as MessagePriority)}>
                 <option value="normal">Normal</option>
@@ -366,7 +413,7 @@ function MessageComposer({
               <label>Segundos<input name="duration_seconds" type="number" min={5} max={120} value={duration} onChange={(event) => setDuration(Number(event.target.value))} /></label>
             )}
             {durationMode === "auto" && <input type="hidden" name="duration_seconds" value="" />}
-            {location === "sidebar" && (
+            {contentType === "message" && location === "sidebar" && (
               <label className="message-exclusive-simple">
                 <input type="checkbox" name="is_exclusive" defaultChecked={Boolean(message?.is_exclusive)} />
                 <span>Usar o espaço lateral somente para esta mensagem enquanto ela estiver ativa</span>
@@ -378,7 +425,7 @@ function MessageComposer({
         <FormMessage error={error} />
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onClose}>Cancelar</button>
-          <AsyncButton busy={busy} className="btn primary">Salvar mensagem</AsyncButton>
+          <AsyncButton busy={busy} className="btn primary">Salvar informação</AsyncButton>
         </div>
       </form>
     </Modal>
@@ -407,4 +454,31 @@ function targetLabel(message: MessageRow, screens: Screen[]) {
 
 function locationLabel(location: MessageDisplayLocation) {
   return location === "sidebar" ? "Destaque lateral" : "Faixa inferior";
+}
+
+
+function informationTypeLabel(type: InformationType | undefined) {
+  if (type === "local_info") return "Informação do local";
+  if (type === "event") return "Próximo evento";
+  return "Mensagem";
+}
+
+function informationIcon(type: InformationType | undefined) {
+  if (type === "local_info") return <Building2 />;
+  if (type === "event") return <CalendarDays />;
+  return <MessageSquareText />;
+}
+
+function eventLabel(value: string | null) {
+  if (!value) return "Data não informada";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não informada";
+  return date.toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).replace(".", "");
+}
+
+function toLocalDateTimeInput(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
