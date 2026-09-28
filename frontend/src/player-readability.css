@@ -56,9 +56,6 @@
   overflow: hidden;
 }
 
-.player-lframe:has(> aside .live-business) > footer {
-  padding-right: clamp(150px, 18vw, 290px) !important;
-}
 
 .player-lframe > footer > * {
   min-width: 0;
@@ -203,7 +200,6 @@
     padding-top: 6px !important;
     padding-bottom: 6px !important;
   }
-  .player-lframe:has(> aside .live-business) > footer { padding-right: clamp(125px, 17vw, 235px) !important; }
   .player-lframe > aside .live-business { width: clamp(95px, 12.5vw, 185px); padding-top: 5px; padding-bottom: 5px; }
   .player-lframe > aside .live-business.business-logo img { max-height: 66% !important; }
   .player-lframe > footer .footer-company img { max-height: clamp(30px, 6vh, 52px) !important; }
