@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   AlertTriangle,
   Building2,
+  CalendarDays,
   CheckCircle2,
   Cloud,
   CloudFog,
@@ -75,6 +76,25 @@ const PLAYER_RUNTIME_STYLE = `
   .news-source-icon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
   .news-source strong { font-size: .72em; color: #244f7e; max-width: 14em; overflow: hidden; text-overflow: ellipsis; }
   .footer-headline { overflow: hidden; text-overflow: ellipsis; }
+  .player-lframe > footer { display: grid !important; grid-template-rows: minmax(0, 1.25fr) minmax(0, .75fr); align-content: stretch; }
+  .player-lframe > footer.news-only { grid-template-rows: 1fr; }
+  .footer-news-row, .footer-service-row { min-width: 0; min-height: 0; display: flex; align-items: center; overflow: hidden; }
+  .footer-news-row { gap: .75em; }
+  .footer-service-row { gap: .75em; border-top: 1px solid rgba(45,76,103,.14); font-size: .62em; color: #40586d; }
+  .footer-service-label { flex: 0 0 auto; font-size: .76em; font-weight: 900; letter-spacing: .12em; color: #244f7e; }
+  .footer-service-row.priority-important .footer-service-label { color: #8c641e; }
+  .footer-service-row.priority-urgent .footer-service-label { color: #963e2a; }
+  .footer-event-date { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35em; font-weight: 800; color: #315f86; }
+  .footer-event-date svg { width: 1em; height: 1em; }
+  .footer-service-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .footer-service-text strong { color: #2d455a; }
+  .weather-alerts { display: grid; gap: .55vh; margin-top: 1.2vh; }
+  .weather-alert { display: grid; grid-template-columns: 1.1em minmax(0,1fr); align-items: start; gap: .55em; padding: .65em .7em; border-radius: .65em; background: #fff4df; color: #76531d; }
+  .weather-alert.level-2, .weather-alert.level-3 { background: #fff0ea; color: #8b3f2b; }
+  .weather-alert > svg { width: 1.05em; height: 1.05em; margin-top: .08em; }
+  .weather-alert span { min-width: 0; display: grid; gap: .18em; }
+  .weather-alert b { font-size: clamp(8px,.66vw,12px); text-transform: uppercase; letter-spacing: .06em; }
+  .weather-alert small { font-size: clamp(9px,.7vw,13px); line-height: 1.2; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .footer-message-label.urgent { background:#8d3d24; }
   .footer-message-label.important { background:#9a6b23; }
   .footer-company { display: flex !important; align-items: center; height: 70%; gap: .7em; animation: none !important; }
@@ -428,58 +448,46 @@ function ActivationView({ activation, error, onRetry }: { activation: { code: st
 function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; onEnd: () => void; onError: (detail: string) => void; }) {
   const settings = manifest.settings;
   const [clock, setClock] = useState(new Date());
+  const [newsIndex, setNewsIndex] = useState(0);
   const [infoIndex, setInfoIndex] = useState(0);
   const [sideIndex, setSideIndex] = useState(0);
   useEffect(() => { const timer = window.setInterval(() => setClock(new Date()), 1000); return () => window.clearInterval(timer); }, []);
 
   const footerMessages = useMemo(() => manifest.messages.filter((message) => (message.displayLocation || "footer") === "footer"), [manifest.messages]);
-  const sideMessages = useMemo(() => manifest.messages.filter((message) => message.displayLocation === "sidebar"), [manifest.messages]);
+  const sideMessages = useMemo(() => manifest.messages.filter((message) => message.displayLocation === "sidebar" && (!message.contentType || message.contentType === "message")), [manifest.messages]);
   const exclusiveSideMessages = useMemo(() => sideMessages.filter((message) => message.isExclusive), [sideMessages]);
   const effectiveSideMessages = exclusiveSideMessages.length ? [exclusiveSideMessages[0]] : sideMessages;
   const weightedSideMessages = useMemo(() => effectiveSideMessages.flatMap((message) => message.priority === "urgent" ? [message, message] : [message]), [effectiveSideMessages]);
 
-  const info = useMemo(() => {
-    const newsEntries = settings.widgets?.news
-      ? manifest.news
-          .map((news) => ({ kind: "news" as const, text: news.title, source: news.source || sourceName(news.url), url: news.url, message: null as PlayerMessage | null }))
-          .filter((entry) => entry.text)
-      : [];
-    const messageEntries = settings.widgets?.messages
-      ? footerMessages
-          .map((message) => ({ kind: "message" as const, text: message.body, source: "", url: "", message }))
-          .filter((entry) => entry.text)
-      : [];
+  const newsEntries = useMemo(() => settings.widgets?.news
+    ? manifest.news
+        .map((news) => ({ text: news.title, source: news.source || sourceName(news.url), url: news.url }))
+        .filter((entry) => entry.text)
+    : [], [settings.widgets?.news, manifest.news]);
 
-    if (!messageEntries.length) return newsEntries;
-    if (!newsEntries.length) return messageEntries;
-
-    const sequence: Array<(typeof newsEntries)[number] | (typeof messageEntries)[number]> = [];
-    const groups = Math.max(messageEntries.length, Math.ceil(newsEntries.length / 2));
-
-    for (let group = 0; group < groups; group += 1) {
-      const firstNews = newsEntries[(group * 2) % newsEntries.length];
-      const secondNews = newsEntries[(group * 2 + 1) % newsEntries.length];
-      sequence.push(firstNews);
-      if (newsEntries.length > 1) sequence.push(secondNews);
-      sequence.push(messageEntries[group % messageEntries.length]);
-    }
-
-    return sequence;
-  }, [settings.widgets?.news, settings.widgets?.messages, manifest.news, footerMessages]);
+  const footerInfo = useMemo(() => settings.widgets?.messages
+    ? footerMessages.filter((message) => Boolean(message.body))
+    : [], [settings.widgets?.messages, footerMessages]);
 
   const sideSlides = useMemo(() => [
     ...(!exclusiveSideMessages.length && settings.widgets?.weather ? [{ kind: "weather" as const, key: "weather" }] : []),
     ...(settings.widgets?.messages ? weightedSideMessages.map((message, position) => ({ kind: "message" as const, key: `${message.id}-${position}`, message })) : []),
   ], [settings.widgets?.weather, settings.widgets?.messages, weightedSideMessages, exclusiveSideMessages.length]);
 
-  useEffect(() => { setInfoIndex(0); }, [info.length]);
+  useEffect(() => { setNewsIndex(0); }, [newsEntries.length]);
   useEffect(() => {
-    if (info.length <= 1) return;
-    const current = info[infoIndex % info.length];
-    const delay = current.kind === "message" && current.message ? messageDisplayMs(current.message) : 12_000;
-    const timer = window.setTimeout(() => setInfoIndex((i) => (i + 1) % info.length), delay);
+    if (newsEntries.length <= 1) return;
+    const timer = window.setTimeout(() => setNewsIndex((current) => (current + 1) % newsEntries.length), 12_000);
     return () => window.clearTimeout(timer);
-  }, [infoIndex, info]);
+  }, [newsIndex, newsEntries]);
+
+  useEffect(() => { setInfoIndex(0); }, [footerInfo.length]);
+  useEffect(() => {
+    if (footerInfo.length <= 1) return;
+    const current = footerInfo[infoIndex % footerInfo.length];
+    const timer = window.setTimeout(() => setInfoIndex((i) => (i + 1) % footerInfo.length), messageDisplayMs(current));
+    return () => window.clearTimeout(timer);
+  }, [infoIndex, footerInfo]);
 
   useEffect(() => { setSideIndex(0); }, [sideSlides.length]);
   useEffect(() => {
@@ -500,7 +508,8 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   const preloader = nextDriveMedia ? <DrivePreloader media={nextDriveMedia} device={device} /> : null;
   const stage = <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div>;
   if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen">{stage}</main></>;
-  const currentInfo = info.length ? info[infoIndex % info.length] : null;
+  const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
+  const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
@@ -514,10 +523,18 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       </div>}
       {settings.widgets?.business && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} />}
     </aside>
-    <footer>
-      {currentInfo?.kind === "news" ? <><SourceBadge source={currentInfo.source} url={currentInfo.url} /><span className="footer-headline" key={`news-${infoIndex}`}>{currentInfo.text}</span></>
-      : currentInfo?.kind === "message" && currentInfo.message ? <><b className={`footer-message-label ${currentInfo.message.priority || "normal"}`}>{currentInfo.message.priority === "urgent" ? "URGENTE" : currentInfo.message.priority === "important" ? "IMPORTANTE" : "AVISO"}</b><span className="footer-headline" key={`message-${infoIndex}`}>{currentInfo.text}</span></>
-      : <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />}
+    <footer className={currentInfo ? "has-service-info" : "news-only"}>
+      <div className="footer-news-row">
+        {currentNews ? <><SourceBadge source={currentNews.source} url={currentNews.url} /><span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span></>
+        : <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />}
+      </div>
+      {currentInfo && (
+        <div className={`footer-service-row priority-${currentInfo.priority || "normal"} type-${currentInfo.contentType || "message"}`} key={`info-${infoIndex}`}>
+          <span className="footer-service-label">{footerInfoLabel(currentInfo)}</span>
+          {currentInfo.contentType === "event" && currentInfo.eventAt && <span className="footer-event-date"><CalendarDays /> {formatEventDate(currentInfo.eventAt)}</span>}
+          <span className="footer-service-text">{currentInfo.title ? <strong>{currentInfo.title}</strong> : null}{currentInfo.title ? " · " : ""}{currentInfo.body}</span>
+        </div>
+      )}
     </footer>
   </main></>;
 }
@@ -530,6 +547,18 @@ function SideMessage({ message }: { message: PlayerMessage }) {
     <span className="side-message-label"><Icon /> {message.isExclusive ? "DESTAQUE" : priority === "urgent" ? "URGENTE" : priority === "important" ? "IMPORTANTE" : "MENSAGEM"}</span>
     {message.title && <h2>{message.title}</h2>}<p>{message.body}</p>
   </div>;
+}
+
+function footerInfoLabel(message: PlayerMessage) {
+  if (message.contentType === "local_info") return "INFORMAÇÃO";
+  if (message.contentType === "event") return "AGENDA";
+  return message.priority === "urgent" ? "URGENTE" : message.priority === "important" ? "IMPORTANTE" : "AVISO";
+}
+
+function formatEventDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).replace(".", "");
 }
 
 function messageDisplayMs(message: PlayerMessage) {
@@ -1299,13 +1328,15 @@ function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if 
 function AppStage({ appKey, name, organization }: { appKey: string | null; name: string; organization: PlayerManifest["organization"] }) { const [now, setNow] = useState(new Date()); useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(timer); }, []); if (appKey === "clock") return <div className="clock-app"><b>{now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b><span>{now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span></div>; return <div className="generic-app"><span className="player-mark"><BrandMark /></span><small>APP PONTOVIEW</small><h1>{name}</h1><p>{organization.displayName}</p></div>; }
 
 type ForecastDay = { date: string; weather_code: number | null; condition?: string; temp_min: number | null; temp_max: number | null; precipitation_probability?: number | null; };
-type WeatherData = { temperature: number | null; apparent_temperature?: number | null; humidity?: number | null; wind_speed?: number | null; weather_code?: number | null; condition?: string; name?: string; forecast?: ForecastDay[]; };
+type WeatherAlert = { id?: string | number | null; title?: string; severity?: string; level?: number; description?: string; ends_at?: string | null; };
+type WeatherData = { temperature: number | null; apparent_temperature?: number | null; humidity?: number | null; wind_speed?: number | null; weather_code?: number | null; condition?: string; name?: string; forecast?: ForecastDay[]; alerts?: WeatherAlert[]; };
 
 function WeatherWidget({ screenId, token, location }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; }) {
   const [data, setData] = useState<WeatherData | null>(null); const locationKey = JSON.stringify(location || {});
   useEffect(() => { let active = true; const load = () => void fetch(`${functionsUrl}/screens-weather`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": screenId, "x-screen-token": token }, body: "{}" }).then((response) => response.ok ? response.json() : null).then((result) => { if (active && result) setData(result); }).catch(() => {}); load(); const timer = window.setInterval(load, 10 * 60_000); return () => { active = false; window.clearInterval(timer); }; }, [screenId, token, locationKey]);
   const forecast = Array.isArray(data?.forecast) ? data.forecast.slice(1, 4) : [];
-  return <div className="live-weather"><div className="weather-current"><WeatherGlyph code={data?.weather_code} /><span><b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b><small className="condition">{data?.condition || "Clima"}</small><small>{data?.name || String(location?.name || "Configure a cidade")}</small>{(data?.apparent_temperature != null || data?.wind_speed != null) && <span className="weather-detail">{data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}{data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}</span>}</span></div>{forecast.length > 0 && <div className="weather-forecast">{forecast.map((day) => <div className="weather-day" key={day.date} title={day.condition || "Previsão"}><small>{forecastLabel(day.date)}</small><WeatherGlyph code={day.weather_code} /><span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span></div>)}</div>}</div>;
+  const alerts = Array.isArray(data?.alerts) ? data.alerts.slice(0, 2) : [];
+  return <div className="live-weather"><div className="weather-current"><WeatherGlyph code={data?.weather_code} /><span><b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b><small className="condition">{data?.condition || "Clima"}</small><small>{data?.name || String(location?.name || "Configure a cidade")}</small>{(data?.apparent_temperature != null || data?.wind_speed != null) && <span className="weather-detail">{data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}{data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}</span>}</span></div>{alerts.length > 0 && <div className="weather-alerts">{alerts.map((alert, position) => <div className={`weather-alert level-${Number(alert.level || 0)}`} key={String(alert.id ?? position)}><AlertTriangle /><span><b>{alert.severity || "Alerta meteorológico"}</b><small>{alert.title || alert.description || "Atenção às condições do tempo"}</small></span></div>)}</div>}{forecast.length > 0 && <div className="weather-forecast">{forecast.map((day) => <div className="weather-day" key={day.date} title={day.condition || "Previsão"}><small>{forecastLabel(day.date)}</small><WeatherGlyph code={day.weather_code} /><span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span></div>)}</div>}</div>;
 }
 function WeatherGlyph({ code }: { code?: number | null }) { const value = Number(code ?? 3); const Icon = value <= 1 ? Sun : value === 2 ? CloudSun : value === 3 ? Cloud : [45, 48].includes(value) ? CloudFog : [71, 73, 75].includes(value) ? Snowflake : [95, 96, 99].includes(value) ? CloudLightning : CloudRain; return <Icon aria-hidden="true" />; }
 function forecastLabel(date: string) { const parsed = new Date(`${date}T12:00:00`); if (Number.isNaN(parsed.getTime())) return "Dia"; return parsed.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""); }
