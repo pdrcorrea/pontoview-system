@@ -90,6 +90,23 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-event-date svg { width: 1em; height: 1em; }
   .footer-service-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.15; font-weight: 600; }
   .footer-service-text strong { color: #203b53; font-weight: 850; }
+  .player-lframe.news-preset-compact .footer-news-row { font-size: .82em; }
+  .player-lframe.news-preset-compact .footer-headline { -webkit-line-clamp: 1 !important; white-space: nowrap !important; }
+  .player-lframe.news-preset-highlight .footer-news-row { font-size: 1.08em; font-weight: 750; }
+  .player-lframe.news-preset-highlight .news-source { opacity: .72; font-size: .86em; }
+  .player-lframe.messages-preset-balanced .footer-service-row { font-size: .82em; }
+  .player-lframe.messages-preset-compact .footer-service-row { font-size: .72em; }
+  .player-lframe.messages-preset-compact .footer-service-label { min-width: auto; }
+  .player-lframe > footer.has-bar-brand { position: relative; }
+  .footer-brand-slot { position: absolute; top: 0; bottom: 0; z-index: 3; width: min(18%, 260px); display: flex; align-items: center; overflow: hidden; }
+  .footer-brand-slot.bar_left { left: var(--pv-footer-x); justify-content: flex-start; }
+  .footer-brand-slot.bar_right { right: var(--pv-footer-x); justify-content: flex-end; }
+  .player-lframe > footer.has-bar-brand.bar_left .footer-news-row,
+  .player-lframe > footer.has-bar-brand.bar_left .footer-service-row { padding-left: min(20%, 285px); }
+  .player-lframe > footer.has-bar-brand.bar_right .footer-news-row,
+  .player-lframe > footer.has-bar-brand.bar_right .footer-service-row { padding-right: min(20%, 285px); }
+  .footer-brand-slot .footer-company { width: 100%; justify-content: inherit; }
+  .footer-company.business-discreet, .live-business.business-discreet { opacity: .82; transform: scale(.82); transform-origin: center; }
   .weather-alerts { display: grid; gap: .55vh; margin-top: 1.2vh; }
   .weather-alert { display: grid; grid-template-columns: 1.1em minmax(0,1fr); align-items: start; gap: .55em; padding: .65em .7em; border-radius: .65em; background: #fff4df; color: #76531d; }
   .weather-alert.level-2, .weather-alert.level-3 { background: #fff0ea; color: #8b3f2b; }
@@ -103,6 +120,18 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-company img { max-height: 100%; max-width: min(28vw,320px); object-fit: contain; }
   .footer-company svg { width: 1.25em; height: 1.25em; color: #244f7e; }
   .footer-company strong { font-size: .85em; color: #244f7e; }
+  .player-lframe.theme-dark > aside, .player-lframe.theme-dark > footer { background: #0c1b28 !important; color: #edf5fb !important; }
+  .player-lframe.theme-dark .live-clock b, .player-lframe.theme-dark .live-clock small,
+  .player-lframe.theme-dark .footer-headline, .player-lframe.theme-dark .footer-service-text,
+  .player-lframe.theme-dark .footer-service-text strong, .player-lframe.theme-dark .footer-company strong { color: #edf5fb !important; }
+  .player-lframe.theme-dark .news-source strong, .player-lframe.theme-dark .footer-service-label,
+  .player-lframe.theme-dark .footer-event-date, .player-lframe.theme-dark .weather-day,
+  .player-lframe.theme-dark .weather-day > small, .player-lframe.theme-dark .live-weather,
+  .player-lframe.theme-dark .side-message p, .player-lframe.theme-dark .side-message h2 { color: #c8d8e5 !important; }
+  .player-lframe.theme-dark .news-source-icon, .player-lframe.theme-dark .footer-event-date { background: #172b3b !important; }
+  .player-lframe.theme-dark .weather-forecast, .player-lframe.theme-dark .footer-service-row { border-color: rgba(218,234,246,.16) !important; }
+  .player-lframe.theme-dark .weather-alert { background: #382f1f; color: #ffe0a4; }
+  .player-lframe.theme-dark .weather-alert.level-2, .player-lframe.theme-dark .weather-alert.level-3 { background: #3a2524; color: #ffc0b5; }
   /* Em retrato, a coluna informativa tem largura mínima legível e o restante fica livre para a mídia. */
   .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: minmax(0, 1fr) clamp(220px, 23%, 320px); }
   .pv-orientation-canvas.logical-portrait .player-lframe.side-left { grid-template-columns: clamp(220px, 23%, 320px) minmax(0, 1fr); }
@@ -449,6 +478,14 @@ function ActivationView({ activation, error, onRetry }: { activation: { code: st
 
 function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; onEnd: () => void; onError: (detail: string) => void; }) {
   const settings = manifest.settings;
+  const widgetSettings = settings.widget_settings || {};
+  const clockPreset = widgetSettings.clock?.preset || "classic";
+  const weatherPreset = widgetSettings.weather?.preset || "complete";
+  const newsPreset = widgetSettings.news?.preset || "editorial";
+  const messagesPreset = widgetSettings.messages?.preset || "highlight";
+  const brandPreset = widgetSettings.business?.preset || "logo";
+  const brandPosition = widgetSettings.business?.position || "side_footer";
+  const playerTheme = settings.theme || "light";
   const [clock, setClock] = useState(new Date());
   const [newsIndex, setNewsIndex] = useState(0);
   const [infoIndex, setInfoIndex] = useState(0);
@@ -515,20 +552,25 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
-  return <>{preloader}<main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position}`}>
+  return <>{preloader}<main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position} theme-${playerTheme} news-preset-${newsPreset} messages-preset-${messagesPreset} brand-${brandPosition}`}>
     <div className="player-main">{stage}</div>
     <aside>
-      {settings.widgets?.clock && <div className="live-clock"><b>{clock.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b>{settings.widgets?.date && <small>{clock.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase()}</small>}</div>}
+      {settings.widgets?.business && brandPosition === "side_header" && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} position="header" />}
+      {settings.widgets?.clock && <div className={`live-clock preset-${clockPreset}`}>
+        <b>{clock.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", ...(clockPreset === "editorial" ? { second: "2-digit" as const } : {}) })}</b>
+        {settings.widgets?.date && clockPreset !== "minimal" && <small>{clock.toLocaleDateString("pt-BR", clockPreset === "editorial" ? { weekday: "long", day: "2-digit", month: "long" } : { weekday: "short", day: "2-digit", month: "short" }).toUpperCase()}</small>}
+      </div>}
       {sideSlides.length > 0 && <div className="side-rotation-slot">
-        {!exclusiveSideMessages.length && settings.widgets?.weather && <div className="side-panel-slide" hidden={currentSide?.kind !== "weather"}><WeatherWidget screenId={device.screenId} token={device.token} location={settings.weather_location} /></div>}
+        {!exclusiveSideMessages.length && settings.widgets?.weather && <div className="side-panel-slide" hidden={currentSide?.kind !== "weather"}><WeatherWidget screenId={device.screenId} token={device.token} location={settings.weather_location} preset={weatherPreset} /></div>}
         {currentSide?.kind === "message" && <div className="side-panel-slide" key={`side-message-${currentSide.key}`}><SideMessage message={currentSide.message} /></div>}
       </div>}
-      {settings.widgets?.business && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} />}
+      {settings.widgets?.business && brandPosition === "side_footer" && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} position="footer" />}
     </aside>
-    <footer className={currentInfo ? "has-service-info" : "news-only"}>
+    <footer className={`${currentInfo ? "has-service-info" : "news-only"} ${settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") ? `has-bar-brand ${brandPosition}` : ""}`}>
+      {settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") && <div className={`footer-brand-slot ${brandPosition}`}><CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /></div>}
       <div className="footer-news-row">
         {currentNews ? <><SourceBadge source={currentNews.source} url={currentNews.url} /><span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span></>
-        : <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} />}
+        : settings.widgets?.business ? <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /> : <span />}
       </div>
       {currentInfo && (
         <div className={`footer-service-row priority-${currentInfo.priority || "normal"} type-${currentInfo.contentType || "message"}`} key={`info-${infoIndex}`}>
@@ -1333,18 +1375,18 @@ type ForecastDay = { date: string; weather_code: number | null; condition?: stri
 type WeatherAlert = { id?: string | number | null; title?: string; severity?: string; level?: number; description?: string; ends_at?: string | null; };
 type WeatherData = { temperature: number | null; apparent_temperature?: number | null; humidity?: number | null; wind_speed?: number | null; weather_code?: number | null; condition?: string; name?: string; forecast?: ForecastDay[]; alerts?: WeatherAlert[]; };
 
-function WeatherWidget({ screenId, token, location }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; }) {
+function WeatherWidget({ screenId, token, location, preset = "complete" }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; preset?: string; }) {
   const [data, setData] = useState<WeatherData | null>(null); const locationKey = JSON.stringify(location || {});
   useEffect(() => { let active = true; const load = () => void fetch(`${functionsUrl}/screens-weather`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": screenId, "x-screen-token": token }, body: "{}" }).then((response) => response.ok ? response.json() : null).then((result) => { if (active && result) setData(result); }).catch(() => {}); load(); const timer = window.setInterval(load, 10 * 60_000); return () => { active = false; window.clearInterval(timer); }; }, [screenId, token, locationKey]);
   const forecast = Array.isArray(data?.forecast) ? data.forecast.slice(1, 4) : [];
   const alerts = Array.isArray(data?.alerts) ? data.alerts.slice(0, 2) : [];
-  return <div className="live-weather"><div className="weather-current"><WeatherGlyph code={data?.weather_code} /><span><b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b><small className="condition">{data?.condition || "Clima"}</small><small>{data?.name || String(location?.name || "Configure a cidade")}</small>{(data?.apparent_temperature != null || data?.wind_speed != null) && <span className="weather-detail">{data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}{data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}</span>}</span></div>{alerts.length > 0 && <div className="weather-alerts">{alerts.map((alert, position) => <div className={`weather-alert level-${Number(alert.level || 0)}`} key={String(alert.id ?? position)}><AlertTriangle /><span><b>{alert.severity || "Alerta meteorológico"}</b><small>{alert.title || alert.description || "Atenção às condições do tempo"}</small></span></div>)}</div>}{forecast.length > 0 && <div className="weather-forecast">{forecast.map((day) => <div className="weather-day" key={day.date} title={day.condition || "Previsão"}><small>{forecastLabel(day.date)}</small><WeatherGlyph code={day.weather_code} /><span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span></div>)}</div>}</div>;
+  return <div className="live-weather"><div className="weather-current"><WeatherGlyph code={data?.weather_code} /><span><b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b><small className="condition">{data?.condition || "Clima"}</small><small>{data?.name || String(location?.name || "Configure a cidade")}</small>{preset === "complete" && (data?.apparent_temperature != null || data?.wind_speed != null) && <span className="weather-detail">{data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}{data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}</span>}</span></div>{alerts.length > 0 && <div className="weather-alerts">{alerts.map((alert, position) => <div className={`weather-alert level-${Number(alert.level || 0)}`} key={String(alert.id ?? position)}><AlertTriangle /><span><b>{alert.severity || "Alerta meteorológico"}</b><small>{alert.title || alert.description || "Atenção às condições do tempo"}</small></span></div>)}</div>}{preset !== "essential" && forecast.length > 0 && <div className="weather-forecast">{forecast.map((day) => <div className="weather-day" key={day.date} title={day.condition || "Previsão"}><small>{forecastLabel(day.date)}</small><WeatherGlyph code={day.weather_code} /><span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span></div>)}</div>}</div>;
 }
 function WeatherGlyph({ code }: { code?: number | null }) { const value = Number(code ?? 3); const Icon = value <= 1 ? Sun : value === 2 ? CloudSun : value === 3 ? Cloud : [45, 48].includes(value) ? CloudFog : [71, 73, 75].includes(value) ? Snowflake : [95, 96, 99].includes(value) ? CloudLightning : CloudRain; return <Icon aria-hidden="true" />; }
 function forecastLabel(date: string) { const parsed = new Date(`${date}T12:00:00`); if (Number.isNaN(parsed.getTime())) return "Dia"; return parsed.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""); }
 function SourceBadge({ source, url }: { source: string; url: string }) { const [imageFailed, setImageFailed] = useState(false); const favicon = faviconUrl(url); return <span className="news-source"><span className="news-source-icon"><Newspaper />{favicon && !imageFailed && <img src={favicon} alt="" onError={() => setImageFailed(true)} />}</span><strong>{source || "Fonte"}</strong></span>; }
-function CompanySide({ logoUrl, name }: { logoUrl: string; name: string }) { const [imageFailed, setImageFailed] = useState(false); if (logoUrl && !imageFailed) return <div className="live-business business-logo"><img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /></div>; return <div className="live-business"><Building2 /><span>{name}</span></div>; }
-function CompanyFooter({ logoUrl, name }: { logoUrl: string; name: string }) { const [imageFailed, setImageFailed] = useState(false); if (logoUrl && !imageFailed) return <span className="footer-company"><img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /></span>; return <span className="footer-company"><Building2 /><strong>{name}</strong></span>; }
+function CompanySide({ logoUrl, name, preset = "logo", position = "footer" }: { logoUrl: string; name: string; preset?: string; position?: "header" | "footer" }) { const [imageFailed, setImageFailed] = useState(false); const showName = preset === "logo_name" || !logoUrl || imageFailed; return <div className={`live-business business-${preset} position-${position} ${logoUrl && !imageFailed ? "business-logo" : ""}`}>{logoUrl && !imageFailed ? <img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /> : <Building2 />}{showName && <span>{name}</span>}</div>; }
+function CompanyFooter({ logoUrl, name, preset = "logo" }: { logoUrl: string; name: string; preset?: string }) { const [imageFailed, setImageFailed] = useState(false); const showName = preset === "logo_name" || !logoUrl || imageFailed; return <span className={`footer-company business-${preset}`}>{logoUrl && !imageFailed ? <img src={logoUrl} alt={name} onError={() => setImageFailed(true)} /> : <Building2 />}{showName && <strong>{name}</strong>}</span>; }
 function BrandMark() { const [imageFailed, setImageFailed] = useState(false); return imageFailed ? <span className="pv-brand-fallback">PV</span> : <img className="pv-brand-official" src="/assets/icon.png" alt="" onError={() => setImageFailed(true)} />; }
 async function clearPlayerCache(screenId: string) { localStorage.removeItem(`pv_manifest_${screenId}`); for (const key of Object.keys(localStorage)) if (key.startsWith("pv-cache:") || key.startsWith("pv-last:")) localStorage.removeItem(key); if ("caches" in window) { const names = await caches.keys(); await Promise.all(names.filter((name) => name.startsWith("pontoview-")).map((name) => caches.delete(name))); } }
 function cacheBustedUrl(rawUrl: string, revision: number) { try { const url = new URL(rawUrl, window.location.origin); if (revision > 0) url.searchParams.set("pv_reload", String(revision)); if (url.origin === window.location.origin && url.pathname.startsWith("/paineis/")) url.searchParams.set("pv_panel_version", "9"); return url.toString(); } catch { return rawUrl; } }
