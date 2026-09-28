@@ -85,11 +85,11 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-news-row {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr;
-    align-content: center;
-    gap: .22em;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .72em;
     margin: .12em 0;
-    padding: .44em .72em .44em .92em;
+    padding: .44em .58em .44em .92em;
     border: 1px solid rgba(45,76,103,.10);
     border-radius: .62em;
     background: #ffffff;
@@ -106,8 +106,10 @@ const PLAYER_RUNTIME_STYLE = `
     background: #315f86;
     opacity: .9;
   }
-  .footer-news-row.no-details { align-content: center; }
+  .footer-news-row.headline-only { align-content: center; }
   .footer-news-row.has-details { align-content: center; }
+  .footer-news-row.expanded { height: 100%; }
+  .footer-news-content { min-width: 0; display: grid; gap: .22em; align-content: center; }
   .footer-news-main {
     min-width: 0;
     display: flex;
@@ -126,6 +128,38 @@ const PLAYER_RUNTIME_STYLE = `
     font-size: .72em;
     font-weight: 480;
     line-height: 1.18;
+  }
+  .footer-news-row.headline-only .footer-news-details,
+  .player-lframe > footer.has-service-info .footer-news-details { display: none !important; }
+  .footer-news-qr {
+    width: clamp(42px, 3.5vw, 66px);
+    height: clamp(42px, 3.5vw, 66px);
+    display: grid;
+    place-items: center;
+    padding: .18em;
+    box-sizing: border-box;
+    border-radius: .45em;
+    background: rgba(49,95,134,.06);
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+  .footer-news-qr img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .player-lframe > footer.has-service-info .footer-news-qr {
+    width: clamp(36px, 2.9vw, 54px);
+    height: clamp(36px, 2.9vw, 54px);
+    opacity: .92;
+  }
+  .player-lframe > footer.news-only .footer-news-row {
+    font-size: 1.04em;
+  }
+  .player-lframe > footer.news-only .footer-news-details {
+    -webkit-line-clamp: 3;
+    font-size: .78em;
   }
   .footer-service-row { display: flex; align-items: center; gap: .8em; margin: .12em 0; padding: .45em .65em; border: 1px solid rgba(45,76,103,.10); background: #f6f4ef; font-size: .92em; color: #314b62; overflow: visible; }
   .footer-service-label { flex: 0 0 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: .38em; padding: .44em .68em; border-radius: .5em; background: #52697e; color: #fff; font-size: .70em; font-weight: 900; letter-spacing: .06em; line-height: 1; }
@@ -148,6 +182,7 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-news-row .footer-headline { flex: 1 1 auto; min-width: 0; font-size: 1em; font-weight: 720; line-height: 1.12 !important; }
   .player-lframe.news-preset-compact .footer-news-row { font-size: .82em; }
   .player-lframe.news-preset-compact .footer-news-details { display: none; }
+  .player-lframe.news-preset-compact .footer-news-qr { width: clamp(34px, 2.6vw, 48px); height: clamp(34px, 2.6vw, 48px); }
   .player-lframe.news-preset-compact .footer-headline { -webkit-line-clamp: 1 !important; white-space: nowrap !important; }
   .player-lframe.news-preset-highlight .footer-news-row { font-size: 1.08em; }
   .player-lframe.news-preset-highlight .footer-news-row .news-source { opacity: .68; font-size: .66em; }
@@ -218,6 +253,7 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe.theme-dark .footer-news-row { background: #14232f !important; border-color: rgba(218,234,246,.13) !important; }
   .player-lframe.theme-dark .footer-news-row::before { background: #70a8d0; }
   .player-lframe.theme-dark .footer-news-details { color: #b7c9d7 !important; }
+  .player-lframe.theme-dark .footer-news-qr { background: rgba(255,255,255,.07); }
   .player-lframe.theme-dark .footer-service-row { background: #1b2b37 !important; color: #eef5fa !important; }
   .player-lframe.theme-dark .footer-service-label { color: #fff !important; }
   .player-lframe.theme-dark .footer-event-date { color: #dceaf4 !important; }
@@ -649,6 +685,8 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen">{stage}</main></>;
   const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
   const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
+  const showNewsDetails = Boolean(currentNews?.details) && !currentInfo;
+  const showNewsQr = Boolean(currentNews?.url);
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
@@ -668,13 +706,16 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
     </aside>
     <footer className={`${currentInfo ? `has-service-info ${footerLengthClass(currentInfo)}` : "news-only"} ${settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") ? `has-bar-brand ${brandPosition}` : ""}`}>
       {settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") && <div className={`footer-brand-slot ${brandPosition}`}><CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /></div>}
-      <div className={`footer-news-row ${currentNews?.details ? "has-details" : "no-details"}`}>
+      <div className={`footer-news-row ${showNewsDetails ? "has-details" : "headline-only"} ${!currentInfo ? "expanded" : ""}`}>
         {currentNews ? <>
-          <div className="footer-news-main">
-            <div className="footer-news-meta"><SourceBadge source={currentNews.source} url={currentNews.url} /></div>
-            <span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span>
+          <div className="footer-news-content">
+            <div className="footer-news-main">
+              <div className="footer-news-meta"><SourceBadge source={currentNews.source} url={currentNews.url} /></div>
+              <span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span>
+            </div>
+            {showNewsDetails && <span className="footer-news-details">{currentNews.details}</span>}
           </div>
-          {currentNews.details && <span className="footer-news-details">{currentNews.details}</span>}
+          {showNewsQr && <span className="footer-news-qr" aria-hidden="true"><img src={newsQrUrl(currentNews.url)} alt="" /></span>}
         </> : <span />}
       </div>
       {currentInfo && (
@@ -699,6 +740,10 @@ function SideMessage({ message }: { message: PlayerMessage }) {
     <span className="side-message-label"><Icon /> {message.isExclusive ? "DESTAQUE" : messageStyleLabel(message)}</span>
     {message.title && <h2>{message.title}</h2>}<p>{message.body}</p>
   </div>;
+}
+
+function newsQrUrl(url: string) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=0&data=${encodeURIComponent(url)}`;
 }
 
 function newsDetails(title: string, summary: string | null | undefined) {
