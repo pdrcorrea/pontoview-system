@@ -94,6 +94,17 @@ export interface OperatingHours {
   end: string;
 }
 
+export type PlayerTheme = "light" | "dark";
+export type BrandPosition = "side_header" | "side_footer" | "bar_left" | "bar_right";
+
+export interface ScreenWidgetSettings {
+  clock?: { preset?: "classic" | "minimal" | "editorial" };
+  weather?: { preset?: "complete" | "essential" | "forecast" };
+  news?: { preset?: "editorial" | "compact" | "highlight" };
+  messages?: { preset?: "highlight" | "balanced" | "compact" };
+  business?: { preset?: "logo" | "logo_name" | "discreet"; position?: BrandPosition };
+}
+
 export interface ScreenSettings {
   screen_id: string;
   layout_mode: "fullscreen" | "lframe";
@@ -108,6 +119,8 @@ export interface ScreenSettings {
     longitude?: number | null;
   } | null;
   news_categories: string[];
+  theme: PlayerTheme;
+  widget_settings: ScreenWidgetSettings;
   transition: "fade" | "cut";
   image_duration_seconds: number;
   auto_start: boolean;
