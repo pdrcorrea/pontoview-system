@@ -99,7 +99,7 @@
 
 .pv-player-runtime .player-lframe {
   --pv-side-size: 20%;
-  --pv-bar-size: 9%;
+  --pv-bar-size: 20%;
   --pv-aside-x: 18px;
   --pv-aside-y: 20px;
   --pv-aside-gap: 16px;
@@ -112,7 +112,7 @@
 
 .pv-player-runtime .pv-orientation-canvas.logical-portrait .player-lframe {
   --pv-side-size: 26%;
-  --pv-bar-size: 6.5%;
+  --pv-bar-size: 26%;
   --pv-aside-x: 14px;
   --pv-aside-y: 18px;
   --pv-aside-gap: 12px;
@@ -123,7 +123,7 @@
 @supports (width: 1cqw) {
   .pv-player-runtime .pv-orientation-canvas.logical-landscape .player-lframe {
     --pv-side-size: max(170px, 20cqw);
-    --pv-bar-size: max(44px, 9cqh);
+    --pv-bar-size: max(72px, 20cqh);
     --pv-aside-x: max(14px, 2.1cqw);
     --pv-aside-y: max(14px, 3.4cqh);
     --pv-aside-gap: max(10px, 2.5cqh);
@@ -133,7 +133,7 @@
 
   .pv-player-runtime .pv-orientation-canvas.logical-portrait .player-lframe {
     --pv-side-size: max(140px, 26cqw);
-    --pv-bar-size: max(44px, 6.5cqh);
+    --pv-bar-size: max(72px, 26cqh);
     --pv-aside-x: max(12px, 2.8cqw);
     --pv-aside-y: max(12px, 2.3cqh);
     --pv-aside-gap: max(8px, 1.8cqh);
@@ -181,10 +181,24 @@
   height: 100% !important;
   min-width: 0 !important;
   min-height: 0 !important;
-  padding: 0 var(--pv-footer-x) !important;
+  padding: clamp(8px, 1.2vh, 18px) var(--pv-footer-x) !important;
   gap: 14px !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
+  align-items: center !important;
+}
+
+.pv-player-runtime .player-lframe > footer .footer-headline {
+  display: -webkit-box !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  line-height: 1.18 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .pv-player-runtime .player-lframe.bar-bottom > footer {
   grid-row: 2 !important;
