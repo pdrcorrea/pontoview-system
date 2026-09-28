@@ -45,13 +45,14 @@ const PLAYER_RUNTIME_STYLE = `
   .side-panel-slide { width: 100%; min-height: 0; animation: pv-side-in 420ms ease both; }
   .side-panel-slide[hidden] { display: none !important; }
   .side-message { height: 100%; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.5vh; border-radius: 1.2vw; padding: .3vw; }
-  .side-message-label { display: inline-flex; width: fit-content; align-items: center; gap: .55em; font-size: clamp(9px,.75vw,13px); font-weight: 800; letter-spacing: .12em; color: #244f7e; }
+  .side-message-label { display: inline-flex; width: fit-content; align-items: center; gap: .55em; padding: .52em .72em; border-radius: .55em; background: #52697e; font-size: clamp(9px,.75vw,13px); font-weight: 800; letter-spacing: .1em; color: #fff; }
   .side-message-label svg { width: 1.2em; height: 1.2em; }
   .side-message h2 { margin: 0; font-size: clamp(20px,2vw,38px); line-height: 1.08; color: #17344f; overflow-wrap: anywhere; }
   .side-message p { margin: 0; font-size: clamp(14px,1.28vw,24px); line-height: 1.34; color: #40586d; overflow-wrap: anywhere; }
-  .side-message.variant-attention .side-message-label, .side-message.priority-urgent .side-message-label { color: #9a4f20; }
-  .side-message.variant-info .side-message-label { color: #236b8e; }
-  .side-message.variant-success .side-message-label { color: #26735a; }
+  .side-message.variant-attention .side-message-label { background: #b87824; color: #fff; }
+  .side-message.variant-info .side-message-label { background: #2f6f96; color: #fff; }
+  .side-message.variant-success .side-message-label { background: #34785e; color: #fff; }
+  .side-message.priority-urgent .side-message-label { background: #a54535; color: #fff; }
   .side-message.priority-urgent { border-left: .35vw solid #9a4f20; padding-left: 1vw; }
   .side-message.priority-important { border-left: .25vw solid #d39a3a; padding-left: .9vw; }
   .side-message.exclusive { background: rgba(255,255,255,.46); }
@@ -80,15 +81,21 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe > footer.news-only { grid-template-rows: 1fr; }
   .footer-news-row, .footer-service-row { min-width: 0; min-height: 0; display: flex; align-items: center; overflow: hidden; }
   .footer-news-row { gap: .75em; }
-  .footer-service-row { gap: .8em; border-top: 1px solid rgba(45,76,103,.14); font-size: .92em; color: #314b62; }
-  .footer-service-label { flex: 0 0 auto; min-width: 6.8em; font-size: .72em; font-weight: 900; letter-spacing: .1em; color: #244f7e; }
-  .footer-service-row.type-local_info .footer-service-label { color: #2f705b; }
-  .footer-service-row.type-event .footer-service-label { color: #7b5e2b; }
-  .footer-service-row.priority-important .footer-service-label { color: #8c641e; }
-  .footer-service-row.priority-urgent .footer-service-label { color: #963e2a; }
+  .footer-service-row { gap: .8em; margin: .12em 0; padding: .45em .65em; box-sizing: border-box; border: 1px solid rgba(45,76,103,.10); border-radius: .6em; background: #f6f4ef; font-size: .92em; color: #314b62; overflow: visible; }
+  .footer-service-label { flex: 0 0 auto; min-width: 6.8em; display: inline-flex; align-items: center; justify-content: center; gap: .38em; padding: .42em .65em; border-radius: .5em; background: #52697e; color: #fff; font-size: .72em; font-weight: 900; letter-spacing: .08em; }
+  .footer-service-label svg { width: 1.05em; height: 1.05em; flex: 0 0 auto; }
+  .footer-service-label b { font: inherit; color: inherit; }
+  .footer-service-row.variant-info .footer-service-label { background: #2f6f96; color: #fff; }
+  .footer-service-row.variant-attention .footer-service-label { background: #b87824; color: #fff; }
+  .footer-service-row.variant-success .footer-service-label { background: #34785e; color: #fff; }
+  .footer-service-row.priority-important .footer-service-label { box-shadow: inset 0 0 0 2px rgba(255,211,122,.65); }
+  .footer-service-row.priority-urgent .footer-service-label { background: #a54535; color: #fff; box-shadow: 0 0 0 2px rgba(165,69,53,.18); }
   .footer-event-date { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35em; padding: .28em .55em; border-radius: .5em; background: #eef3f7; font-size: .78em; font-weight: 850; color: #315f86; }
   .footer-event-date svg { width: 1em; height: 1em; }
-  .footer-service-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.15; font-weight: 600; }
+  .footer-service-text { min-width: 0; flex: 1 1 auto; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; line-height: 1.18; font-weight: 600; }
+  .footer-service-row.content-long { font-size: .80em; }
+  .footer-service-row.content-very-long { font-size: .68em; line-height: 1.12; }
+  .footer-service-row.content-very-long .footer-service-label { font-size: .82em; }
   .footer-service-text strong { color: #203b53; font-weight: 850; }
   .player-lframe.news-preset-compact .footer-news-row { font-size: .82em; }
   .player-lframe.news-preset-compact .footer-headline { -webkit-line-clamp: 1 !important; white-space: nowrap !important; }
@@ -98,7 +105,7 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe.messages-preset-compact .footer-service-row { font-size: .72em; }
   .player-lframe.messages-preset-compact .footer-service-label { min-width: auto; }
   .player-lframe > footer.has-bar-brand { position: relative; }
-  .footer-brand-slot { position: absolute; top: 0; bottom: 0; z-index: 3; width: min(18%, 260px); display: flex; align-items: center; overflow: hidden; }
+  .footer-brand-slot { position: absolute; top: 8%; bottom: 8%; z-index: 3; width: min(18%, 260px); display: flex; align-items: center; overflow: hidden; box-sizing: border-box; }
   .footer-brand-slot.bar_left { left: var(--pv-footer-x); justify-content: flex-start; }
   .footer-brand-slot.bar_right { right: var(--pv-footer-x); justify-content: flex-end; }
   .player-lframe > footer.has-bar-brand.bar_left .footer-news-row,
@@ -121,7 +128,16 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe > aside .live-business.position-header { order: -2; }
   .player-lframe > aside .live-business.position-footer { order: 5; margin-top: auto !important; }
   .player-lframe > aside .live-business.position-header.business-logo img,
-  .player-lframe > aside .live-business.position-footer.business-logo img { max-height: clamp(38px, 6vh, 74px) !important; object-position: left center !important; }
+  .player-lframe > aside .live-business.position-footer.business-logo img {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: clamp(34px, 6vh, 70px) !important;
+    object-fit: contain !important;
+    object-position: left center !important;
+    flex: 0 1 auto;
+  }
   .player-lframe > aside .live-business.business-logo.business-logo_name { gap: .65em; }
   .weather-alerts { display: grid; gap: .55vh; margin-top: 1.2vh; }
   .weather-alert { display: grid; grid-template-columns: 1.1em minmax(0,1fr); align-items: start; gap: .55em; padding: .65em .7em; border-radius: .65em; background: #fff4df; color: #76531d; }
@@ -132,8 +148,8 @@ const PLAYER_RUNTIME_STYLE = `
   .weather-alert small { font-size: clamp(9px,.7vw,13px); line-height: 1.2; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .footer-message-label.urgent { background:#8d3d24; }
   .footer-message-label.important { background:#9a6b23; }
-  .footer-company { display: flex !important; align-items: center; height: 70%; gap: .7em; animation: none !important; }
-  .footer-company img { max-height: 100%; max-width: min(28vw,320px); object-fit: contain; }
+  .footer-company { display: flex !important; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 0; min-height: 0; gap: .7em; animation: none !important; overflow: hidden; }
+  .footer-company img { display: block; width: auto !important; height: auto !important; max-width: 100% !important; max-height: 82% !important; object-fit: contain !important; object-position: center !important; flex: 0 1 auto; }
   .footer-company svg { width: 1.25em; height: 1.25em; color: #244f7e; }
   .footer-company strong { font-size: .85em; color: #244f7e; }
   .player-lframe.theme-dark > aside, .player-lframe.theme-dark > footer { background: #0c1b28 !important; color: #edf5fb !important; }
@@ -148,6 +164,21 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe.theme-dark .weather-forecast, .player-lframe.theme-dark .footer-service-row { border-color: rgba(218,234,246,.16) !important; }
   .player-lframe.theme-dark .weather-alert { background: #382f1f; color: #ffe0a4; }
   .player-lframe.theme-dark .weather-alert.level-2, .player-lframe.theme-dark .weather-alert.level-3 { background: #3a2524; color: #ffc0b5; }
+  .player-lframe.theme-dark .footer-service-row { background: #182631 !important; color: #eef5fa !important; }
+  .player-lframe.theme-dark .footer-service-label { color: #fff !important; }
+  .player-lframe.theme-dark .footer-event-date { color: #dceaf4 !important; }
+  .player-lframe.theme-dark .news-source-icon svg,
+  .player-lframe.theme-dark .weather-current > svg,
+  .player-lframe.theme-dark .weather-day > svg,
+  .player-lframe.theme-dark .weather-detail svg,
+  .player-lframe.theme-dark .footer-company svg,
+  .player-lframe.theme-dark .live-business svg { color: #8fc4e8 !important; }
+  .player-lframe.theme-dark .weather-day .min,
+  .player-lframe.theme-dark .weather-detail,
+  .player-lframe.theme-dark .live-weather small,
+  .player-lframe.theme-dark .live-business span,
+  .player-lframe.theme-dark .side-message-label { color: #d5e3ed; }
+  .player-lframe.theme-dark .news-source-icon img { background: #fff; border-radius: inherit; }
   /* Em retrato, a coluna informativa tem largura mínima legível e o restante fica livre para a mídia. */
   .pv-orientation-canvas.logical-portrait .player-lframe.side-right { grid-template-columns: minmax(0, 1fr) clamp(220px, 23%, 320px); }
   .pv-orientation-canvas.logical-portrait .player-lframe.side-left { grid-template-columns: clamp(220px, 23%, 320px) minmax(0, 1fr); }
@@ -589,8 +620,8 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
         : <span />}
       </div>
       {currentInfo && (
-        <div className={`footer-service-row priority-${currentInfo.priority || "normal"} type-${currentInfo.contentType || "message"}`} key={`info-${infoIndex}`}>
-          <span className="footer-service-label">{footerInfoLabel(currentInfo)}</span>
+        <div className={`footer-service-row priority-${currentInfo.priority || "normal"} type-${currentInfo.contentType || "message"} variant-${currentInfo.styleVariant || "standard"} ${footerLengthClass(currentInfo)}`} key={`info-${infoIndex}`}>
+          <span className="footer-service-label">{footerInfoIcon(currentInfo)}<b>{footerInfoLabel(currentInfo)}</b></span>
           {currentInfo.contentType === "event" && currentInfo.eventAt && <span className="footer-event-date"><CalendarDays /> {formatEventDate(currentInfo.eventAt)}</span>}
           <span className="footer-service-text">{currentInfo.title ? <strong>{currentInfo.title}</strong> : null}{currentInfo.title ? " · " : ""}{currentInfo.body}</span>
         </div>
@@ -607,6 +638,19 @@ function SideMessage({ message }: { message: PlayerMessage }) {
     <span className="side-message-label"><Icon /> {message.isExclusive ? "DESTAQUE" : priority === "urgent" ? "URGENTE" : priority === "important" ? "IMPORTANTE" : "MENSAGEM"}</span>
     {message.title && <h2>{message.title}</h2>}<p>{message.body}</p>
   </div>;
+}
+
+function footerInfoIcon(message: PlayerMessage) {
+  const variant = message.styleVariant || "standard";
+  const Icon = variant === "attention" ? AlertTriangle : variant === "info" ? Info : variant === "success" ? CheckCircle2 : MessageSquareText;
+  return <Icon aria-hidden="true" />;
+}
+
+function footerLengthClass(message: PlayerMessage) {
+  const length = `${message.title || ""} ${message.body || ""}`.trim().length;
+  if (length > 300) return "content-very-long";
+  if (length > 180) return "content-long";
+  return "content-normal";
 }
 
 function footerInfoLabel(message: PlayerMessage) {
