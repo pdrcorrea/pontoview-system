@@ -83,21 +83,54 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe > footer.has-service-info.content-very-long { grid-template-rows: minmax(0, .52fr) minmax(0, 1.48fr); }
   .footer-news-row, .footer-service-row { min-width: 0; min-height: 0; box-sizing: border-box; border-radius: .62em; }
   .footer-news-row {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr;
     align-content: center;
-    gap: .18em;
+    gap: .22em;
     margin: .12em 0;
-    padding: .46em .72em;
+    padding: .44em .72em .44em .92em;
     border: 1px solid rgba(45,76,103,.10);
+    border-radius: .62em;
     background: #ffffff;
     overflow: hidden;
   }
-  .footer-news-meta { min-width: 0; display: flex; align-items: center; }
+  .footer-news-row::before {
+    content: "";
+    position: absolute;
+    left: .34em;
+    top: 20%;
+    bottom: 20%;
+    width: .12em;
+    border-radius: 99px;
+    background: #315f86;
+    opacity: .9;
+  }
+  .footer-news-row.no-details { align-content: center; }
+  .footer-news-row.has-details { align-content: center; }
+  .footer-news-main {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: .7em;
+  }
+  .footer-news-meta { min-width: 0; flex: 0 0 auto; display: flex; align-items: center; }
+  .footer-news-details {
+    min-width: 0;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    padding-left: calc(1.7em + .7em);
+    color: #65798b;
+    font-size: .72em;
+    font-weight: 480;
+    line-height: 1.18;
+  }
   .footer-service-row { display: flex; align-items: center; gap: .8em; margin: .12em 0; padding: .45em .65em; border: 1px solid rgba(45,76,103,.10); background: #f6f4ef; font-size: .92em; color: #314b62; overflow: visible; }
-  .footer-service-label { flex: 0 0 auto; min-width: 6.8em; display: inline-flex; align-items: center; justify-content: center; gap: .38em; padding: .42em .65em; border-radius: .5em; background: #52697e; color: #fff; font-size: .72em; font-weight: 900; letter-spacing: .08em; }
-  .footer-service-label svg { width: 1.05em; height: 1.05em; flex: 0 0 auto; }
-  .footer-service-label b { font: inherit; color: inherit; }
+  .footer-service-label { flex: 0 0 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: .38em; padding: .44em .68em; border-radius: .5em; background: #52697e; color: #fff; font-size: .70em; font-weight: 900; letter-spacing: .06em; line-height: 1; }
+  .footer-service-label svg { width: 1.02em; height: 1.02em; flex: 0 0 auto; color: currentColor !important; }
+  .footer-service-label > span { display: inline !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: inherit !important; font: inherit !important; letter-spacing: inherit !important; line-height: inherit !important; box-shadow: none !important; }
   .footer-service-row.variant-info .footer-service-label { background: #2f6f96; color: #fff; }
   .footer-service-row.variant-attention .footer-service-label { background: #b87824; color: #fff; }
   .footer-service-row.variant-success .footer-service-label { background: #34785e; color: #fff; }
@@ -111,10 +144,10 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-service-row.content-long { font-size: .80em; }
   .footer-service-row.content-very-long { font-size: .68em; line-height: 1.12; }
   .footer-service-row.content-very-long .footer-service-label { font-size: .82em; }
-  .footer-news-row .news-source { font-size: .70em; opacity: .82; }
-  .footer-news-row .footer-headline { font-size: 1em; font-weight: 680; line-height: 1.12 !important; }
+  .footer-news-row .news-source { font-size: .68em; opacity: .86; }
+  .footer-news-row .footer-headline { flex: 1 1 auto; min-width: 0; font-size: 1em; font-weight: 720; line-height: 1.12 !important; }
   .player-lframe.news-preset-compact .footer-news-row { font-size: .82em; }
-  .player-lframe.news-preset-compact .footer-news-meta { display: none; }
+  .player-lframe.news-preset-compact .footer-news-details { display: none; }
   .player-lframe.news-preset-compact .footer-headline { -webkit-line-clamp: 1 !important; white-space: nowrap !important; }
   .player-lframe.news-preset-highlight .footer-news-row { font-size: 1.08em; }
   .player-lframe.news-preset-highlight .footer-news-row .news-source { opacity: .68; font-size: .66em; }
@@ -183,6 +216,8 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe.theme-dark .weather-alert { background: #382f1f; color: #ffe0a4; }
   .player-lframe.theme-dark .weather-alert.level-2, .player-lframe.theme-dark .weather-alert.level-3 { background: #3a2524; color: #ffc0b5; }
   .player-lframe.theme-dark .footer-news-row { background: #14232f !important; border-color: rgba(218,234,246,.13) !important; }
+  .player-lframe.theme-dark .footer-news-row::before { background: #70a8d0; }
+  .player-lframe.theme-dark .footer-news-details { color: #b7c9d7 !important; }
   .player-lframe.theme-dark .footer-service-row { background: #1b2b37 !important; color: #eef5fa !important; }
   .player-lframe.theme-dark .footer-service-label { color: #fff !important; }
   .player-lframe.theme-dark .footer-event-date { color: #dceaf4 !important; }
@@ -565,7 +600,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
 
   const newsEntries = useMemo(() => settings.widgets?.news
     ? manifest.news
-        .map((news) => ({ text: news.title, source: news.source || sourceName(news.url), url: news.url }))
+        .map((news) => ({ text: news.title, details: newsDetails(news.title, news.summary), source: news.source || sourceName(news.url), url: news.url }))
         .filter((entry) => entry.text)
     : [], [settings.widgets?.news, manifest.news]);
 
@@ -633,15 +668,18 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
     </aside>
     <footer className={`${currentInfo ? `has-service-info ${footerLengthClass(currentInfo)}` : "news-only"} ${settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") ? `has-bar-brand ${brandPosition}` : ""}`}>
       {settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") && <div className={`footer-brand-slot ${brandPosition}`}><CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /></div>}
-      <div className="footer-news-row">
+      <div className={`footer-news-row ${currentNews?.details ? "has-details" : "no-details"}`}>
         {currentNews ? <>
-          <div className="footer-news-meta"><SourceBadge source={currentNews.source} url={currentNews.url} /></div>
-          <span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span>
+          <div className="footer-news-main">
+            <div className="footer-news-meta"><SourceBadge source={currentNews.source} url={currentNews.url} /></div>
+            <span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span>
+          </div>
+          {currentNews.details && <span className="footer-news-details">{currentNews.details}</span>}
         </> : <span />}
       </div>
       {currentInfo && (
         <div className={`footer-service-row priority-${currentInfo.priority || "normal"} type-${currentInfo.contentType || "message"} variant-${currentInfo.styleVariant || "standard"} ${footerLengthClass(currentInfo)}`} key={`info-${infoIndex}`}>
-          <span className="footer-service-label">{footerInfoIcon(currentInfo)}<b>{footerInfoLabel(currentInfo)}</b></span>
+          <span className="footer-service-label">{footerInfoIcon(currentInfo)}<span>{footerInfoLabel(currentInfo)}</span></span>
           {currentInfo.contentType === "event" && currentInfo.eventAt && <span className="footer-event-date"><CalendarDays /> {formatEventDate(currentInfo.eventAt)}</span>}
           <span className="footer-service-copy">
             {currentInfo.title && <strong className="footer-service-title">{currentInfo.title}</strong>}
@@ -661,6 +699,16 @@ function SideMessage({ message }: { message: PlayerMessage }) {
     <span className="side-message-label"><Icon /> {message.isExclusive ? "DESTAQUE" : messageStyleLabel(message)}</span>
     {message.title && <h2>{message.title}</h2>}<p>{message.body}</p>
   </div>;
+}
+
+function newsDetails(title: string, summary: string | null | undefined) {
+  const value = String(summary || "").replace(/\s+/g, " ").trim();
+  if (!value) return "";
+  const normalizedTitle = title.replace(/\s+/g, " ").trim().toLowerCase();
+  const normalizedSummary = value.toLowerCase();
+  if (normalizedSummary === normalizedTitle) return "";
+  if (normalizedSummary.startsWith(normalizedTitle) && normalizedSummary.length <= normalizedTitle.length + 20) return "";
+  return value;
 }
 
 function footerInfoIcon(message: PlayerMessage) {
