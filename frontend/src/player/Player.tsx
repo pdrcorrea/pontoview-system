@@ -438,10 +438,34 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   const effectiveSideMessages = exclusiveSideMessages.length ? [exclusiveSideMessages[0]] : sideMessages;
   const weightedSideMessages = useMemo(() => effectiveSideMessages.flatMap((message) => message.priority === "urgent" ? [message, message] : [message]), [effectiveSideMessages]);
 
-  const info = useMemo(() => [
-    ...(settings.widgets?.news ? manifest.news.map((news) => ({ kind: "news" as const, text: news.title, source: news.source || sourceName(news.url), url: news.url, message: null as PlayerMessage | null })) : []),
-    ...(settings.widgets?.messages ? footerMessages.map((message) => ({ kind: "message" as const, text: message.body, source: "", url: "", message })) : []),
-  ].filter((entry) => entry.text), [settings.widgets, manifest.news, footerMessages]);
+  const info = useMemo(() => {
+    const newsEntries = settings.widgets?.news
+      ? manifest.news
+          .map((news) => ({ kind: "news" as const, text: news.title, source: news.source || sourceName(news.url), url: news.url, message: null as PlayerMessage | null }))
+          .filter((entry) => entry.text)
+      : [];
+    const messageEntries = settings.widgets?.messages
+      ? footerMessages
+          .map((message) => ({ kind: "message" as const, text: message.body, source: "", url: "", message }))
+          .filter((entry) => entry.text)
+      : [];
+
+    if (!messageEntries.length) return newsEntries;
+    if (!newsEntries.length) return messageEntries;
+
+    const sequence: Array<(typeof newsEntries)[number] | (typeof messageEntries)[number]> = [];
+    let newsPosition = 0;
+    let messagePosition = 0;
+
+    while (newsPosition < newsEntries.length) {
+      sequence.push(...newsEntries.slice(newsPosition, newsPosition + 2));
+      newsPosition += 2;
+      sequence.push(messageEntries[messagePosition % messageEntries.length]);
+      messagePosition += 1;
+    }
+
+    return sequence;
+  }, [settings.widgets?.news, settings.widgets?.messages, manifest.news, footerMessages]);
 
   const sideSlides = useMemo(() => [
     ...(!exclusiveSideMessages.length && settings.widgets?.weather ? [{ kind: "weather" as const, key: "weather" }] : []),
@@ -452,7 +476,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   useEffect(() => {
     if (info.length <= 1) return;
     const current = info[infoIndex % info.length];
-    const delay = current.kind === "message" && current.message ? messageDisplayMs(current.message) : 8000;
+    const delay = current.kind === "message" && current.message ? messageDisplayMs(current.message) : 12_000;
     const timer = window.setTimeout(() => setInfoIndex((i) => (i + 1) % info.length), delay);
     return () => window.clearTimeout(timer);
   }, [infoIndex, info]);
