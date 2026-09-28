@@ -107,6 +107,22 @@ const PLAYER_RUNTIME_STYLE = `
   .player-lframe > footer.has-bar-brand.bar_right .footer-service-row { padding-right: min(20%, 285px); }
   .footer-brand-slot .footer-company { width: 100%; justify-content: inherit; }
   .footer-company.business-discreet, .live-business.business-discreet { opacity: .82; transform: scale(.82); transform-origin: center; }
+  .player-lframe > aside .live-business.position-header,
+  .player-lframe > aside .live-business.position-footer {
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: clamp(42px, 6vh, 76px);
+    flex: 0 0 auto;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+  }
+  .player-lframe > aside .live-business.position-header { order: -2; }
+  .player-lframe > aside .live-business.position-footer { order: 5; margin-top: auto !important; }
+  .player-lframe > aside .live-business.position-header.business-logo img,
+  .player-lframe > aside .live-business.position-footer.business-logo img { max-height: clamp(38px, 6vh, 74px) !important; object-position: left center !important; }
+  .player-lframe > aside .live-business.business-logo.business-logo_name { gap: .65em; }
   .weather-alerts { display: grid; gap: .55vh; margin-top: 1.2vh; }
   .weather-alert { display: grid; grid-template-columns: 1.1em minmax(0,1fr); align-items: start; gap: .55em; padding: .65em .7em; border-radius: .65em; background: #fff4df; color: #76531d; }
   .weather-alert.level-2, .weather-alert.level-3 { background: #fff0ea; color: #8b3f2b; }
@@ -570,7 +586,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       {settings.widgets?.business && (brandPosition === "bar_left" || brandPosition === "bar_right") && <div className={`footer-brand-slot ${brandPosition}`}><CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /></div>}
       <div className="footer-news-row">
         {currentNews ? <><SourceBadge source={currentNews.source} url={currentNews.url} /><span className="footer-headline" key={`news-${newsIndex}`}>{currentNews.text}</span></>
-        : settings.widgets?.business ? <CompanyFooter logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} /> : <span />}
+        : <span />}
       </div>
       {currentInfo && (
         <div className={`footer-service-row priority-${currentInfo.priority || "normal"} type-${currentInfo.contentType || "message"}`} key={`info-${infoIndex}`}>
