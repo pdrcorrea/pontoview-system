@@ -323,14 +323,15 @@ function MessageComposer({
           </section>
         )}
 
-        {contentType === "message" && <section className="message-simple-section">
-          <b>Onde aparece?</b>
+        {contentType === "message" && <section className="message-simple-section message-placement-section">
+          <b>Onde esta mensagem aparece?</b>
+          <small className="message-helper"><Monitor /> Escolha entre a faixa inferior ou o espaço de destaque na barra lateral.</small>
           <div className="message-choice-grid">
             <button type="button" className={location === "footer" ? "selected" : ""} onClick={() => setLocation("footer")}>
-              <MessageSquareText /><span><strong>Faixa inferior</strong><small>Discreta e contínua</small></span>{location === "footer" && <Check />}
+              <MessageSquareText /><span><strong>Rodapé / faixa inferior</strong><small>Acompanha as notícias na parte inferior</small></span>{location === "footer" && <Check />}
             </button>
             <button type="button" className={location === "sidebar" ? "selected" : ""} onClick={() => setLocation("sidebar")}>
-              <Monitor /><span><strong>Destaque lateral</strong><small>Mais espaço na tela</small></span>{location === "sidebar" && <Check />}
+              <Monitor /><span><strong>Barra lateral</strong><small>Mensagem com mais espaço e destaque</small></span>{location === "sidebar" && <Check />}
             </button>
           </div>
         </section>}
