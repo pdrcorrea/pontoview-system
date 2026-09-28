@@ -1522,27 +1522,58 @@ function ScreenPreview({ settings, orientation }: { settings: ScreenSettings; or
     width: orientation === "portrait" ? "min(100%, 320px)" : "100%",
     marginInline: "auto",
   } as const;
+  const theme = settings.theme || "light";
+  const brandPosition = settings.widget_settings?.business?.position || "side_footer";
+  const clockPreset = settings.widget_settings?.clock?.preset || "classic";
+  const weatherPreset = settings.widget_settings?.weather?.preset || "complete";
+  const newsPreset = settings.widget_settings?.news?.preset || "editorial";
+  const messagesPreset = settings.widget_settings?.messages?.preset || "highlight";
+  const brandPreset = settings.widget_settings?.business?.preset || "logo";
 
   if (settings.layout_mode === "fullscreen") {
     return (
-      <div className={`frame-preview fullscreen-preview orientation-${orientation}`} style={style}>
+      <div className={`frame-preview fullscreen-preview orientation-${orientation} preview-theme-${theme}`} style={style}>
         <div className="main-media"><Play /><b>Conteúdo da playlist</b><small>Vídeos · Imagens · Painéis · YouTube</small></div>
       </div>
     );
   }
 
   return (
-    <div className={`frame-preview l-preview orientation-${orientation} side-${settings.side_position} bar-${settings.bar_position}`} style={style}>
+    <div className={`frame-preview l-preview orientation-${orientation} side-${settings.side_position} bar-${settings.bar_position} preview-theme-${theme} preview-news-${newsPreset} preview-messages-${messagesPreset}`} style={style}>
       <div className="main-media"><Play /><b>Conteúdo principal</b><small>Playlist PontoView</small></div>
       <aside className="frame-side">
-        {settings.widgets.clock && <div className="clock-widget"><b>13:06</b><small>SEX · 11 SET</small></div>}
-        {settings.widgets.weather && <div className="weather-widget"><CloudSun /><span><b>26°</b><small>{String(settings.weather_location?.name || "Sua cidade")}</small></span></div>}
-        {settings.widgets.business && <div className="business-widget"><Building2 /><small>Sua empresa</small></div>}
+        {settings.widgets.business && brandPosition === "side_header" && <PreviewBrand preset={brandPreset} />}
+        {settings.widgets.clock && <div className={`clock-widget preset-${clockPreset}`}><b>13:06</b>{clockPreset !== "minimal" && <small>{clockPreset === "editorial" ? "SEGUNDA · 28 SETEMBRO" : "SEG · 28 SET"}</small>}</div>}
+        {settings.widgets.weather && <div className={`weather-widget preset-${weatherPreset}`}><CloudSun /><span><b>26°</b><small>{String(settings.weather_location?.name || "Sua cidade")}</small>{weatherPreset === "complete" && <em>Sensação 27° · vento 8 km/h</em>}</span></div>}
+        {settings.widgets.business && brandPosition === "side_footer" && <PreviewBrand preset={brandPreset} />}
       </aside>
       <div className="frame-bar">
-        {settings.widgets.news && <span><b>AGORA</b> Notícias e informações atualizadas...</span>}
-        {settings.widgets.messages && <span>• Mensagem da empresa</span>}
+        {settings.widgets.business && brandPosition === "bar_left" && <PreviewBrand preset={brandPreset} compact />}
+        <div className="preview-editorial-stack">
+          {settings.widgets.news && (
+            <div className="preview-news-card">
+              <small><Newspaper /> INFOMONEY</small>
+              <b>Notícia em destaque com leitura confortável e hierarquia editorial.</b>
+            </div>
+          )}
+          {settings.widgets.messages && (
+            <div className="preview-info-card">
+              <span>INFORMAÇÃO</span>
+              <div><b>Fluxo e Ordem de Atendimento</b><small>Mensagem institucional com leitura em múltiplas linhas e maior destaque.</small></div>
+            </div>
+          )}
+        </div>
+        {settings.widgets.business && brandPosition === "bar_right" && <PreviewBrand preset={brandPreset} compact />}
       </div>
+    </div>
+  );
+}
+
+function PreviewBrand({ preset, compact = false }: { preset: string; compact?: boolean }) {
+  return (
+    <div className={`business-widget preview-brand preset-${preset} ${compact ? "compact" : ""}`}>
+      <Building2 />
+      {preset !== "logo" && <small>Sua empresa</small>}
     </div>
   );
 }
