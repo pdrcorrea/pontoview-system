@@ -76,18 +76,20 @@ const PLAYER_RUNTIME_STYLE = `
   .news-source-icon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
   .news-source strong { font-size: .72em; color: #244f7e; max-width: 14em; overflow: hidden; text-overflow: ellipsis; }
   .footer-headline { overflow: hidden; text-overflow: ellipsis; }
-  .player-lframe > footer { display: grid !important; grid-template-rows: minmax(0, 1.25fr) minmax(0, .75fr); align-content: stretch; }
+  .player-lframe > footer { display: grid !important; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); align-content: stretch; }
   .player-lframe > footer.news-only { grid-template-rows: 1fr; }
   .footer-news-row, .footer-service-row { min-width: 0; min-height: 0; display: flex; align-items: center; overflow: hidden; }
   .footer-news-row { gap: .75em; }
-  .footer-service-row { gap: .75em; border-top: 1px solid rgba(45,76,103,.14); font-size: .62em; color: #40586d; }
-  .footer-service-label { flex: 0 0 auto; font-size: .76em; font-weight: 900; letter-spacing: .12em; color: #244f7e; }
+  .footer-service-row { gap: .8em; border-top: 1px solid rgba(45,76,103,.14); font-size: .92em; color: #314b62; }
+  .footer-service-label { flex: 0 0 auto; min-width: 6.8em; font-size: .72em; font-weight: 900; letter-spacing: .1em; color: #244f7e; }
+  .footer-service-row.type-local_info .footer-service-label { color: #2f705b; }
+  .footer-service-row.type-event .footer-service-label { color: #7b5e2b; }
   .footer-service-row.priority-important .footer-service-label { color: #8c641e; }
   .footer-service-row.priority-urgent .footer-service-label { color: #963e2a; }
-  .footer-event-date { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35em; font-weight: 800; color: #315f86; }
+  .footer-event-date { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35em; padding: .28em .55em; border-radius: .5em; background: #eef3f7; font-size: .78em; font-weight: 850; color: #315f86; }
   .footer-event-date svg { width: 1em; height: 1em; }
-  .footer-service-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .footer-service-text strong { color: #2d455a; }
+  .footer-service-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.15; font-weight: 600; }
+  .footer-service-text strong { color: #203b53; font-weight: 850; }
   .weather-alerts { display: grid; gap: .55vh; margin-top: 1.2vh; }
   .weather-alert { display: grid; grid-template-columns: 1.1em minmax(0,1fr); align-items: start; gap: .55em; padding: .65em .7em; border-radius: .65em; background: #fff4df; color: #76531d; }
   .weather-alert.level-2, .weather-alert.level-3 { background: #fff0ea; color: #8b3f2b; }
