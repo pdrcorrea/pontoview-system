@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Check,
   Clock3,
-  Info,
   MessageSquareText,
   Monitor,
   Pencil,
@@ -174,7 +173,7 @@ export function MessagesSimplePage() {
   };
 
   const remove = async (message: MessageRow) => {
-    if (!confirm("Excluir esta mensagem?")) return;
+    if (!confirm("Excluir esta informação?")) return;
     const result = await supabase.from("messages").delete().eq("id", message.id);
     if (result.error) setError(result.error.message);
     else await load();
