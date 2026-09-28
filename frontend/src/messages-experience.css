@@ -473,3 +473,41 @@
     min-height: 68px;
   }
 }
+
+
+.simple-message-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.simple-message-style {
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #64798c;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.simple-message-style.variant-info {
+  background: #2f6f96;
+}
+
+.simple-message-style.variant-attention {
+  background: #b87824;
+}
+
+.simple-message-style.variant-success {
+  background: #34785e;
+}
+
+.message-placement-section {
+  padding: 12px;
+  border: 1px solid #dce6ee;
+  border-radius: 12px;
+  background: #f8fafb;
+}
