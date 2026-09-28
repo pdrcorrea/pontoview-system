@@ -454,14 +454,14 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
     if (!newsEntries.length) return messageEntries;
 
     const sequence: Array<(typeof newsEntries)[number] | (typeof messageEntries)[number]> = [];
-    let newsPosition = 0;
-    let messagePosition = 0;
+    const groups = Math.max(messageEntries.length, Math.ceil(newsEntries.length / 2));
 
-    while (newsPosition < newsEntries.length) {
-      sequence.push(...newsEntries.slice(newsPosition, newsPosition + 2));
-      newsPosition += 2;
-      sequence.push(messageEntries[messagePosition % messageEntries.length]);
-      messagePosition += 1;
+    for (let group = 0; group < groups; group += 1) {
+      const firstNews = newsEntries[(group * 2) % newsEntries.length];
+      const secondNews = newsEntries[(group * 2 + 1) % newsEntries.length];
+      sequence.push(firstNews);
+      if (newsEntries.length > 1) sequence.push(secondNews);
+      sequence.push(messageEntries[group % messageEntries.length]);
     }
 
     return sequence;
