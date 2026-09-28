@@ -1551,14 +1551,17 @@ function ScreenPreview({ settings, orientation }: { settings: ScreenSettings; or
         {settings.widgets.business && brandPosition === "bar_left" && <PreviewBrand preset={brandPreset} compact />}
         <div className="preview-editorial-stack">
           {settings.widgets.news && (
-            <div className="preview-news-card">
-              <small><Newspaper /> INFOMONEY</small>
-              <b>Notícia em destaque com leitura confortável e hierarquia editorial.</b>
+            <div className="preview-news-card has-details">
+              <div className="preview-news-main">
+                <small><Newspaper /> INFOMONEY</small>
+                <b>Manchete da notícia com leitura confortável e hierarquia editorial.</b>
+              </div>
+              <em>Detalhes da notícia aparecem abaixo quando o feed RSS trouxer um resumo útil.</em>
             </div>
           )}
           {settings.widgets.messages && (
             <div className="preview-info-card">
-              <span>INFORMAÇÃO</span>
+              <span><MessageSquareText /> INFORMAÇÃO</span>
               <div><b>Fluxo e Ordem de Atendimento</b><small>Mensagem institucional com leitura em múltiplas linhas e maior destaque.</small></div>
             </div>
           )}
