@@ -301,9 +301,6 @@
   box-sizing: border-box !important;
 }
 
-.pv-player-runtime .player-lframe:has(> aside .live-business) > footer {
-  padding-right: calc(var(--pv-business-size) + var(--pv-footer-x) + var(--pv-footer-x)) !important;
-}
 
 @supports (width: 1cqw) {
   .pv-player-runtime .player-lframe > footer {
