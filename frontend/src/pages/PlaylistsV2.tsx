@@ -39,6 +39,7 @@ import {
   formData,
 } from "../components/ui";
 import { supabase } from "../lib/supabase";
+import { seasonalCampaignRoute } from "../seasonalCampaigns";
 import { formatDuration } from "../lib/youtube";
 import type { Media, Playlist } from "../types";
 
@@ -854,16 +855,7 @@ function MediaPreview({ item, name }: { item?: Media; name: string }) {
     );
   }
   if (item.type === "app" && item.app_key) {
-    const seasonalRoutes: Record<string, string> = {
-      orgulho: "/paineis/orgulho/",
-      setembro_amarelo: "/paineis/setembro-amarelo/",
-      outubro_rosa: "/paineis/outubro-rosa/",
-      novembro_azul: "/paineis/novembro-azul/",
-      dia_mundial_aids: "/paineis/dia-mundial-aids/",
-      natal: "/paineis/natal/",
-      ano_novo: "/paineis/ano-novo/",
-    };
-    const route = seasonalRoutes[item.app_key];
+    const route = seasonalCampaignRoute(item.app_key);
     if (route) {
       return (
         <iframe
