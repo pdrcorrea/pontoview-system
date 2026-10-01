@@ -430,21 +430,43 @@ body.saci .turn-hint{
           </svg>
         </div>
 
-        <div class="symbol" id="saciSymbol" role="img" aria-label="Silhueta estilizada do Saci com gorro vermelho">
+                <div class="symbol" id="saciSymbol" role="img" aria-label="Saci com gorro vermelho, cachimbo e uma perna só">
           <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
-              <linearGradient id="capRed" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#ff5b61"/>
-                <stop offset="1" stop-color="#b60f18"/>
+              <linearGradient id="saciCap" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ff5960"/>
+                <stop offset="1" stop-color="#b70f18"/>
+              </linearGradient>
+              <linearGradient id="saciSkin" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#19110d"/>
+                <stop offset="1" stop-color="#342117"/>
               </linearGradient>
             </defs>
-            <path d="M126 88c23-36 73-51 118-17-28 1-45 11-56 26 21 1 38 11 48 26-20-5-40-1-58 11-18 12-30 29-35 46-11-35-16-63-17-92z" fill="url(#capRed)"/>
-            <circle cx="145" cy="164" r="52" fill="#2c1a13"/>
-            <path d="M112 211c21-22 50-31 80-23 27 8 46 27 59 59-18-9-36-11-54-7 8 14 10 28 7 43-15-18-31-29-50-34-18-5-38-3-61 8 4-19 10-34 19-46z" fill="#2c1a13"/>
-            <path d="M103 181c-16 3-30 11-39 24" fill="none" stroke="#8a643f" stroke-width="9" stroke-linecap="round"/>
-            <path d="M54 205h22c9 0 15 6 15 14s-6 14-15 14H54z" fill="#8a643f"/>
-            <path d="M183 236c19 8 35 24 42 43" fill="none" stroke="#2c1a13" stroke-width="18" stroke-linecap="round"/>
-            <path d="M126 260c-6 17-17 31-34 42" fill="none" stroke="#2c1a13" stroke-width="18" stroke-linecap="round"/>
+
+            <!-- gorro vermelho, comprido e inclinado -->
+            <path d="M113 87c26-40 79-55 128-18-32 2-51 13-62 31 22 2 39 12 50 29-20-7-42-5-62 7-21 13-35 33-41 53-10-38-14-70-13-102z" fill="url(#saciCap)"/>
+
+            <!-- cabeça em perfil -->
+            <path d="M99 155c0-37 27-66 65-66 33 0 59 22 64 54-12-5-25-5-37-1 8 7 13 16 14 27-9-3-18-2-26 1-5 18-18 31-36 37-25-6-44-25-44-52z" fill="url(#saciSkin)"/>
+
+            <!-- nariz e boca em perfil -->
+            <path d="M181 145c16 3 27 9 34 19-10 2-19 5-27 9" fill="none" stroke="#342117" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M178 177c9 5 18 5 27 1" fill="none" stroke="#76513b" stroke-width="5" stroke-linecap="round"/>
+
+            <!-- pescoço e tronco -->
+            <path d="M132 198c10 13 25 19 43 18 31-2 54 14 68 48-21-10-43-12-65-6-24 7-43 22-58 43-3-37 1-71 12-103z" fill="url(#saciSkin)"/>
+
+            <!-- braço levando o cachimbo -->
+            <path d="M124 203c-18-5-36 0-53 16" fill="none" stroke="#2b1b14" stroke-width="16" stroke-linecap="round"/>
+            <path d="M53 217c-9 0-18 5-25 14" fill="none" stroke="#9b6a3f" stroke-width="9" stroke-linecap="round"/>
+            <path d="M17 231h25c10 0 16 7 16 16 0 10-7 17-17 17H17z" fill="#9b6a3f"/>
+
+            <!-- uma única perna -->
+            <path d="M155 256c-12 28-32 50-60 66" fill="none" stroke="#2b1b14" stroke-width="24" stroke-linecap="round"/>
+
+            <!-- redemoinho visual -->
+            <path d="M226 225c27 9 45 26 53 49" fill="none" stroke="#e4b72f" stroke-opacity=".55" stroke-width="7" stroke-linecap="round"/>
+            <path d="M236 247c17 5 29 15 36 28" fill="none" stroke="#4f9b50" stroke-opacity=".6" stroke-width="6" stroke-linecap="round"/>
           </svg>
         </div>
       </div>
