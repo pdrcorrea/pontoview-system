@@ -288,3 +288,50 @@
     justify-content: center;
   }
 }
+
+
+.seasonal-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 4px;
+  padding: 0 2px;
+}
+
+.seasonal-section-title b {
+  color: #35485d;
+  font-size: 13px;
+}
+
+.seasonal-section-title span {
+  color: #7a8b9d;
+  font-size: 11px;
+  text-align: right;
+}
+
+.seasonal-grid.upcoming .seasonal-card {
+  background: #fbfcfd;
+  border-color: #e5eaf0;
+}
+
+.seasonal-grid.upcoming .seasonal-card-art {
+  background: #f1f4f7;
+}
+
+.seasonal-badge.upcoming {
+  background: #edf1f5;
+  color: #63758a;
+}
+
+@media (max-width: 720px) {
+  .seasonal-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .seasonal-section-title span {
+    text-align: left;
+  }
+}
