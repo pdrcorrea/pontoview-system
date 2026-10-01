@@ -29,12 +29,16 @@ function fitLogicalCanvas() {
   if (!availableWidth || !availableHeight) return;
 
   const logicalPortrait = canvas.classList.contains("logical-portrait");
+  const runtimePortrait = availableHeight >= availableWidth;
+  const shouldRotate = logicalPortrait !== runtimePortrait;
   const logicalAspect = logicalPortrait ? 9 / 16 : 16 / 9;
 
-  let width = availableWidth;
+  const fitWidth = shouldRotate ? availableHeight : availableWidth;
+  const fitHeight = shouldRotate ? availableWidth : availableHeight;
+  let width = fitWidth;
   let height = width / logicalAspect;
-  if (height > availableHeight) {
-    height = availableHeight;
+  if (height > fitHeight) {
+    height = fitHeight;
     width = height * logicalAspect;
   }
 
@@ -45,10 +49,14 @@ function fitLogicalCanvas() {
   setImportant(canvas, "top", "50%");
   setImportant(canvas, "right", "auto");
   setImportant(canvas, "bottom", "auto");
-  setImportant(canvas, "max-width", "100%");
-  setImportant(canvas, "max-height", "100%");
+  setImportant(canvas, "max-width", shouldRotate ? "none" : "100%");
+  setImportant(canvas, "max-height", shouldRotate ? "none" : "100%");
   setImportant(canvas, "aspect-ratio", logicalPortrait ? "9 / 16" : "16 / 9");
-  setImportant(canvas, "transform", "translate(-50%, -50%)");
+  setImportant(
+    canvas,
+    "transform",
+    shouldRotate ? "translate(-50%, -50%) rotate(90deg)" : "translate(-50%, -50%)",
+  );
   setImportant(canvas, "transform-origin", "center center");
 }
 
