@@ -973,7 +973,7 @@ function SeasonalCampaignPicker({
                 <span className="seasonal-badge">Disponível agora</span>
                 <h4>{campaign.name}</h4>
                 <p>{campaign.description}</p>
-                <small>{campaign.periodLabel} · Duração padrão: {campaign.durationSeconds}s</small>
+                <small>{campaign.category} · {campaign.periodLabel} · Duração padrão: {campaign.durationSeconds}s</small>
               </div>
               <AsyncButton
                 busy={busy}
