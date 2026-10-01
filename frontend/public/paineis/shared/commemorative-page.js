@@ -46,6 +46,34 @@
         <path d="M88 154c42 26 102 26 144 0M80 196c48 30 112 30 160 0" fill="none" stroke="var(--comm-highlight)" stroke-width="14"/>
         <circle cx="126" cy="118" r="12" fill="var(--comm-highlight)"/><circle cx="194" cy="118" r="12" fill="var(--comm-highlight)"/>
       </svg>`,
+    tiradentesTriangle: `
+      <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="160" cy="160" r="116" fill="rgba(255,255,255,.66)"/>
+        <circle cx="160" cy="160" r="116" fill="none" stroke="var(--comm-highlight)" stroke-opacity=".18" stroke-width="8"/>
+        <path d="M160 72L244 224H76L160 72Z" fill="#c61f2c"/>
+        <path d="M160 103L218 207H102L160 103Z" fill="none" stroke="#9f1721" stroke-width="7" opacity=".42"/>
+      </svg>`,
+    blackConsciousness: `
+      <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="ancestryA" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2d2019"/>
+            <stop offset="1" stop-color="#5a3929"/>
+          </linearGradient>
+          <linearGradient id="ancestryB" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7d4f35"/>
+            <stop offset="1" stop-color="#a96f4c"/>
+          </linearGradient>
+        </defs>
+        <circle cx="160" cy="160" r="118" fill="rgba(255,255,255,.28)"/>
+        <circle cx="160" cy="160" r="118" fill="none" stroke="var(--comm-highlight)" stroke-opacity=".16" stroke-width="8"/>
+        <path d="M82 230c10-48 32-78 68-92-7 10-10 22-10 36 0 20 7 39 22 56-26 14-51 16-80 0z" fill="url(#ancestryA)"/>
+        <path d="M132 236c-6-14-9-30-9-47 0-52 30-90 73-90 31 0 55 20 64 50-8-4-17-6-27-6-23 0-42 14-48 34-5 17-2 34 8 49-20 15-40 20-61 10z" fill="url(#ancestryB)"/>
+        <path d="M116 108c8-26 29-44 58-44 31 0 55 17 66 45-15-10-34-14-54-11-16 2-28 8-39 16-8 6-18 7-31-6z" fill="#231711"/>
+        <path d="M74 248c30 20 59 28 88 28 31 0 59-9 86-28" fill="none" stroke="var(--comm-accent-2)" stroke-width="12" stroke-linecap="round"/>
+        <circle cx="214" cy="83" r="9" fill="var(--comm-highlight)"/>
+        <circle cx="236" cy="102" r="5" fill="var(--comm-highlight)" opacity=".72"/>
+      </svg>`,
     star: `
       <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M160 48l29 70 76 7-58 49 18 74-65-39-65 39 18-74-58-49 76-7z" fill="var(--comm-accent)"/>
