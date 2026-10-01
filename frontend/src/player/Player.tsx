@@ -23,6 +23,7 @@ import {
 import { isWithinOperatingHours } from "../lib/operatingHours";
 import { CURRENT_PLAYER_VERSION } from "../lib/playerVersion";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
+import { isSeasonalCampaignActive, seasonalCampaignByKey, seasonalCampaignRoute } from "../seasonalCampaigns";
 import type { PlayerManifest } from "../types";
 
 const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
@@ -597,7 +598,8 @@ export function PlayerPage() {
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
   useEffect(() => {
     if (!operating || !item || item.media.type !== "app") return;
-    if (isSeasonalAppActive(item.media.appKey, runtimeNow, manifest?.organization.timezone)) return;
+    const campaign = seasonalCampaignByKey(item.media.appKey);
+    if (!campaign || isSeasonalCampaignActive(campaign, runtimeNow, manifest?.organization.timezone)) return;
     const timer = window.setTimeout(() => advance(false, "seasonal_content_out_of_period"), 80);
     return () => window.clearTimeout(timer);
   }, [operating, item?.itemId, item?.media.appKey, runtimeNow, manifest?.organization.timezone, advance]);
@@ -804,49 +806,6 @@ function messageDisplayMs(message: PlayerMessage) {
   const words = text ? text.split(/\s+/).length : 0;
   const readingSeconds = 4 + words / 3;
   return Math.round(Math.min(24, Math.max(8, readingSeconds)) * 1000);
-}
-
-type SeasonalWindow = {
-  start: [number, number];
-  end: [number, number];
-};
-
-const SEASONAL_APP_WINDOWS: Record<string, SeasonalWindow> = {
-  orgulho: { start: [6, 1], end: [6, 30] },
-  setembro_amarelo: { start: [9, 1], end: [9, 30] },
-  outubro_rosa: { start: [10, 1], end: [10, 31] },
-  novembro_azul: { start: [11, 1], end: [11, 30] },
-  dia_mundial_aids: { start: [12, 1], end: [12, 1] },
-  natal: { start: [12, 1], end: [12, 25] },
-  ano_novo: { start: [12, 26], end: [1, 6] },
-};
-
-function seasonalDateCode(now: Date, timezone?: string) {
-  if (!timezone) return (now.getMonth() + 1) * 100 + now.getDate();
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: timezone,
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(now);
-    const month = Number(parts.find((part) => part.type === "month")?.value || now.getMonth() + 1);
-    const day = Number(parts.find((part) => part.type === "day")?.value || now.getDate());
-    return month * 100 + day;
-  } catch {
-    return (now.getMonth() + 1) * 100 + now.getDate();
-  }
-}
-
-function isSeasonalAppActive(appKey: string | null, now = new Date(), timezone?: string) {
-  if (!appKey) return true;
-  const window = SEASONAL_APP_WINDOWS[appKey];
-  if (!window) return true;
-  const current = seasonalDateCode(now, timezone);
-  const start = window.start[0] * 100 + window.start[1];
-  const end = window.end[0] * 100 + window.end[1];
-  return start <= end
-    ? current >= start && current <= end
-    : current >= start || current <= end;
 }
 
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: { item: ManifestItem | null; device: Device; organization: PlayerManifest["organization"]; cacheRevision: number; onEnd: () => void; onError: (detail: string) => void; }) {
@@ -1605,16 +1564,6 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
 let youtubePromise: Promise<void> | null = null;
 function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if (youtubePromise) return youtubePromise; youtubePromise = new Promise((resolve, reject) => { const previous = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(); }; const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => reject(new Error("youtube")); document.head.appendChild(script); }); return youtubePromise; }
 
-const SEASONAL_APP_ROUTES: Record<string, string> = {
-  orgulho: "/paineis/orgulho/",
-  setembro_amarelo: "/paineis/setembro-amarelo/",
-  outubro_rosa: "/paineis/outubro-rosa/",
-  novembro_azul: "/paineis/novembro-azul/",
-  dia_mundial_aids: "/paineis/dia-mundial-aids/",
-  natal: "/paineis/natal/",
-  ano_novo: "/paineis/ano-novo/",
-};
-
 function AppStage({ appKey, name, organization }: { appKey: string | null; name: string; organization: PlayerManifest["organization"] }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -1626,7 +1575,7 @@ function AppStage({ appKey, name, organization }: { appKey: string | null; name:
     return <div className="clock-app"><b>{now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b><span>{now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span></div>;
   }
 
-  const seasonalRoute = appKey ? SEASONAL_APP_ROUTES[appKey] : null;
+  const seasonalRoute = seasonalCampaignRoute(appKey);
   if (seasonalRoute) {
     return <iframe src={seasonalRoute} title={name} sandbox="allow-scripts allow-same-origin" style={{ width: "100%", height: "100%", border: 0, display: "block", background: "transparent" }} />;
   }
