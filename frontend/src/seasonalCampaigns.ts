@@ -7,6 +7,17 @@ export type SeasonalCampaignCategory =
   | "Cívica"
   | "Cultural";
 
+export type SeasonalContentGroup =
+  | "campaign"
+  | "holiday"
+  | "commemorative";
+
+export const SEASONAL_GROUP_LABELS: Record<SeasonalContentGroup, string> = {
+  campaign: "Campanhas",
+  holiday: "Feriados",
+  commemorative: "Datas comemorativas",
+};
+
 export type SeasonalCampaignRule =
   | { kind: "fixed_day"; month: number; day: number; windowDays: number }
   | { kind: "nth_weekday"; month: number; weekday: number; occurrence: number; windowDays: number }
@@ -25,6 +36,7 @@ export type SeasonalCampaign = {
   durationSeconds: number;
   route: string;
   category: SeasonalCampaignCategory;
+  group: SeasonalContentGroup;
 };
 
 export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
@@ -39,7 +51,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/janeiro-branco/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "janeiro_roxo",
     name: "Janeiro Roxo",
@@ -51,7 +64,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/janeiro-roxo/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "dia_mundial_cancer",
     name: "Dia Mundial do Câncer",
@@ -63,7 +77,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/dia-mundial-cancer/",
     category: "Saúde",
-  },
+  group: "commemorative",
+},
   {
     key: "marco_lilas",
     name: "Março Lilás",
@@ -75,7 +90,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/marco-lilas/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "abril_azul",
     name: "Abril Azul",
@@ -87,7 +103,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/abril-azul/",
     category: "Cidadania",
-  },
+  group: "campaign",
+},
   {
     key: "abril_verde",
     name: "Abril Verde",
@@ -99,7 +116,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/abril-verde/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "orgulho",
     name: "Mês do Orgulho",
@@ -111,7 +129,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/orgulho/",
     category: "Cidadania",
-  },
+  group: "campaign",
+},
   {
     key: "junho_vermelho",
     name: "Junho Vermelho",
@@ -123,7 +142,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/junho-vermelho/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "julho_amarelo",
     name: "Julho Amarelo",
@@ -135,7 +155,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/julho-amarelo/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "agosto_dourado",
     name: "Agosto Dourado",
@@ -147,7 +168,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/agosto-dourado/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "agosto_lilas",
     name: "Agosto Lilás",
@@ -159,7 +181,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/agosto-lilas/",
     category: "Cidadania",
-  },
+  group: "campaign",
+},
   {
     key: "combate_fumo",
     name: "Dia Nacional de Combate ao Fumo",
@@ -171,7 +194,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/combate-fumo/",
     category: "Saúde",
-  },
+  group: "commemorative",
+},
   {
     key: "setembro_amarelo",
     name: "Setembro Amarelo",
@@ -183,7 +207,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/setembro-amarelo/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "outubro_rosa",
     name: "Outubro Rosa",
@@ -195,7 +220,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/outubro-rosa/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "novembro_azul",
     name: "Novembro Azul",
@@ -207,7 +233,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/novembro-azul/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "dia_mundial_aids",
     name: "Dia Mundial da Aids",
@@ -219,7 +246,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/dia-mundial-aids/",
     category: "Saúde",
-  },
+  group: "commemorative",
+},
   {
     key: "dezembro_vermelho",
     name: "Dezembro Vermelho",
@@ -231,7 +259,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/dezembro-vermelho/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "dezembro_laranja",
     name: "Dezembro Laranja",
@@ -243,7 +272,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 30,
     route: "/paineis/dezembro-laranja/",
     category: "Saúde",
-  },
+  group: "campaign",
+},
   {
     key: "dia_reis",
     name: "Dia de Reis",
@@ -254,7 +284,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-reis/",
     category: "Religiosa",
-  },
+  group: "commemorative",
+},
   {
     key: "carnaval",
     name: "Carnaval",
@@ -265,7 +296,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/carnaval/",
     category: "Cultural",
-  },
+  group: "holiday",
+},
   {
     key: "dia_mulher",
     name: "Dia Internacional da Mulher",
@@ -276,7 +308,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-mulher/",
     category: "Cidadania",
-  },
+  group: "commemorative",
+},
   {
     key: "sexta_feira_santa",
     name: "Sexta-feira Santa",
@@ -287,7 +320,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/sexta-feira-santa/",
     category: "Religiosa",
-  },
+  group: "holiday",
+},
   {
     key: "pascoa",
     name: "Páscoa",
@@ -298,7 +332,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/pascoa/",
     category: "Religiosa",
-  },
+  group: "holiday",
+},
   {
     key: "tiradentes",
     name: "Tiradentes",
@@ -309,7 +344,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/tiradentes/",
     category: "Cívica",
-  },
+  group: "holiday",
+},
   {
     key: "dia_trabalho",
     name: "Dia do Trabalho",
@@ -320,7 +356,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-trabalho/",
     category: "Comemorativa",
-  },
+  group: "holiday",
+},
   {
     key: "dia_maes",
     name: "Dia das Mães",
@@ -331,7 +368,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-maes/",
     category: "Familiar",
-  },
+  group: "commemorative",
+},
   {
     key: "corpus_christi",
     name: "Corpus Christi",
@@ -342,7 +380,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/corpus-christi/",
     category: "Religiosa",
-  },
+  group: "holiday",
+},
   {
     key: "dia_namorados",
     name: "Dia dos Namorados",
@@ -353,7 +392,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-namorados/",
     category: "Familiar",
-  },
+  group: "commemorative",
+},
   {
     key: "festas_juninas",
     name: "Festas Juninas",
@@ -365,7 +405,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/festas-juninas/",
     category: "Cultural",
-  },
+  group: "commemorative",
+},
   {
     key: "dia_avos",
     name: "Dia dos Avós",
@@ -376,7 +417,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-avos/",
     category: "Familiar",
-  },
+  group: "commemorative",
+},
   {
     key: "dia_pais",
     name: "Dia dos Pais",
@@ -387,7 +429,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-pais/",
     category: "Familiar",
-  },
+  group: "commemorative",
+},
   {
     key: "independencia",
     name: "Independência do Brasil",
@@ -398,7 +441,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/independencia/",
     category: "Cívica",
-  },
+  group: "holiday",
+},
   {
     key: "nossa_senhora_aparecida",
     name: "Nossa Senhora Aparecida",
@@ -409,7 +453,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/nossa-senhora-aparecida/",
     category: "Religiosa",
-  },
+  group: "holiday",
+},
   {
     key: "dia_criancas",
     name: "Dia das Crianças",
@@ -420,7 +465,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-criancas/",
     category: "Familiar",
-  },
+  group: "commemorative",
+},
   {
     key: "halloween_saci",
     name: "Halloween / Dia do Saci",
@@ -431,7 +477,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 28,
     route: "/paineis/halloween-saci/",
     category: "Cultural",
-  },
+  group: "commemorative",
+},
   {
     key: "dia_professores",
     name: "Dia dos Professores",
@@ -442,7 +489,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/dia-professores/",
     category: "Comemorativa",
-  },
+  group: "commemorative",
+},
   {
     key: "finados",
     name: "Finados",
@@ -453,7 +501,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/finados/",
     category: "Religiosa",
-  },
+  group: "holiday",
+},
   {
     key: "proclamacao_republica",
     name: "Proclamação da República",
@@ -464,7 +513,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/proclamacao-republica/",
     category: "Cívica",
-  },
+  group: "holiday",
+},
   {
     key: "consciencia_negra",
     name: "Dia da Consciência Negra",
@@ -475,7 +525,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/consciencia-negra/",
     category: "Cidadania",
-  },
+  group: "holiday",
+},
   {
     key: "natal",
     name: "Natal",
@@ -487,7 +538,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/natal/",
     category: "Comemorativa",
-  },
+  group: "holiday",
+},
   {
     key: "ano_novo",
     name: "Ano Novo",
@@ -499,7 +551,8 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     durationSeconds: 25,
     route: "/paineis/ano-novo/",
     category: "Comemorativa",
-  },
+  group: "holiday",
+},
 ];
 
 function localDateParts(date: Date, timezone?: string) {
