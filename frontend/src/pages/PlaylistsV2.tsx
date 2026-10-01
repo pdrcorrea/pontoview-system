@@ -104,6 +104,7 @@ function mediaEmoji(item: Media) {
 }
 
 function mediaTypeLabel(item: Media) {
+  if (item.type === "app" && item.metadata?.seasonal) return "Campanha sazonal";
   if (panelEmoji(item)) return "Painel PontoView";
   return (
     {
@@ -843,6 +844,15 @@ function MediaPreview({ item, name }: { item?: Media; name: string }) {
         title={name}
         src={item.page_url}
         sandbox="allow-scripts allow-same-origin allow-forms"
+      />
+    );
+  }
+  if (item.type === "app" && item.app_key === "outubro_rosa") {
+    return (
+      <iframe
+        title={name}
+        src="/paineis/outubro-rosa/"
+        sandbox="allow-scripts allow-same-origin"
       />
     );
   }
