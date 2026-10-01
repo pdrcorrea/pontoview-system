@@ -47,19 +47,98 @@ type SeasonalCampaign = {
   key: string;
   name: string;
   description: string;
-  months: number[];
+  start: [number, number];
+  end: [number, number];
+  periodLabel: string;
+  emoji: string;
   durationSeconds: number;
 };
 
 const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
   {
+    key: "orgulho",
+    name: "Mês do Orgulho",
+    description: "Diversidade, respeito, cidadania e visibilidade LGBTQIA+.",
+    start: [6, 1],
+    end: [6, 30],
+    periodLabel: "Junho",
+    emoji: "🌈",
+    durationSeconds: 30,
+  },
+  {
+    key: "setembro_amarelo",
+    name: "Setembro Amarelo",
+    description: "Prevenção do suicídio, acolhimento e incentivo à busca de ajuda.",
+    start: [9, 1],
+    end: [9, 30],
+    periodLabel: "Setembro",
+    emoji: "🎗️",
+    durationSeconds: 30,
+  },
+  {
     key: "outubro_rosa",
     name: "Outubro Rosa",
     description: "Conscientização sobre câncer de mama com orientação breve e acesso ao conteúdo oficial do INCA.",
-    months: [9],
+    start: [10, 1],
+    end: [10, 31],
+    periodLabel: "Outubro",
+    emoji: "🎀",
     durationSeconds: 30,
   },
+  {
+    key: "novembro_azul",
+    name: "Novembro Azul",
+    description: "Saúde do homem e informação confiável sobre câncer de próstata.",
+    start: [11, 1],
+    end: [11, 30],
+    periodLabel: "Novembro",
+    emoji: "🔵",
+    durationSeconds: 30,
+  },
+  {
+    key: "dia_mundial_aids",
+    name: "Dia Mundial da Aids",
+    description: "Informação, prevenção, testagem, tratamento e enfrentamento ao estigma.",
+    start: [12, 1],
+    end: [12, 1],
+    periodLabel: "1º de dezembro",
+    emoji: "🎗️",
+    durationSeconds: 30,
+  },
+  {
+    key: "natal",
+    name: "Natal",
+    description: "Mensagem de boas festas para ambientes de atendimento, espera e convivência.",
+    start: [12, 1],
+    end: [12, 25],
+    periodLabel: "1 a 25 de dezembro",
+    emoji: "🎄",
+    durationSeconds: 25,
+  },
+  {
+    key: "ano_novo",
+    name: "Ano Novo",
+    description: "Mensagem de virada de ano com visual comemorativo e ano atualizado automaticamente.",
+    start: [12, 26],
+    end: [1, 6],
+    periodLabel: "26 de dezembro a 6 de janeiro",
+    emoji: "✨",
+    durationSeconds: 25,
+  },
 ];
+
+function seasonalDateCode(date: Date) {
+  return (date.getMonth() + 1) * 100 + date.getDate();
+}
+
+function isSeasonalCampaignActive(campaign: SeasonalCampaign, now = new Date()) {
+  const current = seasonalDateCode(now);
+  const start = campaign.start[0] * 100 + campaign.start[1];
+  const end = campaign.end[0] * 100 + campaign.end[1];
+  return start <= end
+    ? current >= start && current <= end
+    : current >= start || current <= end;
+}
 const typeLabel: Record<MediaType, string> = {
   drive_image: "Imagem do Drive",
   drive_video: "Vídeo do Drive",
@@ -236,7 +315,11 @@ export function ContentPage() {
           status: "ready",
           metadata: {
             seasonal: true,
-            active_months: campaign.months,
+            seasonal_window: {
+              start: campaign.start,
+              end: campaign.end,
+              period_label: campaign.periodLabel,
+            },
           },
         })
         .select()
@@ -958,9 +1041,8 @@ function SeasonalCampaignPicker({
   onAdd: (campaign: SeasonalCampaign) => Promise<void>;
 }) {
   const now = new Date();
-  const month = now.getMonth();
-  const active = campaigns.filter((campaign) => campaign.months.includes(month));
-  const upcoming = campaigns.filter((campaign) => !campaign.months.includes(month));
+  const active = campaigns.filter((campaign) => isSeasonalCampaignActive(campaign, now));
+  const upcoming = campaigns.filter((campaign) => !isSeasonalCampaignActive(campaign, now));
 
   return (
     <div className="seasonal-campaigns">
@@ -980,13 +1062,13 @@ function SeasonalCampaignPicker({
           {active.map((campaign) => (
             <article className="seasonal-card active" key={campaign.key}>
               <div className="seasonal-card-art" aria-hidden="true">
-                <span>🎀</span>
+                <span>{campaign.emoji}</span>
               </div>
               <div className="seasonal-card-copy">
                 <span className="seasonal-badge">Disponível agora</span>
                 <h4>{campaign.name}</h4>
                 <p>{campaign.description}</p>
-                <small>Duração padrão: {campaign.durationSeconds}s</small>
+                <small>{campaign.periodLabel} · Duração padrão: {campaign.durationSeconds}s</small>
               </div>
               <AsyncButton
                 busy={busy}
@@ -1007,9 +1089,34 @@ function SeasonalCampaignPicker({
       )}
 
       {upcoming.length > 0 && (
-        <div className="seasonal-note">
-          O catálogo sazonal é atualizado conforme o calendário, sem poluir a biblioteca com campanhas fora de época.
-        </div>
+        <>
+          <div className="seasonal-section-title">
+            <b>Outras campanhas</b>
+            <span>Você pode adicioná-las agora e o Player só exibirá no período correto.</span>
+          </div>
+          <div className="seasonal-grid upcoming">
+            {upcoming.map((campaign) => (
+              <article className="seasonal-card" key={campaign.key}>
+                <div className="seasonal-card-art" aria-hidden="true">
+                  <span>{campaign.emoji}</span>
+                </div>
+                <div className="seasonal-card-copy">
+                  <span className="seasonal-badge upcoming">Programada</span>
+                  <h4>{campaign.name}</h4>
+                  <p>{campaign.description}</p>
+                  <small>{campaign.periodLabel} · Duração padrão: {campaign.durationSeconds}s</small>
+                </div>
+                <AsyncButton
+                  busy={busy}
+                  className="btn secondary"
+                  onClick={() => void onAdd(campaign)}
+                >
+                  Adicionar à biblioteca
+                </AsyncButton>
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
