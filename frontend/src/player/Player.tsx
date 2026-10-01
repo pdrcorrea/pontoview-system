@@ -629,23 +629,83 @@ export function PlayerPage() {
   if (!operating) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
 
   const configuredPortrait = manifest.screen.orientation === "portrait";
+  const runtimePortrait = viewport.height >= viewport.width;
+  const shouldRotateCanvas = configuredPortrait !== runtimePortrait;
   const logicalAspect = configuredPortrait ? 9 / 16 : 16 / 9;
-  let canvasWidth = viewport.width;
+  const fitWidth = shouldRotateCanvas ? viewport.height : viewport.width;
+  const fitHeight = shouldRotateCanvas ? viewport.width : viewport.height;
+  let canvasWidth = fitWidth;
   let canvasHeight = canvasWidth / logicalAspect;
-  if (canvasHeight > viewport.height) {
-    canvasHeight = viewport.height;
+  if (canvasHeight > fitHeight) {
+    canvasHeight = fitHeight;
     canvasWidth = canvasHeight * logicalAspect;
   }
   const canvasStyle = {
     width: `${Math.round(canvasWidth)}px`,
     height: `${Math.round(canvasHeight)}px`,
-    transform: "translate(-50%, -50%)",
+    transform: shouldRotateCanvas
+      ? "translate(-50%, -50%) rotate(90deg)"
+      : "translate(-50%, -50%)",
   };
-  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} onEnd={handleEnd} onError={handleError} /></div></div>;
+  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${shouldRotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} onEnd={handleEnd} onError={handleError} /></div></div>;
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
   return <div className="activation-screen"><section><span className="activation-mark" aria-hidden="true"><BrandMark /></span><small>CONECTAR ESTA TELA</small><h1>{activation?.code || "••••••"}</h1><p>No painel PontoView, acesse <b>Telas → Conectar tela</b> e informe este código.</p>{activation && <em>O código é temporário e será renovado automaticamente.</em>}{error && <div className="activation-error">{error}<button onClick={onRetry}><RefreshCw />Tentar novamente</button></div>}</section><footer>pontoview.com.br</footer></div>;
+}
+
+function MediaViewport({ orientation, children }: { orientation: "landscape" | "portrait"; children: React.ReactNode }) {
+  const host = useRef<HTMLDivElement>(null);
+  const [frameSize, setFrameSize] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    const element = host.current;
+    if (!element) return;
+
+    let animationFrame = 0;
+    const fit = () => {
+      const availableWidth = element.clientWidth;
+      const availableHeight = element.clientHeight;
+      if (!availableWidth || !availableHeight) return;
+
+      const aspect = orientation === "portrait" ? 9 / 16 : 16 / 9;
+      let width = availableWidth;
+      let height = width / aspect;
+      if (height > availableHeight) {
+        height = availableHeight;
+        width = height * aspect;
+      }
+
+      const next = { width: Math.round(width), height: Math.round(height) };
+      setFrameSize((current) => current && current.width === next.width && current.height === next.height ? current : next);
+    };
+    const scheduleFit = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(fit);
+    };
+
+    fit();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleFit) : null;
+    observer?.observe(element);
+    window.addEventListener("resize", scheduleFit);
+
+    return () => {
+      observer?.disconnect();
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", scheduleFit);
+    };
+  }, [orientation]);
+
+  return (
+    <div className="player-media-host" ref={host}>
+      <div
+        className={`player-media-frame ${orientation}`}
+        style={frameSize ? { width: `${frameSize.width}px`, height: `${frameSize.height}px` } : undefined}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; onEnd: () => void; onError: (detail: string) => void; }) {
@@ -723,7 +783,8 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
     return next && (next.media.type === "drive_image" || next.media.type === "drive_video") ? next.media : null;
   }, [manifest.items, item?.itemId]);
   const preloader = nextDriveMedia ? <DrivePreloader media={nextDriveMedia} device={device} /> : null;
-  const stage = <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div>;
+  const mediaOrientation = manifest.screen.orientation === "portrait" ? "portrait" : "landscape";
+  const stage = <MediaViewport orientation={mediaOrientation}><div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div></MediaViewport>;
   if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen">{stage}</main></>;
   const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
   const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
