@@ -3,14 +3,10 @@
 /*
  * ORIENTATION CONTRACT
  * --------------------
- * The Player must use the entire drawing surface exposed by the TV/browser.
- * Orientation no longer locks the canvas to 16:9 or 9:16. When the selected
- * orientation differs from the current surface, orientationController swaps
- * the dimensions and rotates the canvas so the content remains correct after
- * the display is physically mounted in the chosen position.
- *
- * Physical rotation configured by the user is still applied independently to
- * the outer runtime by rotationController.
+ * PontoView content is authored on a canonical 16:9 landscape canvas or 9:16
+ * portrait canvas. Non-standard TV/browser ratios must letterbox the logical
+ * canvas instead of stretching/cropping the content. Physical rotation remains
+ * independent and is handled by rotationController.
  */
 .pv-player-runtime {
   background: #071a2d;
@@ -20,16 +16,16 @@
 .pv-player-runtime .pv-orientation-canvas {
   right: auto !important;
   bottom: auto !important;
-  max-width: none !important;
-  max-height: none !important;
-  aspect-ratio: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
 }
 
-.pv-player-runtime .pv-orientation-canvas.logical-portrait,
 .pv-player-runtime .pv-orientation-canvas.logical-landscape {
-  max-width: none !important;
-  max-height: none !important;
-  aspect-ratio: auto !important;
+  aspect-ratio: 16 / 9 !important;
+}
+
+.pv-player-runtime .pv-orientation-canvas.logical-portrait {
+  aspect-ratio: 9 / 16 !important;
 }
 
 /* Loading state: give the official icon breathing room instead of clipping it
@@ -98,8 +94,8 @@
 }
 
 .pv-player-runtime .player-lframe {
-  --pv-side-size: 20%;
-  --pv-bar-size: 20%;
+  --pv-side-size: 24%;
+  --pv-bar-size: 15%;
   --pv-aside-x: 18px;
   --pv-aside-y: 20px;
   --pv-aside-gap: 16px;
@@ -111,8 +107,8 @@
 }
 
 .pv-player-runtime .pv-orientation-canvas.logical-portrait .player-lframe {
-  --pv-side-size: 26%;
-  --pv-bar-size: 26%;
+  --pv-side-size: 24%;
+  --pv-bar-size: 15%;
   --pv-aside-x: 14px;
   --pv-aside-y: 18px;
   --pv-aside-gap: 12px;
@@ -122,8 +118,8 @@
 
 @supports (width: 1cqw) {
   .pv-player-runtime .pv-orientation-canvas.logical-landscape .player-lframe {
-    --pv-side-size: max(170px, 20cqw);
-    --pv-bar-size: max(72px, 20cqh);
+    --pv-side-size: max(170px, 24cqw);
+    --pv-bar-size: max(72px, 15cqh);
     --pv-aside-x: max(14px, 2.1cqw);
     --pv-aside-y: max(14px, 3.4cqh);
     --pv-aside-gap: max(10px, 2.5cqh);
@@ -132,8 +128,8 @@
   }
 
   .pv-player-runtime .pv-orientation-canvas.logical-portrait .player-lframe {
-    --pv-side-size: max(140px, 26cqw);
-    --pv-bar-size: max(72px, 26cqh);
+    --pv-side-size: max(140px, 24cqw);
+    --pv-bar-size: max(72px, 15cqh);
     --pv-aside-x: max(12px, 2.8cqw);
     --pv-aside-y: max(12px, 2.3cqh);
     --pv-aside-gap: max(8px, 1.8cqh);
