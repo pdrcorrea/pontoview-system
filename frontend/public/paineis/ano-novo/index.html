@@ -14,4 +14,4 @@
 <g stroke="#f0d48a" stroke-width="4"><path d="M245 65V34"/><path d="M245 96v31"/><path d="M214 80h-31"/><path d="M276 80h31"/><path d="M223 58l-22-22"/><path d="M267 102l22 22"/><path d="M267 58l22-22"/><path d="M223 102l-22 22"/></g>
 </g><circle cx="78" cy="103" r="7" fill="#fff4c4"/><circle cx="245" cy="80" r="6" fill="#fff4c4"/>
 </svg><div id="pvNewYear" style="position:absolute;font-size:clamp(58px,7vw,120px);font-weight:850;letter-spacing:-.06em;color:#f1d58a;text-shadow:0 10px 30px rgba(0,0,0,.22)">2027</div></div></div></div></div>
-</section></main><script>(()=>{const n=new Date();const y=n.getMonth()===11?n.getFullYear()+1:n.getFullYear();const el=document.getElementById("pvNewYear");if(el)el.textContent=String(y)})()</script></body></html>
+</section></main><script>(()=>{const n=new Date();const isNewYearWeek=n.getMonth()===0&&n.getDate()<=6;const y=isNewYearWeek?n.getFullYear():n.getFullYear()+1;const el=document.getElementById("pvNewYear");if(el)el.textContent=String(y)})()</script></body></html>
