@@ -145,7 +145,11 @@ function mediaEmoji(item: Media) {
 }
 
 function mediaTypeLabel(item: Media) {
-  if (item.type === "app" && item.metadata?.seasonal) return "Campanha sazonal";
+  if (item.type === "app" && item.metadata?.seasonal) {
+    if (item.metadata?.seasonal_group === "holiday") return "Feriado";
+    if (item.metadata?.seasonal_group === "commemorative") return "Data comemorativa";
+    return "Campanha sazonal";
+  }
   if (panelEmoji(item)) return "Painel PontoView";
   return (
     {
