@@ -211,7 +211,7 @@ export function ContentPage() {
           item.status !== "archived",
       );
       if (duplicate) {
-        throw new Error("Esta campanha já está na sua biblioteca.");
+        throw new Error("Este conteúdo sazonal já está na sua biblioteca.");
       }
 
       const result = await supabase
@@ -247,7 +247,7 @@ export function ContentPage() {
       setError(
         cause instanceof Error
           ? cause.message
-          : "Não foi possível adicionar a campanha sazonal.",
+          : "Não foi possível adicionar o conteúdo sazonal.",
       );
     } finally {
       setBusy(false);
