@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PontoView Telas • Outubro Rosa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--rose:#f04f89;--rose2:#cf2f6b;--deep:#8f214d;--ink:#77213f;--soft:#9c657a;--paper:#fff9fb}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;font-family:Inter,system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+body{display:grid;place-items:stretch}
+.panel{position:relative;width:100vw;height:100vh;overflow:hidden;isolation:isolate;background:radial-gradient(circle at 78% 18%,#fff 0 9%,transparent 10%),linear-gradient(135deg,#fffafd 0%,#ffeaf2 52%,#ffd8e7 100%)}
+.orb{position:absolute;border-radius:50%;z-index:-3;opacity:.55;animation:drift 13s ease-in-out infinite alternate}.orb.a{width:42vw;height:42vw;left:-17vw;top:-23vw;background:rgba(255,119,169,.25)}.orb.b{width:48vw;height:48vw;right:-20vw;bottom:-26vw;background:rgba(222,53,115,.16);animation-delay:-4s}
+.wave{position:absolute;left:-8vw;right:-8vw;bottom:-12vh;height:36vh;z-index:-2;border-radius:50% 50% 0 0;background:linear-gradient(180deg,transparent 0 18%,rgba(255,127,169,.15) 19% 37%,rgba(225,55,116,.20) 38% 58%,rgba(255,180,204,.22) 59% 78%,transparent 79%);transform:rotate(-3deg);animation:wave 11s ease-in-out infinite alternate}
+.stage{height:100%;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(340px,.88fr);gap:clamp(24px,4vw,72px);align-items:center;padding:clamp(42px,5vw,92px)}
+.copy{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(18px,2.4vh,34px);animation:enterLeft .9s cubic-bezier(.2,.8,.2,1) both}
+h1{margin:0;font-size:clamp(76px,10.7vw,190px);line-height:.82;letter-spacing:-.075em;text-transform:uppercase;color:var(--rose2);font-weight:800}h1 span{display:block;color:var(--rose);animation:breathe 5.5s ease-in-out infinite;transform-origin:left center}
+.lead{max-width:900px;font-size:clamp(25px,2.3vw,44px);line-height:1.14;font-weight:750;letter-spacing:-.025em;color:#8c214c}.lead strong{color:var(--rose2)}
+.text{max-width:900px;font-size:clamp(18px,1.34vw,27px);line-height:1.48;color:var(--soft);font-weight:500}
+.tags{display:flex;gap:11px;flex-wrap:wrap}.tag{display:inline-flex;align-items:center;gap:9px;padding:10px 15px;border-radius:16px;background:rgba(255,255,255,.82);border:1px solid rgba(143,33,77,.08);font-size:clamp(13px,.92vw,17px);font-weight:650;color:var(--deep);box-shadow:0 10px 26px rgba(120,28,64,.05)}.tag i{width:8px;height:8px;border-radius:50%;background:var(--rose)}
+.visual{position:relative;height:min(78vh,790px);min-width:0;animation:enterRight 1s .08s cubic-bezier(.2,.8,.2,1) both}
+.ribbon{position:absolute;width:min(30vw,500px);aspect-ratio:.72;top:1%;left:49%;transform:translateX(-50%);animation:float 5.8s ease-in-out infinite;filter:drop-shadow(0 24px 34px rgba(184,37,88,.18))}
+.loop{position:absolute;inset:4% 15% 30%;border:clamp(30px,3vw,54px) solid #ff78a9;border-bottom-color:transparent;border-radius:48% 48% 44% 44%}.tail{position:absolute;width:clamp(42px,4.1vw,72px);height:58%;top:38%;border-radius:999px;background:linear-gradient(180deg,#ff8db6,#e6407c)}.tail.l{left:36%;transform:rotate(24deg)}.tail.r{right:34%;transform:rotate(-24deg)}.knot{position:absolute;width:clamp(68px,7vw,112px);aspect-ratio:1;left:50%;top:42%;transform:translate(-50%,-50%) rotate(45deg);border-radius:24px 50% 24px 50%;background:linear-gradient(135deg,#ffa0c3,#ef4b86 65%,#d72a6c);box-shadow:inset -10px -10px 18px rgba(150,0,50,.1),inset 8px 8px 18px rgba(255,255,255,.25)}
+.qr{position:absolute;right:0;bottom:0;width:min(27vw,430px);min-width:290px;padding:clamp(18px,1.7vw,26px);border-radius:30px;background:rgba(255,255,255,.93);border:1px solid rgba(143,33,77,.1);box-shadow:0 24px 70px rgba(151,26,76,.14);animation:qrFloat 6s 1s ease-in-out infinite}.qr-grid{display:grid;grid-template-columns:minmax(120px,44%) 1fr;gap:18px;align-items:center}.qr-box{aspect-ratio:1;width:100%;max-width:176px;justify-self:center;padding:8px;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}.qr-box img{display:block;width:100%;height:100%;object-fit:contain}.qr b{display:block;font-size:clamp(18px,1.35vw,25px);color:var(--rose2);line-height:1.05;margin-bottom:8px}.qr p{margin:0 0 10px;font-size:clamp(13px,.9vw,17px);line-height:1.35;color:#8d5a6d}.qr small{font-size:clamp(11px,.78vw,14px);color:#aa6d84;font-weight:650}
+@keyframes enterLeft{from{opacity:0;transform:translateX(-42px)}to{opacity:1;transform:none}}@keyframes enterRight{from{opacity:0;transform:translateX(46px) scale(.98)}to{opacity:1;transform:none}}@keyframes drift{to{transform:translate(22px,18px) scale(1.05)}}@keyframes wave{to{transform:rotate(-1deg) translateY(-14px)}}@keyframes float{0%,100%{transform:translateX(-50%) translateY(0) rotate(-1deg)}50%{transform:translateX(-50%) translateY(-12px) rotate(1.3deg)}}@keyframes qrFloat{50%{transform:translateY(-8px)}}@keyframes breathe{50%{transform:scaleX(1.015)}}
+@media(max-aspect-ratio:4/3),(max-width:980px){.stage{grid-template-columns:1fr;grid-template-rows:1fr auto;gap:10px;padding:clamp(28px,5vw,56px)}h1{font-size:clamp(64px,15vw,118px)}.lead{font-size:clamp(22px,4vw,34px)}.text{font-size:clamp(16px,2.5vw,22px)}.visual{height:clamp(240px,34vh,420px)}.ribbon{width:min(40vw,330px);left:24%;top:-4%}.qr{width:min(54vw,390px)}}@media(max-width:640px){.stage{padding:24px;overflow:auto}.tags{display:grid}.visual{height:310px}.ribbon{width:190px;left:22%;top:8%}.qr{width:min(68vw,320px);min-width:0;padding:14px;border-radius:22px}.qr-grid{grid-template-columns:110px 1fr;gap:12px}.qr-box{width:110px}h1{font-size:clamp(58px,18vw,86px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<main class="panel">
+<div class="orb a"></div><div class="orb b"></div><div class="wave"></div>
+<section class="stage">
+<div class="copy">
+<h1>Outubro<span>Rosa</span></h1>
+<div class="lead"><strong>Informação e atenção aos sinais fazem diferença.</strong></div>
+<div class="text">Conheça o seu corpo e procure um serviço de saúde se perceber alguma alteração suspeita. Cuidar de hoje é proteger o amanhã.</div>
+<div class="tags"><span class="tag"><i></i>Conheça seu corpo</span><span class="tag"><i></i>Procure orientação profissional</span><span class="tag"><i></i>Informação confiável</span></div>
+</div>
+<div class="visual">
+<div class="ribbon" aria-label="Laço rosa"><div class="loop"></div><div class="tail l"></div><div class="tail r"></div><div class="knot"></div></div>
+<aside class="qr"><div class="qr-grid"><div class="qr-box"><img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=0&data=https%3A%2F%2Fwww.gov.br%2Finca%2Fpt-br%2Fassuntos%2Fcancer%2Ftipos%2Fmama" alt="QR Code para informações do INCA sobre câncer de mama"></div><div><b>Saiba mais</b><p>Informações oficiais sobre câncer de mama, sinais e cuidados.</p><small>Fonte: INCA • gov.br</small></div></div></aside>
+</div>
+</section>
+</main>
+</body>
+</html>
