@@ -19,7 +19,7 @@
       <p class="pv-body" id="todayNote"></p>
     </section>
     <section class="pv-cards" id="cards">
-      <article class="pv-card"><div class="pv-card-label">Data especial</div><div class="pv-card-value" id="holiday">Dia comum</div><div class="pv-card-note" id="holidayNote">Sem feriado nacional hoje</div></article>
+      <article class="pv-card"><div class="pv-card-label">Data especial</div><div class="pv-card-value" id="holiday">Dia comum</div><div class="pv-card-note" id="holidayNote">Sem feriado nacional hoje</div><div class="pv-card-note" id="holidaySource"></div></article>
       <article class="pv-card"><div class="pv-card-label">Estação</div><div class="pv-card-value" id="season">--</div><div class="pv-card-note">Hemisfério Sul</div></article>
       <article class="pv-card"><div class="pv-card-label">Ano em curso</div><div class="pv-card-value" id="dayOfYear">--</div><div class="pv-card-note" id="daysLeft">--</div></article>
       <article class="pv-card"><div class="pv-card-label">Próximo feriado</div><div class="pv-card-value" id="nextHolidayDate">--</div><div class="pv-card-note" id="nextHolidayName">Consultando calendário nacional</div></article>
@@ -28,15 +28,131 @@
   <footer class="pv-footer"><div class="pv-footer-brand">PontoView</div></footer>
 </div>
 <script src="../shared/pv.js?v=8"></script>
+<script src="../shared/today-observances.js?v=1"></script>
 <script>
-const els={clock:document.getElementById('clock'),weekday:document.getElementById('weekday'),dateTitle:document.getElementById('dateTitle'),todayNote:document.getElementById('todayNote'),holiday:document.getElementById('holiday'),holidayNote:document.getElementById('holidayNote'),season:document.getElementById('season'),dayOfYear:document.getElementById('dayOfYear'),daysLeft:document.getElementById('daysLeft'),nextHolidayDate:document.getElementById('nextHolidayDate'),nextHolidayName:document.getElementById('nextHolidayName')};
-function localYMD(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
-function dayOfYear(d){const start=Date.UTC(d.getFullYear(),0,0),current=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());return Math.floor((current-start)/86400000)}
-function season(d){const md=(d.getMonth()+1)*100+d.getDate();if(md>=1221||md<=320)return 'Verão';if(md<=620)return 'Outono';if(md<=922)return 'Inverno';return 'Primavera'}
-async function directData(){const year=new Date().getFullYear();let holidays=[];try{holidays=await PV.fetchJSON(`https://brasilapi.com.br/api/feriados/v1/${year}`)}catch{}return{holidays:Array.isArray(holidays)?holidays:[]}}
-function render(data){const now=new Date(),holidays=Array.isArray(data.holidays)?data.holidays:[],today=localYMD(now),todayHoliday=holidays.find(h=>h.date===today),next=holidays.find(h=>h.date>today),long=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(now);els.weekday.textContent=PV.titleCase(new Intl.DateTimeFormat('pt-BR',{weekday:'long'}).format(now));els.dateTitle.textContent=PV.titleCase(long);els.todayNote.textContent=todayHoliday?`Hoje é ${todayHoliday.name}.`:'Um novo dia para informar, conectar e fazer acontecer.';els.holiday.textContent=todayHoliday?'Feriado':'Dia comum';els.holidayNote.textContent=todayHoliday?todayHoliday.name:'Sem feriado nacional hoje';els.season.textContent=season(now);const doy=dayOfYear(now),total=dayOfYear(new Date(now.getFullYear(),11,31));els.dayOfYear.textContent=`${doy}º dia`;els.daysLeft.textContent=`${Math.max(0,total-doy)} dias restantes no ano`;if(next){const d=new Date(next.date+'T12:00:00');els.nextHolidayDate.textContent=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short'}).format(d).replace('.','');els.nextHolidayName.textContent=next.name}else{els.nextHolidayDate.textContent='Novo ano';els.nextHolidayName.textContent='Próximo calendário em breve'}}
-function updateClock(){els.clock.textContent=new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(new Date())}
-async function load(){try{render(await PV.fromApi('/api/hoje',directData))}catch{render({holidays:[]})}updateClock()}
-load();setInterval(updateClock,1000);
+const els={
+  clock:document.getElementById('clock'),
+  weekday:document.getElementById('weekday'),
+  dateTitle:document.getElementById('dateTitle'),
+  todayNote:document.getElementById('todayNote'),
+  holiday:document.getElementById('holiday'),
+  holidayNote:document.getElementById('holidayNote'),
+  holidaySource:document.getElementById('holidaySource'),
+  season:document.getElementById('season'),
+  dayOfYear:document.getElementById('dayOfYear'),
+  daysLeft:document.getElementById('daysLeft'),
+  nextHolidayDate:document.getElementById('nextHolidayDate'),
+  nextHolidayName:document.getElementById('nextHolidayName')
+};
+
+function localYMD(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function dayOfYear(d){
+  const start=Date.UTC(d.getFullYear(),0,0);
+  const current=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());
+  return Math.floor((current-start)/86400000);
+}
+
+function season(d){
+  const md=(d.getMonth()+1)*100+d.getDate();
+  if(md>=1221||md<=320)return 'Verão';
+  if(md<=620)return 'Outono';
+  if(md<=922)return 'Inverno';
+  return 'Primavera';
+}
+
+async function directData(){
+  const year=new Date().getFullYear();
+  let holidays=[];
+  try{
+    holidays=await PV.fetchJSON(`https://brasilapi.com.br/api/feriados/v1/${year}`);
+  }catch{}
+  return{holidays:Array.isArray(holidays)?holidays:[]};
+}
+
+function render(data){
+  const now=new Date();
+  const holidays=Array.isArray(data.holidays)?data.holidays:[];
+  const today=localYMD(now);
+  const todayHoliday=holidays.find(h=>h.date===today);
+  const next=holidays.find(h=>h.date>today);
+  const observances=window.PV_TODAY_OBSERVANCES?.forDate?.(now)||[];
+  const featured=observances[0]||null;
+  const long=new Intl.DateTimeFormat('pt-BR',{
+    day:'2-digit',
+    month:'long',
+    year:'numeric'
+  }).format(now);
+
+  els.weekday.textContent=PV.titleCase(
+    new Intl.DateTimeFormat('pt-BR',{weekday:'long'}).format(now)
+  );
+  els.dateTitle.textContent=PV.titleCase(long);
+
+  if(todayHoliday){
+    els.holiday.textContent='Feriado';
+    els.holidayNote.textContent=todayHoliday.name;
+    if(featured){
+      els.todayNote.textContent=`Hoje é ${todayHoliday.name}. A data também marca ${featured.name}.`;
+      els.holidaySource.textContent=`Também hoje: ${featured.name}`;
+    }else{
+      els.todayNote.textContent=`Hoje é ${todayHoliday.name}.`;
+      els.holidaySource.textContent='';
+    }
+  }else if(featured){
+    const names=observances.slice(0,2).map(item=>item.name);
+    els.holiday.textContent='Data especial';
+    els.holidayNote.textContent=names.join(' • ')+(observances.length>2?` + ${observances.length-2}`:'');
+    els.holidaySource.textContent=`Fonte: ${[...new Set(observances.map(item=>item.source))].join(' • ')}`;
+    els.todayNote.textContent=featured.description;
+  }else{
+    els.holiday.textContent='Dia comum';
+    els.holidayNote.textContent='Sem feriado nacional hoje';
+    els.holidaySource.textContent='';
+    els.todayNote.textContent='Um novo dia para informar, conectar e fazer acontecer.';
+  }
+
+  els.season.textContent=season(now);
+  const doy=dayOfYear(now);
+  const total=dayOfYear(new Date(now.getFullYear(),11,31));
+  els.dayOfYear.textContent=`${doy}º dia`;
+  els.daysLeft.textContent=`${Math.max(0,total-doy)} dias restantes no ano`;
+
+  if(next){
+    const d=new Date(next.date+'T12:00:00');
+    els.nextHolidayDate.textContent=new Intl.DateTimeFormat('pt-BR',{
+      day:'2-digit',
+      month:'short'
+    }).format(d).replace('.','');
+    els.nextHolidayName.textContent=next.name;
+  }else{
+    els.nextHolidayDate.textContent='Novo ano';
+    els.nextHolidayName.textContent='Próximo calendário em breve';
+  }
+}
+
+function updateClock(){
+  els.clock.textContent=new Intl.DateTimeFormat('pt-BR',{
+    hour:'2-digit',
+    minute:'2-digit'
+  }).format(new Date());
+}
+
+async function load(){
+  try{
+    render(await PV.fromApi('/api/hoje',directData));
+  }catch{
+    render({holidays:[]});
+  }
+  updateClock();
+}
+
+load();
+setInterval(updateClock,1000);
 </script>
 </body></html>
