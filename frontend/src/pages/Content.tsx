@@ -963,7 +963,7 @@ function ContentForm({
               <option value="news">Notícias</option>
               <option value="menu_board">Menu Board</option>
               <option value="messages">Mensagens</option>
-              <option value="busboard">BusBoard</option>
+              <option value="busboard">BusBoard</option>\n              <option value="outubro_rosa">Outubro Rosa</option>
             </select>
           </label>
           <label>
@@ -1032,7 +1032,7 @@ function appName(key: string) {
         news: "Notícias",
         menu_board: "Menu Board",
         messages: "Mensagens",
-        busboard: "BusBoard",
+        busboard: "BusBoard",\n        outubro_rosa: "Outubro Rosa",
       } as Record<string, string>
     )[key] || "App PontoView"
   );
