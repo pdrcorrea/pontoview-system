@@ -39,7 +39,7 @@ import {
   formData,
 } from "../components/ui";
 import { supabase } from "../lib/supabase";
-import { seasonalCampaignRoute } from "../seasonalCampaigns";
+import { seasonalCampaignByKey, seasonalCampaignRoute } from "../seasonalCampaigns";
 import { formatDuration } from "../lib/youtube";
 import type { Media, Playlist } from "../types";
 
@@ -146,8 +146,9 @@ function mediaEmoji(item: Media) {
 
 function mediaTypeLabel(item: Media) {
   if (item.type === "app" && item.metadata?.seasonal) {
-    if (item.metadata?.seasonal_group === "holiday") return "Feriado";
-    if (item.metadata?.seasonal_group === "commemorative") return "Data comemorativa";
+    const group = item.metadata?.seasonal_group || seasonalCampaignByKey(item.app_key)?.group;
+    if (group === "holiday") return "Feriado";
+    if (group === "commemorative") return "Data comemorativa";
     return "Campanha sazonal";
   }
   if (panelEmoji(item)) return "Painel PontoView";
