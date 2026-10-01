@@ -8,6 +8,7 @@ import {
 import {
   AppWindow,
   Ban,
+  CalendarHeart,
   Cloud,
   FileImage,
   FileVideo,
@@ -40,7 +41,25 @@ import { extractYouTubeId, formatDuration } from "../lib/youtube";
 import type { Media, MediaType } from "../types";
 import "../webpage-security.css";
 
-type Source = "youtube" | "drive" | "webpage" | "app" | "message";
+type Source = "youtube" | "drive" | "webpage" | "app" | "seasonal" | "message";
+
+type SeasonalCampaign = {
+  key: string;
+  name: string;
+  description: string;
+  months: number[];
+  durationSeconds: number;
+};
+
+const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
+  {
+    key: "outubro_rosa",
+    name: "Outubro Rosa",
+    description: "Conscientização sobre câncer de mama com orientação breve e acesso ao conteúdo oficial do INCA.",
+    months: [9],
+    durationSeconds: 30,
+  },
+];
 const typeLabel: Record<MediaType, string> = {
   drive_image: "Imagem do Drive",
   drive_video: "Vídeo do Drive",
@@ -183,6 +202,54 @@ export function ContentPage() {
         cause instanceof Error
           ? cause.message
           : "Não foi possível adicionar o conteúdo.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addSeasonalCampaign = async (campaign: SeasonalCampaign) => {
+    if (!organization || !user) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const duplicate = items.some(
+        (item) =>
+          item.type === "app" &&
+          item.app_key === campaign.key &&
+          item.status !== "archived",
+      );
+      if (duplicate) {
+        throw new Error("Esta campanha já está na sua biblioteca.");
+      }
+
+      const result = await supabase
+        .from("media")
+        .insert({
+          organization_id: organization.id,
+          type: "app",
+          app_key: campaign.key,
+          name: campaign.name,
+          duration_seconds: campaign.durationSeconds,
+          online_required: false,
+          created_by: user.id,
+          status: "ready",
+          metadata: {
+            seasonal: true,
+            active_months: campaign.months,
+          },
+        })
+        .select()
+        .single();
+
+      if (result.error) throw result.error;
+      setModal(false);
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível adicionar a campanha sazonal.",
       );
     } finally {
       setBusy(false);
@@ -692,6 +759,7 @@ export function ContentPage() {
                 ["drive", "Google Drive", Cloud],
                 ["webpage", "Página web", Link2],
                 ["app", "App PontoView", Sparkles],
+                ["seasonal", "Campanhas sazonais", CalendarHeart],
                 ["message", "Comunicado", MessageSquareText],
               ] as const
             ).map(([id, label, Icon]) => (
@@ -711,7 +779,13 @@ export function ContentPage() {
             ))}
           </div>
           <FormMessage error={error} />
-          {source === "drive" ? (
+          {source === "seasonal" ? (
+            <SeasonalCampaignPicker
+              campaigns={SEASONAL_CAMPAIGNS}
+              busy={busy}
+              onAdd={addSeasonalCampaign}
+            />
+          ) : source === "drive" ? (
             <div className="drive-picker">
               <Cloud size={30} />
               <h3>Arquivos continuam no seu Drive</h3>
@@ -874,13 +948,80 @@ export function ContentPage() {
   );
 }
 
+function SeasonalCampaignPicker({
+  campaigns,
+  busy,
+  onAdd,
+}: {
+  campaigns: SeasonalCampaign[];
+  busy: boolean;
+  onAdd: (campaign: SeasonalCampaign) => Promise<void>;
+}) {
+  const now = new Date();
+  const month = now.getMonth();
+  const active = campaigns.filter((campaign) => campaign.months.includes(month));
+  const upcoming = campaigns.filter((campaign) => !campaign.months.includes(month));
+
+  return (
+    <div className="seasonal-campaigns">
+      <div className="seasonal-campaigns-intro">
+        <span className="seasonal-icon"><CalendarHeart /></span>
+        <div>
+          <h3>Campanhas disponíveis agora</h3>
+          <p>
+            A PontoView mostra aqui apenas campanhas adequadas ao período atual.
+            Depois de adicionar, você pode usá-las normalmente em qualquer playlist.
+          </p>
+        </div>
+      </div>
+
+      {active.length ? (
+        <div className="seasonal-grid">
+          {active.map((campaign) => (
+            <article className="seasonal-card active" key={campaign.key}>
+              <div className="seasonal-card-art" aria-hidden="true">
+                <span>🎀</span>
+              </div>
+              <div className="seasonal-card-copy">
+                <span className="seasonal-badge">Disponível agora</span>
+                <h4>{campaign.name}</h4>
+                <p>{campaign.description}</p>
+                <small>Duração padrão: {campaign.durationSeconds}s</small>
+              </div>
+              <AsyncButton
+                busy={busy}
+                className="btn primary"
+                onClick={() => void onAdd(campaign)}
+              >
+                Adicionar à biblioteca
+              </AsyncButton>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="seasonal-empty">
+          <CalendarHeart />
+          <b>Nenhuma campanha ativa neste período</b>
+          <span>Novas campanhas aparecem automaticamente quando chega a época certa.</span>
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
+        <div className="seasonal-note">
+          O catálogo sazonal é atualizado conforme o calendário, sem poluir a biblioteca com campanhas fora de época.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ContentForm({
   source,
   busy,
   onSubmit,
   onCancel,
 }: {
-  source: Exclude<Source, "drive">;
+  source: Exclude<Source, "drive" | "seasonal">;
   busy: boolean;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
@@ -964,7 +1105,6 @@ function ContentForm({
               <option value="menu_board">Menu Board</option>
               <option value="messages">Mensagens</option>
               <option value="busboard">BusBoard</option>
-              <option value="outubro_rosa">Outubro Rosa</option>
             </select>
           </label>
           <label>
