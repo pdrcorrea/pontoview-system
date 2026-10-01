@@ -42,6 +42,14 @@
         --ribbon-shadow: rgba(166, 118, 0, .2);
       }
 
+      .pv-campaign-ribbon.theme-red {
+        --ribbon-soft: #ffb6bd;
+        --ribbon-main: #e63946;
+        --ribbon-deep: #b51f2c;
+        --ribbon-edge: #8f1721;
+        --ribbon-shadow: rgba(181, 31, 44, .22);
+      }
+
       .pv-campaign-ribbon svg {
         width: 100%;
         height: 100%;
