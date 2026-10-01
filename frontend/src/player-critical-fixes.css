@@ -93,6 +93,57 @@
   max-height: 100% !important;
 }
 
+/* Media geometry is deterministic: the React layout calculates the exact
+   16:9/9:16 frame from the saved L-frame dimensions, with no ResizeObserver,
+   polling or extra network activity. */
+.pv-player-runtime .player-media-host {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  background: #000;
+}
+
+.pv-player-runtime .player-media-frame {
+  flex: 0 0 auto;
+  overflow: hidden !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  background: #000;
+}
+
+.pv-player-runtime .player-media-frame > .pv-stage-transition,
+.pv-player-runtime .player-media-frame .timed-stage,
+.pv-player-runtime .player-media-frame .drive-stage,
+.pv-player-runtime .player-media-frame .youtube-stage {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+.pv-player-runtime .player-media-frame video,
+.pv-player-runtime .player-media-frame img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+}
+
+.pv-player-runtime .player-media-frame iframe {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border: 0 !important;
+}
+
 .pv-player-runtime .player-lframe {
   --pv-side-size: 24%;
   --pv-bar-size: 15%;
