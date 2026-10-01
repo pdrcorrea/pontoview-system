@@ -241,6 +241,66 @@ body.saci .moon{
   overflow:visible;
   filter:drop-shadow(0 22px 30px rgba(0,0,0,.24));
 }
+.transition-vortex{
+  position:absolute;
+  z-index:20;
+  left:50%;
+  top:50%;
+  width:max(145vmax,1200px);
+  aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(.08) rotate(0deg);
+  opacity:0;
+  pointer-events:none;
+  border-radius:50%;
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(228,183,47,.0) 0deg 12deg,
+      rgba(228,183,47,.88) 18deg 24deg,
+      rgba(82,153,74,.76) 30deg 38deg,
+      rgba(227,50,50,.72) 43deg 48deg,
+      rgba(255,255,255,.08) 52deg 58deg,
+      rgba(228,183,47,.0) 62deg 76deg
+    );
+  filter:blur(2px);
+  mix-blend-mode:screen;
+}
+
+.transition-vortex::before,
+.transition-vortex::after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  inset:14%;
+  border:clamp(10px,1.2vmin,18px) solid rgba(228,183,47,.68);
+  border-left-color:transparent;
+  border-bottom-color:transparent;
+}
+
+.transition-vortex::after{
+  inset:27%;
+  border-color:rgba(82,153,74,.72);
+  border-right-color:transparent;
+  border-top-color:transparent;
+}
+
+.transition-vortex.active{
+  animation:vortexTransition 1.65s cubic-bezier(.2,.7,.2,1) forwards;
+}
+
+.transition-dim{
+  position:absolute;
+  z-index:19;
+  inset:0;
+  pointer-events:none;
+  background:rgba(8,15,9,.0);
+  opacity:0;
+}
+
+.transition-dim.active{
+  animation:vortexDim 1.65s ease forwards;
+}
+
 .saci-wind{
   position:absolute;
   width:min(78%,390px);
@@ -305,6 +365,34 @@ body.saci .turn-hint{
   opacity:1;
   transform:none;
 }
+@keyframes vortexTransition{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.08) rotate(0deg);
+  }
+  18%{
+    opacity:.96;
+  }
+  52%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(.58) rotate(390deg);
+  }
+  72%{
+    opacity:.92;
+    transform:translate(-50%,-50%) scale(.92) rotate(610deg);
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.22) rotate(790deg);
+  }
+}
+
+@keyframes vortexDim{
+  0%,18%{opacity:0;background:rgba(8,15,9,0)}
+  48%,60%{opacity:1;background:rgba(8,15,9,.46)}
+  100%{opacity:0;background:rgba(8,15,9,0)}
+}
+
 @keyframes drift{
   to{transform:translate(16px,12px) scale(1.035)}
 }
@@ -372,6 +460,8 @@ body.saci .turn-hint{
 </head>
 <body>
 <main class="panel">
+  <div class="transition-dim" id="transitionDim" aria-hidden="true"></div>
+  <div class="transition-vortex" id="transitionVortex" aria-hidden="true"></div>
   <div class="orb a"></div>
   <div class="orb b"></div>
   <div class="moon"></div>
@@ -483,6 +573,8 @@ body.saci .turn-hint{
   const saciText = document.getElementById("saciText");
   const halloweenSymbol = document.getElementById("halloweenSymbol");
   const saciSymbol = document.getElementById("saciSymbol");
+  const transitionVortex = document.getElementById("transitionVortex");
+  const transitionDim = document.getElementById("transitionDim");
 
   const showSaci = () => {
     body.classList.add("saci");
@@ -492,7 +584,19 @@ body.saci .turn-hint{
     saciSymbol.classList.add("active");
   };
 
-  window.setTimeout(showSaci, 7200);
+  const beginTransition = () => {
+    transitionVortex.classList.add("active");
+    transitionDim.classList.add("active");
+
+    window.setTimeout(showSaci, 760);
+
+    window.setTimeout(() => {
+      transitionVortex.classList.remove("active");
+      transitionDim.classList.remove("active");
+    }, 1750);
+  };
+
+  window.setTimeout(beginTransition, 6500);
 })();
 </script>
 </body>
