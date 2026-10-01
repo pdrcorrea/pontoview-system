@@ -430,3 +430,40 @@
     text-align: left;
   }
 }
+
+
+.seasonal-card.holiday {
+  border-color: #d9e3ee;
+  background: linear-gradient(135deg, #fbfdff 0%, #f2f7fb 100%);
+}
+
+.seasonal-card.holiday .seasonal-card-art {
+  background: linear-gradient(145deg, #dce9f5, #c8dced);
+}
+
+.seasonal-card.holiday h4 {
+  color: #31546f;
+}
+
+.seasonal-card.holiday p,
+.seasonal-card.holiday small {
+  color: #667e91;
+}
+
+.seasonal-card.commemorative {
+  border-color: #eadfca;
+  background: linear-gradient(135deg, #fffdf9 0%, #fbf7ef 100%);
+}
+
+.seasonal-card.commemorative .seasonal-card-art {
+  background: linear-gradient(145deg, #f5e6c8, #ead5ad);
+}
+
+.seasonal-card.commemorative h4 {
+  color: #6e542d;
+}
+
+.seasonal-card.commemorative p,
+.seasonal-card.commemorative small {
+  color: #816f54;
+}
