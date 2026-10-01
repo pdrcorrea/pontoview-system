@@ -16,8 +16,8 @@
 .pv-player-runtime .pv-orientation-canvas {
   right: auto !important;
   bottom: auto !important;
-  max-width: none !important;
-  max-height: none !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
 }
 
 .pv-player-runtime .pv-orientation-canvas.logical-landscape {
@@ -93,42 +93,27 @@
   max-height: 100% !important;
 }
 
-/*
- * MEDIA VIEWPORT CONTRACT
- * -----------------------
- * The main content itself also keeps the configured logical aspect ratio.
- * L-frame widgets may reduce the available rectangle, so the media viewport
- * letterboxes inside that area instead of stretching or cropping panels/video.
- */
+/* Media geometry is deterministic: the React layout calculates the exact
+   16:9/9:16 frame from the saved L-frame dimensions, with no ResizeObserver,
+   polling or extra network activity. */
 .pv-player-runtime .player-media-host {
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
   background: #000;
 }
 
 .pv-player-runtime .player-media-frame {
-  position: relative;
   flex: 0 0 auto;
-  min-width: 0;
-  min-height: 0;
+  overflow: hidden !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  overflow: hidden !important;
   background: #000;
-}
-
-.pv-player-runtime .player-media-frame.landscape {
-  aspect-ratio: 16 / 9;
-}
-
-.pv-player-runtime .player-media-frame.portrait {
-  aspect-ratio: 9 / 16;
 }
 
 .pv-player-runtime .player-media-frame > .pv-stage-transition,
@@ -149,7 +134,6 @@
   max-height: 100% !important;
   object-fit: contain !important;
   object-position: center center !important;
-  background: #000;
 }
 
 .pv-player-runtime .player-media-frame iframe {

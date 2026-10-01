@@ -20,8 +20,10 @@ function fitLogicalCanvas() {
   const canvas = document.querySelector<HTMLElement>(".pv-orientation-canvas");
   if (!runtime || !canvas) return;
 
-  // Preserve the canonical canvas (16:9 or 9:16) and rotate it only when the
-  // configured orientation differs from the physical drawing surface.
+  // The TV/browser may expose a non-16:9 surface (for example 16:10).
+  // PontoView panels and videos are authored against a canonical logical
+  // canvas, so fit that canvas inside the available runtime instead of
+  // stretching it to the physical viewport.
   const availableWidth = runtime.clientWidth || window.innerWidth;
   const availableHeight = runtime.clientHeight || window.innerHeight;
   if (!availableWidth || !availableHeight) return;
@@ -33,7 +35,6 @@ function fitLogicalCanvas() {
 
   const fitWidth = shouldRotate ? availableHeight : availableWidth;
   const fitHeight = shouldRotate ? availableWidth : availableHeight;
-
   let width = fitWidth;
   let height = width / logicalAspect;
   if (height > fitHeight) {
@@ -48,8 +49,8 @@ function fitLogicalCanvas() {
   setImportant(canvas, "top", "50%");
   setImportant(canvas, "right", "auto");
   setImportant(canvas, "bottom", "auto");
-  setImportant(canvas, "max-width", "none");
-  setImportant(canvas, "max-height", "none");
+  setImportant(canvas, "max-width", shouldRotate ? "none" : "100%");
+  setImportant(canvas, "max-height", shouldRotate ? "none" : "100%");
   setImportant(canvas, "aspect-ratio", logicalPortrait ? "9 / 16" : "16 / 9");
   setImportant(
     canvas,
