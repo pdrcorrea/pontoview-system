@@ -66,7 +66,13 @@ const PANEL_EMOJIS: Array<[string[], string]> = [
   [["menu board", "menu_board", "cardapio"], "🍽️"],
   [["mensagens", "messages", "comunicado"], "💬"],
   [["busboard", "onibus", "rodoviaria"], "🚌"],
+  [["mes do orgulho", "orgulho"], "🌈"],
+  [["setembro amarelo", "setembro_amarelo"], "🎗️"],
   [["outubro rosa", "outubro_rosa"], "🎀"],
+  [["novembro azul", "novembro_azul"], "🔵"],
+  [["dia mundial da aids", "dia_mundial_aids", "aids"], "🎗️"],
+  [["natal"], "🎄"],
+  [["ano novo", "ano_novo"], "✨"],
 ];
 
 function normalizeText(value?: string | null) {
@@ -847,14 +853,26 @@ function MediaPreview({ item, name }: { item?: Media; name: string }) {
       />
     );
   }
-  if (item.type === "app" && item.app_key === "outubro_rosa") {
-    return (
-      <iframe
-        title={name}
-        src="/paineis/outubro-rosa/"
-        sandbox="allow-scripts allow-same-origin"
-      />
-    );
+  if (item.type === "app" && item.app_key) {
+    const seasonalRoutes: Record<string, string> = {
+      orgulho: "/paineis/orgulho/",
+      setembro_amarelo: "/paineis/setembro-amarelo/",
+      outubro_rosa: "/paineis/outubro-rosa/",
+      novembro_azul: "/paineis/novembro-azul/",
+      dia_mundial_aids: "/paineis/dia-mundial-aids/",
+      natal: "/paineis/natal/",
+      ano_novo: "/paineis/ano-novo/",
+    };
+    const route = seasonalRoutes[item.app_key];
+    if (route) {
+      return (
+        <iframe
+          title={name}
+          src={route}
+          sandbox="allow-scripts allow-same-origin"
+        />
+      );
+    }
   }
   if (item.thumbnail_url) return <img src={item.thumbnail_url} alt={`Prévia de ${name}`} />;
   if (item.type === "message") {
