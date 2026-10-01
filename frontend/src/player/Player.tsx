@@ -595,6 +595,12 @@ export function PlayerPage() {
   }, [activeDevice]);
   const handleEnd = useCallback(() => advance(false), [advance]);
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
+  useEffect(() => {
+    if (!operating || !item || item.media.type !== "app") return;
+    if (isSeasonalAppActive(item.media.appKey)) return;
+    const timer = window.setTimeout(() => advance(false, "seasonal_content_out_of_period"), 80);
+    return () => window.clearTimeout(timer);
+  }, [operating, item?.itemId, item?.media.appKey, advance]);
   useEffect(() => { if (!operating) return; if (item?.media.onlineRequired && !navigator.onLine) { const timer = window.setTimeout(() => advance(true, "offline_content_skipped"), 500); return () => window.clearTimeout(timer); } }, [operating, item?.itemId, advance]);
 
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
@@ -798,6 +804,16 @@ function messageDisplayMs(message: PlayerMessage) {
   const words = text ? text.split(/\s+/).length : 0;
   const readingSeconds = 4 + words / 3;
   return Math.round(Math.min(24, Math.max(8, readingSeconds)) * 1000);
+}
+
+const SEASONAL_APP_MONTHS: Record<string, number[]> = {
+  outubro_rosa: [9],
+};
+
+function isSeasonalAppActive(appKey: string | null, now = new Date()) {
+  if (!appKey) return true;
+  const months = SEASONAL_APP_MONTHS[appKey];
+  return !months || months.includes(now.getMonth());
 }
 
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: { item: ManifestItem | null; device: Device; organization: PlayerManifest["organization"]; cacheRevision: number; onEnd: () => void; onError: (detail: string) => void; }) {
