@@ -1,11 +1,25 @@
-export type SeasonalCampaignCategory = "Saúde" | "Cidadania" | "Comemorativa";
+export type SeasonalCampaignCategory =
+  | "Saúde"
+  | "Cidadania"
+  | "Comemorativa"
+  | "Familiar"
+  | "Religiosa"
+  | "Cívica"
+  | "Cultural";
+
+export type SeasonalCampaignRule =
+  | { kind: "fixed_day"; month: number; day: number; windowDays: number }
+  | { kind: "nth_weekday"; month: number; weekday: number; occurrence: number; windowDays: number }
+  | { kind: "easter_offset"; offsetDays: number; windowDays: number }
+  | { kind: "easter_range"; startOffset: number; endOffset: number };
 
 export type SeasonalCampaign = {
   key: string;
   name: string;
   description: string;
-  start: [number, number];
-  end: [number, number];
+  start?: [number, number];
+  end?: [number, number];
+  rule?: SeasonalCampaignRule;
   periodLabel: string;
   emoji: string;
   durationSeconds: number;
@@ -231,6 +245,227 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
     category: "Saúde",
   },
   {
+    key: "dia_reis",
+    name: "Dia de Reis",
+    description: "Celebração tradicional do encerramento do ciclo natalino.",
+    rule: { kind: "fixed_day", month: 1, day: 6, windowDays: 7 },
+    periodLabel: "6 de janeiro · ± 7 dias",
+    emoji: "👑",
+    durationSeconds: 25,
+    route: "/paineis/dia-reis/",
+    category: "Religiosa",
+  },
+  {
+    key: "carnaval",
+    name: "Carnaval",
+    description: "Painel festivo para o período de Carnaval, com cores e movimento.",
+    rule: { kind: "easter_range", startOffset: -50, endOffset: -46 },
+    periodLabel: "Período do Carnaval · data móvel",
+    emoji: "🎭",
+    durationSeconds: 25,
+    route: "/paineis/carnaval/",
+    category: "Cultural",
+  },
+  {
+    key: "dia_mulher",
+    name: "Dia Internacional da Mulher",
+    description: "Mensagem de respeito, reconhecimento e valorização das mulheres.",
+    rule: { kind: "fixed_day", month: 3, day: 8, windowDays: 7 },
+    periodLabel: "8 de março · ± 7 dias",
+    emoji: "🌷",
+    durationSeconds: 25,
+    route: "/paineis/dia-mulher/",
+    category: "Cidadania",
+  },
+  {
+    key: "sexta_feira_santa",
+    name: "Sexta-feira Santa",
+    description: "Mensagem respeitosa para a celebração cristã da Paixão de Cristo.",
+    rule: { kind: "easter_offset", offsetDays: -2, windowDays: 7 },
+    periodLabel: "Sexta-feira antes da Páscoa · ± 7 dias",
+    emoji: "✝️",
+    durationSeconds: 25,
+    route: "/paineis/sexta-feira-santa/",
+    category: "Religiosa",
+  },
+  {
+    key: "pascoa",
+    name: "Páscoa",
+    description: "Mensagem de renovação, esperança e união para o período pascal.",
+    rule: { kind: "easter_offset", offsetDays: 0, windowDays: 7 },
+    periodLabel: "Domingo de Páscoa · ± 7 dias",
+    emoji: "🕊️",
+    durationSeconds: 25,
+    route: "/paineis/pascoa/",
+    category: "Religiosa",
+  },
+  {
+    key: "tiradentes",
+    name: "Tiradentes",
+    description: "Data cívica nacional em memória de Joaquim José da Silva Xavier.",
+    rule: { kind: "fixed_day", month: 4, day: 21, windowDays: 7 },
+    periodLabel: "21 de abril · ± 7 dias",
+    emoji: "⭐",
+    durationSeconds: 25,
+    route: "/paineis/tiradentes/",
+    category: "Cívica",
+  },
+  {
+    key: "dia_trabalho",
+    name: "Dia do Trabalho",
+    description: "Mensagem de reconhecimento a quem contribui diariamente com seu trabalho.",
+    rule: { kind: "fixed_day", month: 5, day: 1, windowDays: 7 },
+    periodLabel: "1º de maio · ± 7 dias",
+    emoji: "🛠️",
+    durationSeconds: 25,
+    route: "/paineis/dia-trabalho/",
+    category: "Comemorativa",
+  },
+  {
+    key: "dia_maes",
+    name: "Dia das Mães",
+    description: "Mensagem afetiva para o segundo domingo de maio.",
+    rule: { kind: "nth_weekday", month: 5, weekday: 0, occurrence: 2, windowDays: 7 },
+    periodLabel: "2º domingo de maio · ± 7 dias",
+    emoji: "🌷",
+    durationSeconds: 25,
+    route: "/paineis/dia-maes/",
+    category: "Familiar",
+  },
+  {
+    key: "corpus_christi",
+    name: "Corpus Christi",
+    description: "Painel respeitoso para a celebração cristã de Corpus Christi.",
+    rule: { kind: "easter_offset", offsetDays: 60, windowDays: 7 },
+    periodLabel: "60 dias após a Páscoa · ± 7 dias",
+    emoji: "🕊️",
+    durationSeconds: 25,
+    route: "/paineis/corpus-christi/",
+    category: "Religiosa",
+  },
+  {
+    key: "dia_namorados",
+    name: "Dia dos Namorados",
+    description: "Mensagem leve e afetiva para celebrar vínculos e companheirismo.",
+    rule: { kind: "fixed_day", month: 6, day: 12, windowDays: 7 },
+    periodLabel: "12 de junho · ± 7 dias",
+    emoji: "💞",
+    durationSeconds: 25,
+    route: "/paineis/dia-namorados/",
+    category: "Familiar",
+  },
+  {
+    key: "festas_juninas",
+    name: "Festas Juninas",
+    description: "Ambientação de junho inspirada nas tradições populares das festas juninas.",
+    start: [6, 1],
+    end: [6, 30],
+    periodLabel: "Junho",
+    emoji: "🔥",
+    durationSeconds: 25,
+    route: "/paineis/festas-juninas/",
+    category: "Cultural",
+  },
+  {
+    key: "dia_avos",
+    name: "Dia dos Avós",
+    description: "Mensagem de carinho e reconhecimento às avós e aos avôs.",
+    rule: { kind: "fixed_day", month: 7, day: 26, windowDays: 7 },
+    periodLabel: "26 de julho · ± 7 dias",
+    emoji: "💛",
+    durationSeconds: 25,
+    route: "/paineis/dia-avos/",
+    category: "Familiar",
+  },
+  {
+    key: "dia_pais",
+    name: "Dia dos Pais",
+    description: "Mensagem afetiva para o segundo domingo de agosto.",
+    rule: { kind: "nth_weekday", month: 8, weekday: 0, occurrence: 2, windowDays: 7 },
+    periodLabel: "2º domingo de agosto · ± 7 dias",
+    emoji: "💙",
+    durationSeconds: 25,
+    route: "/paineis/dia-pais/",
+    category: "Familiar",
+  },
+  {
+    key: "independencia",
+    name: "Independência do Brasil",
+    description: "Painel cívico para a data nacional de 7 de setembro.",
+    rule: { kind: "fixed_day", month: 9, day: 7, windowDays: 7 },
+    periodLabel: "7 de setembro · ± 7 dias",
+    emoji: "🇧🇷",
+    durationSeconds: 25,
+    route: "/paineis/independencia/",
+    category: "Cívica",
+  },
+  {
+    key: "nossa_senhora_aparecida",
+    name: "Nossa Senhora Aparecida",
+    description: "Painel respeitoso para a celebração da Padroeira do Brasil.",
+    rule: { kind: "fixed_day", month: 10, day: 12, windowDays: 7 },
+    periodLabel: "12 de outubro · ± 7 dias",
+    emoji: "🙏",
+    durationSeconds: 25,
+    route: "/paineis/nossa-senhora-aparecida/",
+    category: "Religiosa",
+  },
+  {
+    key: "dia_criancas",
+    name: "Dia das Crianças",
+    description: "Mensagem alegre sobre infância, brincadeira, cuidado e imaginação.",
+    rule: { kind: "fixed_day", month: 10, day: 12, windowDays: 7 },
+    periodLabel: "12 de outubro · ± 7 dias",
+    emoji: "🎈",
+    durationSeconds: 25,
+    route: "/paineis/dia-criancas/",
+    category: "Familiar",
+  },
+  {
+    key: "dia_professores",
+    name: "Dia dos Professores",
+    description: "Mensagem de reconhecimento a quem ensina, orienta e transforma.",
+    rule: { kind: "fixed_day", month: 10, day: 15, windowDays: 7 },
+    periodLabel: "15 de outubro · ± 7 dias",
+    emoji: "📚",
+    durationSeconds: 25,
+    route: "/paineis/dia-professores/",
+    category: "Comemorativa",
+  },
+  {
+    key: "finados",
+    name: "Finados",
+    description: "Mensagem sóbria de memória, saudade e respeito.",
+    rule: { kind: "fixed_day", month: 11, day: 2, windowDays: 7 },
+    periodLabel: "2 de novembro · ± 7 dias",
+    emoji: "🕯️",
+    durationSeconds: 25,
+    route: "/paineis/finados/",
+    category: "Religiosa",
+  },
+  {
+    key: "proclamacao_republica",
+    name: "Proclamação da República",
+    description: "Painel cívico para a data nacional de 15 de novembro.",
+    rule: { kind: "fixed_day", month: 11, day: 15, windowDays: 7 },
+    periodLabel: "15 de novembro · ± 7 dias",
+    emoji: "🇧🇷",
+    durationSeconds: 25,
+    route: "/paineis/proclamacao-republica/",
+    category: "Cívica",
+  },
+  {
+    key: "consciencia_negra",
+    name: "Dia da Consciência Negra",
+    description: "Data de reflexão sobre igualdade, respeito e valorização da cultura afro-brasileira.",
+    rule: { kind: "fixed_day", month: 11, day: 20, windowDays: 7 },
+    periodLabel: "20 de novembro · ± 7 dias",
+    emoji: "🖤",
+    durationSeconds: 25,
+    route: "/paineis/consciencia-negra/",
+    category: "Cidadania",
+  },
+  {
     key: "natal",
     name: "Natal",
     description: "Mensagem de boas festas para ambientes de atendimento, espera e convivência.",
@@ -256,33 +491,124 @@ export const SEASONAL_CAMPAIGNS: SeasonalCampaign[] = [
   },
 ];
 
-export function seasonalDateCode(date: Date, timezone?: string) {
-  if (!timezone) return (date.getMonth() + 1) * 100 + date.getDate();
+function localDateParts(date: Date, timezone?: string) {
+  if (!timezone) {
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+    };
+  }
 
   try {
     const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
+      year: "numeric",
       month: "2-digit",
       day: "2-digit",
     }).formatToParts(date);
-    const month = Number(
-      parts.find((part) => part.type === "month")?.value || date.getMonth() + 1,
-    );
-    const day = Number(
-      parts.find((part) => part.type === "day")?.value || date.getDate(),
-    );
-    return month * 100 + day;
+    return {
+      year: Number(parts.find((part) => part.type === "year")?.value || date.getFullYear()),
+      month: Number(parts.find((part) => part.type === "month")?.value || date.getMonth() + 1),
+      day: Number(parts.find((part) => part.type === "day")?.value || date.getDate()),
+    };
   } catch {
-    return (date.getMonth() + 1) * 100 + date.getDate();
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+    };
   }
 }
 
+function dateUtc(year: number, month: number, day: number) {
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function addUtcDays(date: Date, days: number) {
+  const next = new Date(date.getTime());
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function easterSundayUtc(year: number) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return dateUtc(year, month, day);
+}
+
+function nthWeekdayUtc(year: number, month: number, weekday: number, occurrence: number) {
+  const first = dateUtc(year, month, 1);
+  const offset = (weekday - first.getUTCDay() + 7) % 7;
+  return dateUtc(year, month, 1 + offset + (occurrence - 1) * 7);
+}
+
+function withinDays(current: Date, target: Date, windowDays: number) {
+  const diff = Math.abs(current.getTime() - target.getTime());
+  return diff <= windowDays * 86_400_000;
+}
+
+function matchesDynamicRule(rule: SeasonalCampaignRule, current: Date, year: number) {
+  if (rule.kind === "fixed_day") {
+    return withinDays(current, dateUtc(year, rule.month, rule.day), rule.windowDays);
+  }
+
+  if (rule.kind === "nth_weekday") {
+    return withinDays(
+      current,
+      nthWeekdayUtc(year, rule.month, rule.weekday, rule.occurrence),
+      rule.windowDays,
+    );
+  }
+
+  if (rule.kind === "easter_offset") {
+    return withinDays(
+      current,
+      addUtcDays(easterSundayUtc(year), rule.offsetDays),
+      rule.windowDays,
+    );
+  }
+
+  const easter = easterSundayUtc(year);
+  const start = addUtcDays(easter, rule.startOffset);
+  const end = addUtcDays(easter, rule.endOffset);
+  return current >= start && current <= end;
+}
+
+export function seasonalDateCode(date: Date, timezone?: string) {
+  const parts = localDateParts(date, timezone);
+  return parts.month * 100 + parts.day;
+}
+
 export function isSeasonalCampaignActive(
-  campaign: Pick<SeasonalCampaign, "start" | "end">,
+  campaign: Pick<SeasonalCampaign, "start" | "end" | "rule">,
   now = new Date(),
   timezone?: string,
 ) {
-  const current = seasonalDateCode(now, timezone);
+  const parts = localDateParts(now, timezone);
+  const currentDate = dateUtc(parts.year, parts.month, parts.day);
+
+  if (campaign.rule) {
+    return [parts.year - 1, parts.year, parts.year + 1].some((year) =>
+      matchesDynamicRule(campaign.rule as SeasonalCampaignRule, currentDate, year),
+    );
+  }
+
+  if (!campaign.start || !campaign.end) return true;
+
+  const current = parts.month * 100 + parts.day;
   const start = campaign.start[0] * 100 + campaign.start[1];
   const end = campaign.end[0] * 100 + campaign.end[1];
 
