@@ -38,7 +38,13 @@ import {
 } from "../lib/googlePicker";
 import { invokeFunction, supabase } from "../lib/supabase";
 import { extractYouTubeId, formatDuration } from "../lib/youtube";
-import { SEASONAL_CAMPAIGNS, isSeasonalCampaignActive, type SeasonalCampaign } from "../seasonalCampaigns";
+import {
+  SEASONAL_CAMPAIGNS,
+  SEASONAL_GROUP_LABELS,
+  isSeasonalCampaignActive,
+  type SeasonalCampaign,
+  type SeasonalContentGroup,
+} from "../seasonalCampaigns";
 import type { Media, MediaType } from "../types";
 import "../webpage-security.css";
 
@@ -748,7 +754,7 @@ export function ContentPage() {
                 ["drive", "Google Drive", Cloud],
                 ["webpage", "Página web", Link2],
                 ["app", "App PontoView", Sparkles],
-                ["seasonal", "Campanhas sazonais", CalendarHeart],
+                ["seasonal", "Conteúdos sazonais", CalendarHeart],
                 ["message", "Comunicado", MessageSquareText],
               ] as const
             ).map(([id, label, Icon]) => (
@@ -946,84 +952,120 @@ function SeasonalCampaignPicker({
   busy: boolean;
   onAdd: (campaign: SeasonalCampaign) => Promise<void>;
 }) {
+  const [group, setGroup] = useState<SeasonalContentGroup>("campaign");
   const now = new Date();
-  const active = campaigns.filter((campaign) => isSeasonalCampaignActive(campaign, now));
-  const upcoming = campaigns.filter((campaign) => !isSeasonalCampaignActive(campaign, now));
+  const groups: SeasonalContentGroup[] = ["campaign", "holiday", "commemorative"];
+  const descriptions: Record<SeasonalContentGroup, string> = {
+    campaign: "Campanhas de conscientização e temas que acompanham um período do calendário.",
+    holiday: "Feriados nacionais e celebrações de grande relevância no calendário brasileiro.",
+    commemorative: "Datas familiares, culturais e especiais que merecem uma peça própria.",
+  };
+
+  const selected = campaigns.filter((campaign) => campaign.group === group);
+  const active = selected.filter((campaign) => isSeasonalCampaignActive(campaign, now));
+  const upcoming = selected.filter((campaign) => !isSeasonalCampaignActive(campaign, now));
+
+  const renderCard = (campaign: SeasonalCampaign, isActive: boolean) => (
+    <article
+      className={isActive ? "seasonal-card active" : "seasonal-card"}
+      key={campaign.key}
+    >
+      <div className="seasonal-card-art" aria-hidden="true">
+        <span>{campaign.emoji}</span>
+      </div>
+      <div className="seasonal-card-copy">
+        <span className={isActive ? "seasonal-badge" : "seasonal-badge upcoming"}>
+          {isActive ? "Disponível agora" : "Programado"}
+        </span>
+        <h4>{campaign.name}</h4>
+        <p>{campaign.description}</p>
+        <small>
+          {campaign.category} · {campaign.periodLabel} · {campaign.durationSeconds}s
+        </small>
+      </div>
+      <AsyncButton
+        busy={busy}
+        className={isActive ? "btn primary" : "btn secondary"}
+        onClick={() => void onAdd(campaign)}
+      >
+        Adicionar à biblioteca
+      </AsyncButton>
+    </article>
+  );
 
   return (
     <div className="seasonal-campaigns">
       <div className="seasonal-campaigns-intro">
         <span className="seasonal-icon"><CalendarHeart /></span>
         <div>
-          <h3>Campanhas disponíveis agora</h3>
+          <h3>Conteúdos sazonais</h3>
           <p>
-            A PontoView destaca as campanhas adequadas ao período atual. Datas de um único dia ficam ativas por 7 dias antes e 7 dias depois.
-            Você escolhe quais campanhas adicionar e em quais playlists usar.
+            Escolha apenas o que faz sentido para a sua tela. O Player respeita o período
+            de cada conteúdo e ignora automaticamente itens fora da época programada.
           </p>
         </div>
       </div>
 
-      {active.length ? (
-        <div className="seasonal-grid">
-          {active.map((campaign) => (
-            <article className="seasonal-card active" key={campaign.key}>
-              <div className="seasonal-card-art" aria-hidden="true">
-                <span>{campaign.emoji}</span>
-              </div>
-              <div className="seasonal-card-copy">
-                <span className="seasonal-badge">Disponível agora</span>
-                <h4>{campaign.name}</h4>
-                <p>{campaign.description}</p>
-                <small>{campaign.category} · {campaign.periodLabel} · Duração padrão: {campaign.durationSeconds}s</small>
-              </div>
-              <AsyncButton
-                busy={busy}
-                className="btn primary"
-                onClick={() => void onAdd(campaign)}
-              >
-                Adicionar à biblioteca
-              </AsyncButton>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className="seasonal-empty">
-          <CalendarHeart />
-          <b>Nenhuma campanha ativa neste período</b>
-          <span>Novas campanhas aparecem automaticamente quando chega a época certa.</span>
-        </div>
+      <div className="seasonal-group-tabs" role="tablist" aria-label="Tipos de conteúdo sazonal">
+        {groups.map((item) => {
+          const count = campaigns.filter((campaign) => campaign.group === item).length;
+          return (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={group === item}
+              className={group === item ? "seasonal-group-tab active" : "seasonal-group-tab"}
+              key={item}
+              onClick={() => setGroup(item)}
+            >
+              <span>{SEASONAL_GROUP_LABELS[item]}</span>
+              <small>{count}</small>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="seasonal-group-description">
+        <b>{SEASONAL_GROUP_LABELS[group]}</b>
+        <span>{descriptions[group]}</span>
+      </div>
+
+      {active.length > 0 && (
+        <>
+          <div className="seasonal-section-title">
+            <b>Disponíveis agora</b>
+            <span>Conteúdos dentro do período atual.</span>
+          </div>
+          <div className="seasonal-grid">
+            {active.map((campaign) => renderCard(campaign, true))}
+          </div>
+        </>
       )}
 
       {upcoming.length > 0 && (
         <>
           <div className="seasonal-section-title">
-            <b>Outras campanhas</b>
-            <span>Você pode adicioná-las agora e o Player só exibirá no período correto.</span>
+            <b>{active.length ? "Outras opções" : "Programados"}</b>
+            <span>Você pode preparar a playlist antes da data chegar.</span>
           </div>
           <div className="seasonal-grid upcoming">
-            {upcoming.map((campaign) => (
-              <article className="seasonal-card" key={campaign.key}>
-                <div className="seasonal-card-art" aria-hidden="true">
-                  <span>{campaign.emoji}</span>
-                </div>
-                <div className="seasonal-card-copy">
-                  <span className="seasonal-badge upcoming">Programada</span>
-                  <h4>{campaign.name}</h4>
-                  <p>{campaign.description}</p>
-                  <small>{campaign.periodLabel} · Duração padrão: {campaign.durationSeconds}s</small>
-                </div>
-                <AsyncButton
-                  busy={busy}
-                  className="btn secondary"
-                  onClick={() => void onAdd(campaign)}
-                >
-                  Adicionar à biblioteca
-                </AsyncButton>
-              </article>
-            ))}
+            {upcoming.map((campaign) => renderCard(campaign, false))}
           </div>
         </>
       )}
+
+      {!selected.length && (
+        <div className="seasonal-empty">
+          <CalendarHeart />
+          <b>Nenhum conteúdo nesta categoria</b>
+          <span>Novos painéis podem ser adicionados sem alterar a organização do catálogo.</span>
+        </div>
+      )}
+
+      <div className="seasonal-note">
+        Datas menores e observâncias do calendário não aparecem nesta lista. Elas são exibidas
+        automaticamente no painel <b>Hoje</b>, somente na própria data.
+      </div>
     </div>
   );
 }
