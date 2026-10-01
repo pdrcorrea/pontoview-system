@@ -956,8 +956,8 @@ function SeasonalCampaignPicker({
         <div>
           <h3>Campanhas disponíveis agora</h3>
           <p>
-            A PontoView mostra aqui apenas campanhas adequadas ao período atual.
-            Depois de adicionar, você pode usá-las normalmente em qualquer playlist.
+            A PontoView destaca as campanhas adequadas ao período atual. Datas de um único dia ficam ativas por 7 dias antes e 7 dias depois.
+            Você escolhe quais campanhas adicionar e em quais playlists usar.
           </p>
         </div>
       </div>
