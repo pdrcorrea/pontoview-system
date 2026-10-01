@@ -226,6 +226,8 @@ export function ContentPage() {
           status: "ready",
           metadata: {
             seasonal: true,
+            seasonal_group: campaign.group,
+            seasonal_category: campaign.category,
             seasonal_window: {
               start: campaign.start || null,
               end: campaign.end || null,
@@ -698,7 +700,15 @@ export function ContentPage() {
               </div>
               <div className="media-info">
                 <b>{item.name}</b>
-                <span>{item.type === "app" && item.metadata?.seasonal ? "Campanha sazonal" : typeLabel[item.type]}</span>
+                <span>{
+                  item.type === "app" && item.metadata?.seasonal
+                    ? item.metadata?.seasonal_group === "holiday"
+                      ? "Feriado"
+                      : item.metadata?.seasonal_group === "commemorative"
+                        ? "Data comemorativa"
+                        : "Campanha sazonal"
+                    : typeLabel[item.type]
+                }</span>
                 <small
                   className={
                     item.online_required ? "requires-net" : "offline-ready"
