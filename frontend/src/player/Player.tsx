@@ -629,26 +629,34 @@ export function PlayerPage() {
   if (!operating) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
 
   const configuredPortrait = manifest.screen.orientation === "portrait";
+  const viewportPortrait = viewport.height >= viewport.width;
+  const shouldRotateCanvas = configuredPortrait !== viewportPortrait;
   const logicalAspect = configuredPortrait ? 9 / 16 : 16 / 9;
-  let canvasWidth = viewport.width;
+  const fitWidth = shouldRotateCanvas ? viewport.height : viewport.width;
+  const fitHeight = shouldRotateCanvas ? viewport.width : viewport.height;
+  let canvasWidth = fitWidth;
   let canvasHeight = canvasWidth / logicalAspect;
-  if (canvasHeight > viewport.height) {
-    canvasHeight = viewport.height;
+  if (canvasHeight > fitHeight) {
+    canvasHeight = fitHeight;
     canvasWidth = canvasHeight * logicalAspect;
   }
   const canvasStyle = {
     width: `${Math.round(canvasWidth)}px`,
     height: `${Math.round(canvasHeight)}px`,
-    transform: "translate(-50%, -50%)",
+    maxWidth: shouldRotateCanvas ? "none" : "100%",
+    maxHeight: shouldRotateCanvas ? "none" : "100%",
+    transform: shouldRotateCanvas
+      ? "translate(-50%, -50%) rotate(90deg)"
+      : "translate(-50%, -50%)",
   };
-  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} onEnd={handleEnd} onError={handleError} /></div></div>;
+  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${shouldRotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} canvasWidth={canvasWidth} canvasHeight={canvasHeight} onEnd={handleEnd} onError={handleError} /></div></div>;
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
   return <div className="activation-screen"><section><span className="activation-mark" aria-hidden="true"><BrandMark /></span><small>CONECTAR ESTA TELA</small><h1>{activation?.code || "••••••"}</h1><p>No painel PontoView, acesse <b>Telas → Conectar tela</b> e informe este código.</p>{activation && <em>O código é temporário e será renovado automaticamente.</em>}{error && <div className="activation-error">{error}<button onClick={onRetry}><RefreshCw />Tentar novamente</button></div>}</section><footer>pontoview.com.br</footer></div>;
 }
 
-function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; onEnd: () => void; onError: (detail: string) => void; }) {
+function PlayerLayout({ manifest, item, device, playbackCycle, canvasWidth, canvasHeight, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; canvasWidth: number; canvasHeight: number; onEnd: () => void; onError: (detail: string) => void; }) {
   const settings = manifest.settings;
   const widgetSettings = settings.widget_settings || {};
   const clockPreset = widgetSettings.clock?.preset || "classic";
@@ -723,8 +731,21 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
     return next && (next.media.type === "drive_image" || next.media.type === "drive_video") ? next.media : null;
   }, [manifest.items, item?.itemId]);
   const preloader = nextDriveMedia ? <DrivePreloader media={nextDriveMedia} device={device} /> : null;
-  const stage = <div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div>;
-  if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen">{stage}</main></>;
+  const mediaAspect = manifest.screen.orientation === "portrait" ? 9 / 16 : 16 / 9;
+  const availableMediaWidth = settings.layout_mode === "lframe" ? canvasWidth * (1 - sideWidthPercent / 100) : canvasWidth;
+  const availableMediaHeight = settings.layout_mode === "lframe" ? canvasHeight * (1 - barHeightPercent / 100) : canvasHeight;
+  let mediaWidth = Math.max(1, availableMediaWidth);
+  let mediaHeight = mediaWidth / mediaAspect;
+  if (mediaHeight > availableMediaHeight) {
+    mediaHeight = Math.max(1, availableMediaHeight);
+    mediaWidth = mediaHeight * mediaAspect;
+  }
+  const mediaFrameStyle = {
+    width: `${Math.round(mediaWidth)}px`,
+    height: `${Math.round(mediaHeight)}px`,
+  };
+  const stage = <div className="player-media-frame" style={mediaFrameStyle}><div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div></div>;
+  if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen player-media-host">{stage}</main></>;
   const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
   const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
   const showNewsDetails = Boolean(currentNews?.details) && !currentInfo;
@@ -733,7 +754,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
   return <>{preloader}<main style={layoutStyle} className={`player-lframe side-${settings.side_position} bar-${settings.bar_position} theme-${playerTheme} news-preset-${newsPreset} messages-preset-${messagesPreset} brand-${brandPosition}`}>
-    <div className="player-main">{stage}</div>
+    <div className="player-main player-media-host">{stage}</div>
     <aside>
       {settings.widgets?.business && brandPosition === "side_header" && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} position="header" />}
       {settings.widgets?.clock && <div className={`live-clock preset-${clockPreset}`}>
