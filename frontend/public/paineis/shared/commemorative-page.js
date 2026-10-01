@@ -56,23 +56,42 @@
     blackConsciousness: `
       <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
-          <linearGradient id="ancestryA" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#2d2019"/>
-            <stop offset="1" stop-color="#5a3929"/>
+          <linearGradient id="avatarSkin" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#17110e"/>
+            <stop offset="1" stop-color="#35231c"/>
           </linearGradient>
-          <linearGradient id="ancestryB" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#7d4f35"/>
-            <stop offset="1" stop-color="#a96f4c"/>
+          <linearGradient id="avatarGold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e1b66b"/>
+            <stop offset="1" stop-color="#b7833f"/>
           </linearGradient>
         </defs>
-        <circle cx="160" cy="160" r="118" fill="rgba(255,255,255,.28)"/>
+
+        <circle cx="160" cy="160" r="118" fill="rgba(255,255,255,.32)"/>
         <circle cx="160" cy="160" r="118" fill="none" stroke="var(--comm-highlight)" stroke-opacity=".16" stroke-width="8"/>
-        <path d="M82 230c10-48 32-78 68-92-7 10-10 22-10 36 0 20 7 39 22 56-26 14-51 16-80 0z" fill="url(#ancestryA)"/>
-        <path d="M132 236c-6-14-9-30-9-47 0-52 30-90 73-90 31 0 55 20 64 50-8-4-17-6-27-6-23 0-42 14-48 34-5 17-2 34 8 49-20 15-40 20-61 10z" fill="url(#ancestryB)"/>
-        <path d="M116 108c8-26 29-44 58-44 31 0 55 17 66 45-15-10-34-14-54-11-16 2-28 8-39 16-8 6-18 7-31-6z" fill="#231711"/>
-        <path d="M74 248c30 20 59 28 88 28 31 0 59-9 86-28" fill="none" stroke="var(--comm-accent-2)" stroke-width="12" stroke-linecap="round"/>
-        <circle cx="214" cy="83" r="9" fill="var(--comm-highlight)"/>
-        <circle cx="236" cy="102" r="5" fill="var(--comm-highlight)" opacity=".72"/>
+
+        <!-- cabelo afro -->
+        <circle cx="160" cy="103" r="64" fill="#15100d"/>
+        <circle cx="117" cy="101" r="31" fill="#15100d"/>
+        <circle cx="203" cy="101" r="31" fill="#15100d"/>
+        <circle cx="131" cy="72" r="30" fill="#15100d"/>
+        <circle cx="189" cy="72" r="30" fill="#15100d"/>
+
+        <!-- cabeça -->
+        <circle cx="160" cy="145" r="57" fill="url(#avatarSkin)"/>
+
+        <!-- orelhas -->
+        <circle cx="104" cy="148" r="12" fill="#2b1d17"/>
+        <circle cx="216" cy="148" r="12" fill="#2b1d17"/>
+
+        <!-- pescoço -->
+        <path d="M137 190h46v38h-46z" fill="#2b1d17"/>
+
+        <!-- ombros / busto -->
+        <path d="M72 270c7-55 39-84 88-84s81 29 88 84z" fill="url(#avatarSkin)"/>
+
+        <!-- detalhe dourado de identidade/ancestralidade -->
+        <path d="M117 229c13 14 27 21 43 21s30-7 43-21" fill="none" stroke="url(#avatarGold)" stroke-width="10" stroke-linecap="round"/>
+        <circle cx="216" cy="116" r="7" fill="url(#avatarGold)"/>
       </svg>`,
     star: `
       <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
