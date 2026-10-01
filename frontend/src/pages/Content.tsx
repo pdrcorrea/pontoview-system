@@ -221,8 +221,9 @@ export function ContentPage() {
           metadata: {
             seasonal: true,
             seasonal_window: {
-              start: campaign.start,
-              end: campaign.end,
+              start: campaign.start || null,
+              end: campaign.end || null,
+              rule: campaign.rule || null,
               period_label: campaign.periodLabel,
             },
           },
