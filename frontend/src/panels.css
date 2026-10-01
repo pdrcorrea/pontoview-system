@@ -129,3 +129,162 @@
     width: 86vw;
   }
 }
+
+
+/* Campanhas sazonais */
+.seasonal-campaigns {
+  display: grid;
+  gap: 18px;
+}
+
+.seasonal-campaigns-intro {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border: 1px solid #e5eaf0;
+  border-radius: 20px;
+  background: #fafbfd;
+}
+
+.seasonal-campaigns-intro .seasonal-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #f7e7ee;
+  color: #b72f66;
+}
+
+.seasonal-campaigns-intro h3 {
+  margin: 1px 0 5px;
+  font-size: 16px;
+  color: #233549;
+}
+
+.seasonal-campaigns-intro p {
+  margin: 0;
+  color: #6d7e91;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.seasonal-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.seasonal-card {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid #ead7df;
+  background: linear-gradient(135deg, #fffafd 0%, #fff3f7 100%);
+}
+
+.seasonal-card-art {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #ffd6e4, #f7afc8);
+}
+
+.seasonal-card-art span {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.seasonal-card-copy {
+  min-width: 0;
+}
+
+.seasonal-badge {
+  display: inline-flex;
+  margin-bottom: 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f9d7e4;
+  color: #a42759;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.seasonal-card h4 {
+  margin: 0 0 5px;
+  font-size: 18px;
+  color: #7e2148;
+}
+
+.seasonal-card p {
+  margin: 0 0 7px;
+  max-width: 58ch;
+  color: #76596a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.seasonal-card small {
+  color: #9a7888;
+  font-size: 11px;
+}
+
+.seasonal-empty {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  text-align: center;
+  border: 1px dashed #dbe3eb;
+  border-radius: 20px;
+  color: #718399;
+  background: #fbfcfd;
+}
+
+.seasonal-empty svg {
+  width: 30px;
+  height: 30px;
+}
+
+.seasonal-empty b {
+  color: #3b4d61;
+}
+
+.seasonal-empty span {
+  font-size: 12px;
+}
+
+.seasonal-note {
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: #f6f8fa;
+  color: #718399;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .seasonal-card {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .seasonal-card-art {
+    width: 72px;
+    height: 72px;
+  }
+
+  .seasonal-card .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+  }
+}
