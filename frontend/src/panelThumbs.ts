@@ -7,7 +7,13 @@ const PANEL_EMOJIS: Array<[RegExp, string]> = [
   [/\b(cultura)\b/i, "🎭"],
   [/\b(curiosidades)\b/i, "💡"],
   [/\b(saude)\b/i, "❤️‍🩹"],
+  [/\b(mes do orgulho|orgulho)\b/i, "🌈"],
+  [/\b(setembro amarelo)\b/i, "🎗️"],
   [/\b(outubro rosa)\b/i, "🎀"],
+  [/\b(novembro azul)\b/i, "🔵"],
+  [/\b(dia mundial da aids|aids)\b/i, "🎗️"],
+  [/\b(natal)\b/i, "🎄"],
+  [/\b(ano novo)\b/i, "✨"],
   [/\b(saudacoes|saudacao)\b/i, "👋"],
   [/\b(orientacoes|orientacao)\b/i, "📌"],
   [/\b(sustentabilidade)\b/i, "🌱"],
@@ -36,7 +42,7 @@ function decoratePanelThumbs() {
   document.querySelectorAll<HTMLElement>(".media-card").forEach((card) => {
     const name = card.querySelector<HTMLElement>(".media-info > b")?.textContent?.trim() || "";
     const type = card.querySelector<HTMLElement>(".media-info > span")?.textContent?.trim() || "";
-    const isPontoViewContent = type === "App PontoView" || type === "Página web";
+    const isPontoViewContent = type === "App PontoView" || type === "Campanha sazonal" || type === "Página web";
     if (!isPontoViewContent) return;
 
     const emoji = findEmoji(name);
