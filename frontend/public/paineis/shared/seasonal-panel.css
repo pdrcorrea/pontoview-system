@@ -1,0 +1,295 @@
+:root{
+  --seasonal-bg:#fff;
+  --seasonal-bg-2:#f6f8fb;
+  --seasonal-accent:#315f86;
+  --seasonal-accent-2:#244f7e;
+  --seasonal-deep:#17344f;
+  --seasonal-text:#17344f;
+  --seasonal-soft:#61768a;
+  --seasonal-chip-bg:rgba(255,255,255,.84);
+  --seasonal-chip-border:rgba(23,52,79,.08);
+  --seasonal-card-bg:rgba(255,255,255,.94);
+  --seasonal-card-border:rgba(23,52,79,.09);
+  --seasonal-shadow:rgba(23,52,79,.12);
+}
+*{box-sizing:border-box}
+html,body{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  color:var(--seasonal-text);
+  background:var(--seasonal-bg);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+body{display:block}
+.pv-seasonal{
+  position:relative;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 79% 17%,rgba(255,255,255,.88) 0 8%,transparent 18%),
+    linear-gradient(135deg,var(--seasonal-bg) 0%,var(--seasonal-bg-2) 100%);
+}
+.pv-seasonal::before,.pv-seasonal::after{
+  content:"";
+  position:absolute;
+  z-index:-3;
+  border-radius:50%;
+  pointer-events:none;
+}
+.pv-seasonal::before{
+  width:min(42%,520px);
+  aspect-ratio:1;
+  left:-13%;
+  top:-25%;
+  background:var(--seasonal-orb-1,rgba(255,255,255,.28));
+  animation:seasonalDrift 13s ease-in-out infinite alternate;
+}
+.pv-seasonal::after{
+  width:min(48%,620px);
+  aspect-ratio:1;
+  right:-18%;
+  bottom:-34%;
+  background:var(--seasonal-orb-2,rgba(255,255,255,.16));
+  animation:seasonalDrift 13s -4s ease-in-out infinite alternate-reverse;
+}
+.seasonal-wave{
+  position:absolute;
+  z-index:-2;
+  left:-6%;
+  right:-6%;
+  bottom:-17%;
+  height:40%;
+  border-radius:50% 50% 0 0;
+  background:var(--seasonal-wave,linear-gradient(180deg,transparent,rgba(255,255,255,.15),transparent));
+  transform:rotate(-2deg);
+  animation:seasonalWave 11s ease-in-out infinite alternate;
+}
+.seasonal-stage{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(260px,.82fr);
+  align-items:stretch;
+  gap:clamp(16px,2.6vmin,44px);
+  padding:clamp(22px,4vmin,64px);
+}
+.seasonal-copy{
+  min-width:0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:clamp(12px,2.1vmin,28px);
+  animation:seasonalEnterLeft .85s cubic-bezier(.2,.8,.2,1) both;
+}
+.seasonal-kicker{
+  width:max-content;
+  max-width:100%;
+  padding:7px 11px;
+  border-radius:999px;
+  background:var(--seasonal-chip-bg);
+  border:1px solid var(--seasonal-chip-border);
+  color:var(--seasonal-accent-2);
+  font-size:clamp(10px,min(.75vw,1.5vh),13px);
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.seasonal-title{
+  margin:0;
+  max-width:100%;
+  color:var(--seasonal-accent-2);
+  font-size:clamp(48px,min(8vw,13vh),146px);
+  line-height:.86;
+  letter-spacing:-.065em;
+  text-wrap:balance;
+  font-weight:800;
+}
+.seasonal-title span{display:block;color:var(--seasonal-accent)}
+.seasonal-lead{
+  max-width:30ch;
+  color:var(--seasonal-deep);
+  font-size:clamp(20px,min(2.05vw,3.8vh),38px);
+  line-height:1.13;
+  font-weight:760;
+  letter-spacing:-.025em;
+}
+.seasonal-text{
+  max-width:58ch;
+  color:var(--seasonal-soft);
+  font-size:clamp(15px,min(1.22vw,2.3vh),23px);
+  line-height:1.45;
+  font-weight:500;
+}
+.seasonal-tags{display:flex;gap:9px;flex-wrap:wrap}
+.seasonal-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  padding:9px 13px;
+  border-radius:14px;
+  color:var(--seasonal-deep);
+  background:var(--seasonal-chip-bg);
+  border:1px solid var(--seasonal-chip-border);
+  font-size:clamp(11px,min(.84vw,1.65vh),15px);
+  font-weight:650;
+}
+.seasonal-tag::before{
+  content:"";
+  width:7px;
+  height:7px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:var(--seasonal-accent);
+}
+.seasonal-visual{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) auto;
+  gap:clamp(12px,2vmin,24px);
+  align-items:center;
+  animation:seasonalEnterRight .95s .06s cubic-bezier(.2,.8,.2,1) both;
+}
+.seasonal-symbol-stage{
+  min-width:0;
+  min-height:0;
+  display:grid;
+  place-items:center;
+  align-self:stretch;
+}
+.campaign-ribbon-wrap{
+  width:min(74%,340px);
+  min-width:0;
+  animation:seasonalFloat 5.8s ease-in-out infinite;
+}
+.seasonal-symbol{
+  width:min(74%,340px);
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  animation:seasonalFloat 5.8s ease-in-out infinite;
+}
+.seasonal-symbol svg{width:100%;height:100%;display:block;overflow:visible}
+.seasonal-qr{
+  width:min(100%,440px);
+  justify-self:end;
+  min-width:0;
+  padding:clamp(14px,2vmin,22px);
+  border-radius:clamp(20px,2.2vmin,30px);
+  background:var(--seasonal-card-bg);
+  border:1px solid var(--seasonal-card-border);
+  box-shadow:0 20px 54px var(--seasonal-shadow);
+  animation:seasonalQrFloat 6s 1s ease-in-out infinite;
+}
+.seasonal-qr-grid{
+  min-width:0;
+  display:grid;
+  grid-template-columns:clamp(86px,10vmin,142px) minmax(0,1fr);
+  gap:clamp(12px,1.6vmin,18px);
+  align-items:center;
+}
+.seasonal-qr-box{
+  width:100%;
+  aspect-ratio:1;
+  padding:7px;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
+}
+.seasonal-qr-box img{display:block;width:100%;height:100%;object-fit:contain}
+.seasonal-qr-copy{min-width:0}
+.seasonal-qr b{
+  display:block;
+  margin-bottom:5px;
+  color:var(--seasonal-accent-2);
+  font-size:clamp(16px,min(1.25vw,2.2vh),23px);
+  line-height:1.05;
+}
+.seasonal-qr p{
+  margin:0 0 8px;
+  color:var(--seasonal-soft);
+  font-size:clamp(11px,min(.82vw,1.55vh),15px);
+  line-height:1.35;
+}
+.seasonal-qr small{
+  display:block;
+  color:var(--seasonal-soft);
+  font-size:clamp(10px,min(.72vw,1.35vh),13px);
+  font-weight:650;
+}
+.seasonal-visual.no-qr{
+  grid-template-rows:1fr;
+}
+.seasonal-visual.no-qr .seasonal-symbol{width:min(82%,430px)}
+@keyframes seasonalEnterLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+@keyframes seasonalEnterRight{from{opacity:0;transform:translateX(30px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes seasonalDrift{to{transform:translate(16px,14px) scale(1.04)}}
+@keyframes seasonalWave{to{transform:rotate(-.6deg) translateY(-8px)}}
+@keyframes seasonalFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.015)}}
+@keyframes seasonalQrFloat{50%{transform:translateY(-5px)}}
+@media(max-aspect-ratio:1.45/1){
+  .seasonal-stage{
+    grid-template-columns:minmax(0,1.08fr) minmax(230px,.92fr);
+    padding:clamp(18px,3vmin,38px);
+    gap:clamp(12px,2vmin,26px);
+  }
+  .seasonal-copy{gap:clamp(10px,1.7vmin,20px)}
+  .seasonal-title{font-size:clamp(44px,min(7vw,11.5vh),106px)}
+  .seasonal-lead{font-size:clamp(18px,min(1.85vw,3.1vh),29px)}
+  .seasonal-text{font-size:clamp(14px,min(1.04vw,1.8vh),19px)}
+  .seasonal-tag{padding:7px 10px}
+  .campaign-ribbon-wrap,.seasonal-symbol{width:min(68%,260px)}
+  .seasonal-qr{width:min(100%,360px)}
+}
+@media(max-width:760px),(max-aspect-ratio:4/5){
+  html,body{overflow:auto}
+  .pv-seasonal{height:auto;min-height:100%}
+  .seasonal-stage{
+    height:auto;
+    min-height:100%;
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto;
+    padding:22px;
+  }
+  .seasonal-copy{justify-content:flex-start;gap:13px}
+  .seasonal-title{font-size:clamp(52px,16vw,90px)}
+  .seasonal-lead{font-size:clamp(20px,5vw,31px)}
+  .seasonal-text{font-size:clamp(15px,3.6vw,20px)}
+  .seasonal-visual{
+    height:auto;
+    grid-template-columns:minmax(120px,.65fr) minmax(0,1.35fr);
+    grid-template-rows:auto;
+    gap:14px;
+  }
+  .seasonal-visual.no-qr{grid-template-columns:1fr}
+  .campaign-ribbon-wrap,.seasonal-symbol{width:min(100%,210px)}
+  .seasonal-visual.no-qr .seasonal-symbol{width:min(70%,300px)}
+  .seasonal-qr{width:100%}
+  .seasonal-qr-grid{grid-template-columns:92px minmax(0,1fr)}
+}
+@media(max-height:560px) and (orientation:landscape){
+  .seasonal-stage{padding:16px 22px;gap:18px}
+  .seasonal-copy{gap:8px}
+  .seasonal-kicker{padding:5px 8px;font-size:9px}
+  .seasonal-title{font-size:clamp(40px,10.5vh,72px)}
+  .seasonal-lead{font-size:clamp(16px,4vh,23px)}
+  .seasonal-text{font-size:clamp(12px,2.75vh,16px);line-height:1.35}
+  .seasonal-tag{padding:6px 9px;font-size:11px}
+  .campaign-ribbon-wrap,.seasonal-symbol{width:min(55%,180px)}
+  .seasonal-visual.no-qr .seasonal-symbol{width:min(65%,230px)}
+  .seasonal-qr{padding:11px 12px;width:min(100%,330px)}
+  .seasonal-qr-grid{grid-template-columns:78px minmax(0,1fr);gap:10px}
+  .seasonal-qr p{margin-bottom:5px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
