@@ -42,6 +42,7 @@ import {
   SEASONAL_CAMPAIGNS,
   SEASONAL_GROUP_LABELS,
   isSeasonalCampaignActive,
+  seasonalCampaignByKey,
   type SeasonalCampaign,
   type SeasonalContentGroup,
 } from "../seasonalCampaigns";
@@ -702,9 +703,9 @@ export function ContentPage() {
                 <b>{item.name}</b>
                 <span>{
                   item.type === "app" && item.metadata?.seasonal
-                    ? item.metadata?.seasonal_group === "holiday"
+                    ? (item.metadata?.seasonal_group || seasonalCampaignByKey(item.app_key)?.group) === "holiday"
                       ? "Feriado"
-                      : item.metadata?.seasonal_group === "commemorative"
+                      : (item.metadata?.seasonal_group || seasonalCampaignByKey(item.app_key)?.group) === "commemorative"
                         ? "Data comemorativa"
                         : "Campanha sazonal"
                     : typeLabel[item.type]
@@ -977,7 +978,7 @@ function SeasonalCampaignPicker({
 
   const renderCard = (campaign: SeasonalCampaign, isActive: boolean) => (
     <article
-      className={isActive ? "seasonal-card active" : "seasonal-card"}
+      className={isActive ? `seasonal-card active ${campaign.group}` : `seasonal-card ${campaign.group}`}
       key={campaign.key}
     >
       <div className="seasonal-card-art" aria-hidden="true">
