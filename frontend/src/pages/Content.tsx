@@ -158,7 +158,7 @@ export function ContentPage() {
           type: "app",
           app_key: data.app_key,
           duration_seconds: Number(data.duration || 30),
-          online_required: ["news", "busboard"].includes(data.app_key),
+          online_required: ["news", "busboard", "outubro_rosa"].includes(data.app_key),
           name: data.name || appName(data.app_key),
         };
       if (source === "message")
