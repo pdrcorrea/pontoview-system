@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import {
   AlertTriangle,
@@ -37,6 +37,25 @@ const PLAYER_RUNTIME_STYLE = `
   .pv-orientation-canvas .player-fullscreen { min-height: 100% !important; }
   .pv-stage-transition { width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; background: #000; animation: pv-stage-in 560ms cubic-bezier(.22,.61,.36,1) both; will-change: opacity, transform; }
   .pv-stage-transition.cut { animation: none; }
+  .player-main, .pv-stage-transition, .timed-stage, .drive-stage, .youtube-stage { width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
+  .player-main video, .player-main > video, .timed-stage > img {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    background: #000;
+  }
+  .player-main iframe, .timed-stage > iframe, .youtube-stage iframe {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border: 0 !important;
+  }
   @keyframes pv-stage-in { from { opacity: 0; transform: scale(1.006); } to { opacity: 1; transform: scale(1); } }
   @keyframes pv-side-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .pv-player-power-off { position: fixed; inset: 0; z-index: 99999; width: 100vw; height: 100vh; background: #000; cursor: none; }
@@ -610,10 +629,19 @@ export function PlayerPage() {
   if (!operating) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
 
   const configuredPortrait = manifest.screen.orientation === "portrait";
-  const viewportPortrait = viewport.height >= viewport.width;
-  const rotateCanvas = configuredPortrait !== viewportPortrait;
-  const canvasStyle = rotateCanvas ? { width: `${viewport.height}px`, height: `${viewport.width}px`, transform: "translate(-50%, -50%) rotate(90deg)" } : { width: `${viewport.width}px`, height: `${viewport.height}px`, transform: "translate(-50%, -50%)" };
-  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${rotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} onEnd={handleEnd} onError={handleError} /></div></div>;
+  const logicalAspect = configuredPortrait ? 9 / 16 : 16 / 9;
+  let canvasWidth = viewport.width;
+  let canvasHeight = canvasWidth / logicalAspect;
+  if (canvasHeight > viewport.height) {
+    canvasHeight = viewport.height;
+    canvasWidth = canvasHeight * logicalAspect;
+  }
+  const canvasStyle = {
+    width: `${Math.round(canvasWidth)}px`,
+    height: `${Math.round(canvasHeight)}px`,
+    transform: "translate(-50%, -50%)",
+  };
+  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} onEnd={handleEnd} onError={handleError} /></div></div>;
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
@@ -629,7 +657,13 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   const messagesPreset = widgetSettings.messages?.preset || "highlight";
   const brandPreset = widgetSettings.business?.preset || "logo";
   const brandPosition = widgetSettings.business?.position || "side_footer";
-  const playerTheme = settings.theme || "light";
+  const playerTheme = settings.theme === "dark" ? "dark" : "light";
+  const sideWidthPercent = clampPlayerPercent(settings.side_width_percent, 24, 16, 38);
+  const barHeightPercent = clampPlayerPercent(settings.bar_height_percent, 15, 8, 24);
+  const layoutStyle = {
+    "--pv-side-size": `${sideWidthPercent}%`,
+    "--pv-bar-size": `${barHeightPercent}%`,
+  } as CSSProperties;
   const [clock, setClock] = useState(new Date());
   const [newsIndex, setNewsIndex] = useState(0);
   const [infoIndex, setInfoIndex] = useState(0);
@@ -698,7 +732,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
-  return <>{preloader}<main className={`player-lframe side-${settings.side_position} bar-${settings.bar_position} theme-${playerTheme} news-preset-${newsPreset} messages-preset-${messagesPreset} brand-${brandPosition}`}>
+  return <>{preloader}<main style={layoutStyle} className={`player-lframe side-${settings.side_position} bar-${settings.bar_position} theme-${playerTheme} news-preset-${newsPreset} messages-preset-${messagesPreset} brand-${brandPosition}`}>
     <div className="player-main">{stage}</div>
     <aside>
       {settings.widgets?.business && brandPosition === "side_header" && <CompanySide logoUrl={logoUrl} name={manifest.organization.displayName} preset={brandPreset} position="header" />}
@@ -738,6 +772,12 @@ function PlayerLayout({ manifest, item, device, playbackCycle, onEnd, onError }:
       )}
     </footer>
   </main></>;
+}
+
+function clampPlayerPercent(value: unknown, fallback: number, min: number, max: number) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(max, Math.max(min, numeric));
 }
 
 function SideMessage({ message }: { message: PlayerMessage }) {
