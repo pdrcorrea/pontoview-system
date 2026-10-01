@@ -7,6 +7,7 @@ const PANEL_EMOJIS: Array<[RegExp, string]> = [
   [/\b(cultura)\b/i, "🎭"],
   [/\b(curiosidades)\b/i, "💡"],
   [/\b(saude)\b/i, "❤️‍🩹"],
+  [/\b(outubro rosa)\b/i, "🎀"],
   [/\b(saudacoes|saudacao)\b/i, "👋"],
   [/\b(orientacoes|orientacao)\b/i, "📌"],
   [/\b(sustentabilidade)\b/i, "🌱"],
