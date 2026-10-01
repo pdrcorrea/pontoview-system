@@ -786,7 +786,7 @@ export function ContentPage() {
               </div>
               <div className="media-info">
                 <b>{item.name}</b>
-                <span>{typeLabel[item.type]}</span>
+                <span>{item.type === "app" && item.metadata?.seasonal ? "Campanha sazonal" : typeLabel[item.type]}</span>
                 <small
                   className={
                     item.online_required ? "requires-net" : "offline-ready"
