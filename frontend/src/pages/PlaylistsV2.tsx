@@ -66,6 +66,7 @@ const PANEL_EMOJIS: Array<[string[], string]> = [
   [["menu board", "menu_board", "cardapio"], "🍽️"],
   [["mensagens", "messages", "comunicado"], "💬"],
   [["busboard", "onibus", "rodoviaria"], "🚌"],
+  [["outubro rosa", "outubro_rosa"], "🎀"],
 ];
 
 function normalizeText(value?: string | null) {
@@ -227,22 +228,41 @@ export function PlaylistsPage() {
   };
 
   const openEditor = async (playlist: Playlist) => {
+    if (!organization) return;
     setEditing(playlist);
     setBusy(true);
     setError(null);
     setLibrarySearch("");
-    const result = await supabase
-      .from("playlist_items")
-      .select(
-        "id,media_id,position,duration_seconds,settings,media(name,type,duration_seconds)",
-      )
-      .eq("playlist_id", playlist.id)
-      .order("position");
+
+    const [itemsResult, mediaResult] = await Promise.all([
+      supabase
+        .from("playlist_items")
+        .select(
+          "id,media_id,position,duration_seconds,settings,media(name,type,duration_seconds)",
+        )
+        .eq("playlist_id", playlist.id)
+        .order("position"),
+      supabase
+        .from("media")
+        .select("*")
+        .eq("organization_id", organization.id)
+        .eq("status", "ready")
+        .order("name"),
+    ]);
+
     setBusy(false);
-    if (result.error) setError(result.error.message);
-    else {
+
+    if (mediaResult.error) {
+      setError(mediaResult.error.message);
+    } else {
+      setMedia((mediaResult.data || []) as Media[]);
+    }
+
+    if (itemsResult.error) {
+      setError(itemsResult.error.message);
+    } else {
       setEditorItems(
-        (result.data || []).map((row: any) => ({
+        (itemsResult.data || []).map((row: any) => ({
           id: row.id,
           mediaId: row.media_id,
           name: row.media?.name || "Conteúdo",
