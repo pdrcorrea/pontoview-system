@@ -76,9 +76,18 @@ async function mp(path: string, method = "GET", body?: unknown) {
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
     console.error("Mercado Pago error", response.status, json);
+    if (response.status === 400)
+      throw new HttpError(502, "MERCADO_PAGO_REQUEST_INVALID");
     throw new HttpError(502, `MERCADO_PAGO_${response.status}`);
   }
   return json;
+}
+
+function mercadoPagoDate(value: string | null | undefined) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime()))
+    throw new HttpError(500, "INVALID_BILLING_DATE");
+  return date.toISOString();
 }
 
 type Usage = {
@@ -279,9 +288,13 @@ Deno.serve(async (req) => {
 
     if (body.action === "cancel") {
       const providerId = String(subscription.provider_subscription_id || "");
+      const providerStatus = String(subscription.provider_status || "").toLowerCase();
 
       if (usage.trialActive) {
-        if (providerId) {
+        if (
+          providerId &&
+          ["authorized", "payment_approved", "paused"].includes(providerStatus)
+        ) {
           await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
             status: "canceled",
           });
@@ -294,6 +307,8 @@ Deno.serve(async (req) => {
             canceled_at: null,
             provider_status: providerId ? "canceled" : subscription.provider_status,
             provider_plan_id: providerId ? null : subscription.provider_plan_id,
+            provider_subscription_id:
+              providerStatus === "pending" ? null : subscription.provider_subscription_id,
             last_synced_amount_cents: 0,
           })
           .eq("id", subscription.id);
@@ -351,18 +366,11 @@ Deno.serve(async (req) => {
       return reply({ checkoutUrl: `${returnUrl}?billing=active` });
     }
 
-    if (providerId && providerStatus === "pending") {
-      try {
-        await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
-          status: "canceled",
-        });
-      } catch (error) {
-        console.error("Could not cancel legacy pending preapproval", error);
-      }
-    }
-
+    // Pending subscriptions from the legacy price model cannot always transition
+    // to canceled in Mercado Pago. They are harmless without an authorized payment
+    // method, so create a fresh checkout and replace the local provider reference.
     const payload = {
-      reason: "PontoView Telas - telas vinculadas",
+      reason: "PontoView Telas",
       external_reference: `screens:${organizationId}`,
       payer_email: user.email,
       back_url: returnUrl,
@@ -370,7 +378,7 @@ Deno.serve(async (req) => {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        start_date: usage.periodEnd,
+        start_date: mercadoPagoDate(usage.periodEnd),
         transaction_amount: usage.projectedAmountCents / 100,
         currency_id: "BRL",
       },
