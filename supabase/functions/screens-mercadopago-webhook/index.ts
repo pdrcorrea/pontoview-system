@@ -154,9 +154,17 @@ async function syncPreapproval(data: any) {
   };
 
   if (raw === "cancelled" || raw === "canceled") {
-    update.status = "canceled";
-    update.cancel_at_period_end = false;
-    update.canceled_at = now.toISOString();
+    if (!trialEnded) {
+      update.status = "trial";
+      update.cancel_at_period_end = false;
+      update.canceled_at = null;
+      update.provider_plan_id = null;
+      update.last_synced_amount_cents = 0;
+    } else {
+      update.status = "canceled";
+      update.cancel_at_period_end = false;
+      update.canceled_at = now.toISOString();
+    }
   } else if (raw === "authorized") {
     if (trialEnded) update.status = "active";
     update.grace_period_ends_at = null;
