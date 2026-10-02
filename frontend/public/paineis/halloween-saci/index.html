@@ -419,6 +419,86 @@ body.saci .turn-hint{
   .text{font-size:clamp(14px,min(1.04vw,1.8vh),19px)}
   .symbol-wrap{width:min(68%,270px)}
 }
+@media(min-width:761px) and (max-aspect-ratio:4/5){
+  html,body{overflow:hidden}
+  .panel{
+    height:100%;
+    min-height:0;
+  }
+  .stage{
+    height:100%;
+    min-height:0;
+    grid-template-columns:1fr;
+    grid-template-rows:minmax(0,1.08fr) minmax(0,.92fr);
+    align-items:stretch;
+    padding:clamp(42px,5vw,68px);
+    gap:clamp(30px,3.6vh,56px);
+  }
+  .copy{
+    min-height:0;
+    align-self:stretch;
+    display:grid;
+    align-items:center;
+  }
+  .phase{
+    gap:clamp(16px,1.9vh,27px);
+  }
+  .kicker{
+    padding:9px 13px;
+    font-size:clamp(12px,1.35vw,16px);
+  }
+  .title{
+    max-width:8ch;
+    font-size:clamp(86px,14vw,144px);
+    line-height:.82;
+  }
+  .lead{
+    max-width:26ch;
+    font-size:clamp(28px,3.8vw,42px);
+    line-height:1.1;
+  }
+  .text{
+    max-width:39ch;
+    font-size:clamp(19px,2.3vw,27px);
+    line-height:1.42;
+  }
+  .tags{
+    gap:11px;
+  }
+  .tag{
+    padding:11px 15px;
+    border-radius:16px;
+    font-size:clamp(14px,1.6vw,18px);
+  }
+  .tag::before{
+    width:9px;
+    height:9px;
+  }
+  .visual{
+    height:100%;
+    min-height:0;
+    align-self:stretch;
+  }
+  .symbol-wrap{
+    width:min(64vw,470px);
+  }
+  .saci-wind{
+    width:min(66vw,490px);
+  }
+  .moon{
+    width:min(18vw,150px);
+    top:5%;
+    right:8%;
+  }
+  .turn-hint{
+    right:clamp(28px,3.2vw,46px);
+    bottom:clamp(28px,3.2vw,46px);
+    max-width:min(66vw,560px);
+    padding:15px 18px;
+    font-size:clamp(13px,1.45vw,17px);
+  }
+}
+
 @media(max-width:760px),(max-aspect-ratio:4/5){
   html,body{overflow:auto}
   .panel{height:auto;min-height:100%}
