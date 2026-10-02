@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Clock3, CreditCard, Monitor } from "lucide-react";
+import { Check, CreditCard, Monitor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import {
@@ -17,26 +17,16 @@ type Subscription = {
   provider_status: string | null;
   trial_ends_at: string | null;
   current_period_end: string | null;
-  grace_period_ends_at: string | null;
   cancel_at_period_end: boolean;
-  unit_price_cents: number;
-  projected_amount_cents: number;
 };
 
 type Usage = {
-  billingModel: string;
   unitPriceCents: number;
   activeScreens: number;
   trialEndsAt: string | null;
   trialActive: boolean;
   trialDaysRemaining: number;
-  periodStart: string | null;
   periodEnd: string | null;
-  periodDays: number;
-  screenDaysAccrued: number;
-  screenDaysProjected: number;
-  accruedAmountCents: number;
-  projectedAmountCents: number;
 };
 
 type Payment = {
@@ -44,8 +34,6 @@ type Payment = {
   status: string;
   amount_cents: number;
   paid_at: string | null;
-  period_start: string | null;
-  period_end: string | null;
   created_at: string;
 };
 
@@ -116,8 +104,8 @@ export function BillingPage() {
   const cancel = async () => {
     if (!organization || !subscription || !usage) return;
     const message = usage.trialActive
-      ? "Cancelar a cobrança recorrente? Seu período gratuito continuará disponível até o fim do teste."
-      : "Cancelar a cobrança recorrente? O ciclo já utilizado será fechado normalmente e não haverá renovação depois dele.";
+      ? "Cancelar a cobrança recorrente? Seu teste gratuito continuará disponível até o fim."
+      : "Cancelar a assinatura ao final do ciclo atual?";
     if (!confirm(message)) return;
 
     setBusy(true);
@@ -132,7 +120,7 @@ export function BillingPage() {
       setError(
         cause instanceof Error
           ? friendlyBillingError(cause.message)
-          : "Não foi possível cancelar a cobrança recorrente.",
+          : "Não foi possível cancelar a assinatura.",
       );
     } finally {
       setBusy(false);
@@ -145,7 +133,7 @@ export function BillingPage() {
         <PageHead
           eyebrow="Financeiro"
           title="PontoView Telas"
-          text="Carregando sua cobrança por uso."
+          text="Carregando informações da assinatura."
         />
         <div className="panel"><p>Carregando informações financeiras…</p></div>
       </>
@@ -169,16 +157,14 @@ export function BillingPage() {
     subscription?.status === "active"
   );
   const nextDate = usage?.trialActive ? usage.trialEndsAt : usage?.periodEnd;
-  const periodProgress = usage?.periodDays
-    ? Math.min(100, Math.round((usage.screenDaysAccrued / Math.max(1, usage.screenDaysProjected)) * 100))
-    : 0;
+  const monthlyValue = (usage?.activeScreens || 0) * (usage?.unitPriceCents || 0);
 
   return (
     <>
       <PageHead
         eyebrow="Financeiro"
         title="PontoView Telas"
-        text="Uma cobrança simples: R$ 29 por tela ao mês, proporcional aos dias em que ela permanecer vinculada."
+        text="Gerencie sua assinatura e seus pagamentos."
       />
       <FormMessage error={error} />
 
@@ -186,7 +172,7 @@ export function BillingPage() {
         <>
           <div className="billing-hero panel">
             <div>
-              <span className="eyebrow">COBRANÇA POR USO</span>
+              <span className="eyebrow">ASSINATURA</span>
               <h2>PontoView Telas</h2>
               {usage.trialActive && (
                 <span className="promo-badge">5 DIAS GRÁTIS</span>
@@ -195,27 +181,23 @@ export function BillingPage() {
                 <strong>{money(usage.unitPriceCents)}</strong>
                 <span>/ tela / mês</span>
               </div>
-              <small>
-                O valor é proporcional aos dias de vinculação. Uma tela offline continua vinculada e, portanto, continua na medição.
-              </small>
+              <small>Adicione ou remova telas quando precisar.</small>
             </div>
 
             <div className="billing-status">
               <span className={`status ${statusActive ? "active" : "offline-status"}`}>
                 <Check /> {status}
               </span>
-              <small>{usage.trialActive ? "Fim do período gratuito" : "Fechamento do ciclo"}</small>
+              <small>{usage.trialActive ? "Teste grátis até" : "Próxima cobrança"}</small>
               <b>{formatDate(nextDate)}</b>
 
               {usage.trialActive && (
-                <small style={{ marginTop: 0 }}>
-                  {trialCopy(usage.trialDaysRemaining)}. Nenhuma diária do teste será cobrada depois.
-                </small>
+                <small style={{ marginTop: 0 }}>{trialCopy(usage.trialDaysRemaining)}</small>
               )}
 
               {subscription.cancel_at_period_end && (
                 <small className="pending-plan-note">
-                  Cancelamento agendado para o fim deste ciclo.
+                  A assinatura será encerrada ao final do ciclo atual.
                 </small>
               )}
             </div>
@@ -225,29 +207,24 @@ export function BillingPage() {
             <section className="panel">
               <div className="panel-title">
                 <div>
-                  <h2>Uso do ciclo</h2>
-                  <p>A conta é feita por tela × dia de vinculação.</p>
+                  <h2>Sua assinatura</h2>
+                  <p>Resumo das telas vinculadas à sua conta.</p>
                 </div>
                 <Monitor />
               </div>
 
               <div className="payment-line">
-                <span><b>Telas vinculadas agora</b><small>Online ou offline</small></span>
+                <span><b>Telas vinculadas</b><small>Telas ativas na sua conta</small></span>
                 <strong>{usage.activeScreens}</strong>
               </div>
               <div className="payment-line">
-                <span><b>Dias de tela acumulados</b><small>Screen-days no período atual</small></span>
-                <strong>{usage.trialActive ? "Grátis" : usage.screenDaysAccrued}</strong>
+                <span><b>Valor mensal</b><small>Com a quantidade atual de telas</small></span>
+                <strong>{money(monthlyValue)}</strong>
               </div>
-              <div className="payment-line">
-                <span><b>{usage.trialActive ? "Estimativa do 1º ciclo pago" : "Acumulado até hoje"}</b><small>{usage.trialActive ? "Se as telas atuais permanecerem vinculadas" : "Valor proporcional já utilizado"}</small></span>
-                <strong>{money(usage.trialActive ? usage.projectedAmountCents : usage.accruedAmountCents)}</strong>
-              </div>
-
-              {!usage.trialActive && usage.screenDaysProjected > 0 && (
-                <div className="usage">
-                  <div><span>Consumo do ciclo</span><b>{usage.screenDaysAccrued} de {usage.screenDaysProjected} screen-days projetados</b></div>
-                  <div className="usage-bar"><i style={{ width: `${periodProgress}%` }} /></div>
+              {usage.trialActive && (
+                <div className="payment-line">
+                  <span><b>Período gratuito</b><small>Você ainda não será cobrado</small></span>
+                  <strong>R$ 0,00</strong>
                 </div>
               )}
             </section>
@@ -256,7 +233,7 @@ export function BillingPage() {
               <div className="panel-title">
                 <div>
                   <h2>Pagamento</h2>
-                  <p>A medição é diária, mas o fechamento acontece uma vez por mês.</p>
+                  <p>Pagamento seguro pelo Mercado Pago.</p>
                 </div>
                 <CreditCard />
               </div>
@@ -265,7 +242,7 @@ export function BillingPage() {
                 <span className="mp-mark">MP</span>
                 <span>
                   <b>{providerConfigured ? "Mercado Pago configurado" : providerPending ? "Configuração pendente" : "Forma de pagamento não configurada"}</b>
-                  <small>{providerConfigured ? "A cobrança acompanha automaticamente as telas vinculadas." : "Cadastre o pagamento para continuar após o período gratuito."}</small>
+                  <small>{providerConfigured ? "Sua forma de pagamento está pronta." : "Cadastre uma forma de pagamento para manter a assinatura ativa."}</small>
                 </span>
               </div>
 
@@ -283,55 +260,19 @@ export function BillingPage() {
 
               {providerConfigured && !subscription.cancel_at_period_end && role === "owner" && (
                 <AsyncButton busy={busy} className="btn secondary full" onClick={() => void cancel()}>
-                  Cancelar cobrança recorrente
+                  Cancelar assinatura
                 </AsyncButton>
               )}
             </section>
           </div>
-
-          <section className="panel history">
-            <div className="panel-title">
-              <div>
-                <h2>Como a cobrança funciona</h2>
-                <p>O estado online da TV nunca altera o valor. O que importa é o vínculo.</p>
-              </div>
-              <Clock3 />
-            </div>
-            <div className="table">
-              <div className="tr th">
-                <span>Evento</span>
-                <span>O que acontece</span>
-                <span>Medição</span>
-                <span>Resultado</span>
-              </div>
-              <div className="tr">
-                <span>Vincular tela</span>
-                <span>A tela entra na conta naquele dia.</span>
-                <span>1 screen-day</span>
-                <span>Começa a medir</span>
-              </div>
-              <div className="tr">
-                <span>TV offline</span>
-                <span>O vínculo com a conta continua existindo.</span>
-                <span>Normal</span>
-                <span>Continua medindo</span>
-              </div>
-              <div className="tr">
-                <span>Desvincular</span>
-                <span>O dia da desvinculação conta uma única vez.</span>
-                <span>Último dia</span>
-                <span>Para de medir</span>
-              </div>
-            </div>
-          </section>
         </>
       )}
 
       <section className="panel history">
         <div className="panel-title">
           <div>
-            <h2>Pagamentos</h2>
-            <p>Histórico dos fechamentos mensais.</p>
+            <h2>Histórico de pagamentos</h2>
+            <p>Últimos pagamentos da sua assinatura.</p>
           </div>
         </div>
         <div className="table">
@@ -345,7 +286,7 @@ export function BillingPage() {
             payments.map((payment) => (
               <div className="tr" key={payment.id}>
                 <span>{formatDate(payment.paid_at || payment.created_at)}</span>
-                <span>{paymentPeriod(payment)}</span>
+                <span>PontoView Telas</span>
                 <span>{money(payment.amount_cents)}</span>
                 <span>{paymentStatus(payment.status)}</span>
               </div>
@@ -379,11 +320,6 @@ function trialCopy(days: number) {
   return `Restam ${days} dias grátis`;
 }
 
-function paymentPeriod(payment: Payment) {
-  if (!payment.period_start || !payment.period_end) return "PontoView Telas";
-  return `Telas vinculadas · ${formatDate(payment.period_start)} a ${formatDate(payment.period_end)}`;
-}
-
 function money(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -406,9 +342,11 @@ function paymentStatus(value: string) {
 
 function friendlyBillingError(value: string) {
   if (value.includes("CONNECT_A_SCREEN_FIRST"))
-    return "Conecte pelo menos uma tela antes de cadastrar a cobrança.";
+    return "Conecte pelo menos uma tela antes de cadastrar a forma de pagamento.";
   if (value.includes("MERCADO_PAGO_NOT_CONFIGURED"))
     return "O Mercado Pago ainda não está configurado para esta conta.";
+  if (value.includes("MERCADO_PAGO_REQUEST_INVALID") || value.includes("MERCADO_PAGO_400"))
+    return "Não foi possível iniciar o Mercado Pago. Tente novamente em instantes.";
   if (value.includes("SUBSCRIPTION_NOT_FOUND"))
     return "Não encontramos a assinatura desta empresa.";
   return value;
