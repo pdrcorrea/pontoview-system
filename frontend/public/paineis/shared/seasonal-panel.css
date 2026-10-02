@@ -252,7 +252,7 @@ body{display:block}
   .campaign-ribbon-wrap,.seasonal-symbol{width:min(68%,260px)}
   .seasonal-qr{width:min(100%,360px)}
 }
-@media(max-width:760px),(max-aspect-ratio:4/5){
+@media(max-width:760px){
   html,body{overflow:auto}
   .pv-seasonal{height:auto;min-height:100%}
   .seasonal-stage{
