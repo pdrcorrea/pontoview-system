@@ -90,6 +90,12 @@ function mercadoPagoDate(value: string | null | undefined) {
   return date.toISOString();
 }
 
+function sameInstant(a: unknown, b: string | null | undefined) {
+  const left = typeof a === "string" ? new Date(a).getTime() : Number.NaN;
+  const right = b ? new Date(b).getTime() : Number.NaN;
+  return Number.isFinite(left) && Number.isFinite(right) && Math.abs(left - right) < 60000;
+}
+
 type Usage = {
   billingModel: string;
   unitPriceCents: number;
@@ -347,6 +353,7 @@ Deno.serve(async (req) => {
     const returnUrl = CANONICAL_RETURN_URL;
     const providerId = String(subscription.provider_subscription_id || "");
     const providerStatus = String(subscription.provider_status || "").toLowerCase();
+    const expectedStartDate = usage.trialActive ? usage.trialEndsAt : null;
 
     if (
       providerId &&
@@ -355,7 +362,12 @@ Deno.serve(async (req) => {
     ) {
       await syncProviderAmount(subscription, usage);
       const existing = await mp(`/preapproval/${encodeURIComponent(providerId)}`);
-      if (existing.init_point) return reply({ checkoutUrl: existing.init_point });
+      const existingStartDate = existing?.auto_recurring?.start_date;
+      const reusable = usage.trialActive
+        ? sameInstant(existingStartDate, expectedStartDate)
+        : !existingStartDate || new Date(existingStartDate).getTime() <= Date.now() + 60000;
+      if (reusable && existing.init_point)
+        return reply({ checkoutUrl: existing.init_point });
     }
 
     if (
@@ -366,22 +378,26 @@ Deno.serve(async (req) => {
       return reply({ checkoutUrl: `${returnUrl}?billing=active` });
     }
 
-    // Pending subscriptions from the legacy price model cannot always transition
-    // to canceled in Mercado Pago. They are harmless without an authorized payment
-    // method, so create a fresh checkout and replace the local provider reference.
+    // Pending subscriptions with an obsolete recurrence date are left untouched in
+    // Mercado Pago. Without an authorized payment method they do not charge. A new
+    // checkout replaces the local provider reference, and stale webhooks are ignored.
+    const autoRecurring: Record<string, unknown> = {
+      frequency: 1,
+      frequency_type: "months",
+      transaction_amount: usage.projectedAmountCents / 100,
+      currency_id: "BRL",
+    };
+    if (usage.trialActive) {
+      autoRecurring.start_date = mercadoPagoDate(usage.trialEndsAt);
+    }
+
     const payload = {
       reason: "PontoView Telas",
       external_reference: `screens:${organizationId}`,
       payer_email: user.email,
       back_url: returnUrl,
       notification_url: `${SUPABASE_URL}/functions/v1/screens-mercadopago-webhook`,
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
-        start_date: mercadoPagoDate(usage.periodEnd),
-        transaction_amount: usage.projectedAmountCents / 100,
-        currency_id: "BRL",
-      },
+      auto_recurring: autoRecurring,
       status: "pending",
     };
 
