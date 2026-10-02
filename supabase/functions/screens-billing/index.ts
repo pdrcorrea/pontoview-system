@@ -8,6 +8,7 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
 });
 const API = "https://api.mercadopago.com";
 const CANONICAL_RETURN_URL = "https://telas.pontoview.com.br/financeiro";
+const BILLING_MODEL_VERSION = "screen-day-v1";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type",
@@ -57,6 +58,7 @@ async function requireOrgRole(
     .maybeSingle();
   if (!data || !roles.includes(data.role))
     throw new HttpError(403, "ACCESS_DENIED");
+  return data.role as string;
 }
 
 async function mp(path: string, method = "GET", body?: unknown) {
@@ -67,9 +69,7 @@ async function mp(path: string, method = "GET", body?: unknown) {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      ...(method === "POST"
-        ? { "X-Idempotency-Key": crypto.randomUUID() }
-        : {}),
+      ...(method === "POST" ? { "X-Idempotency-Key": crypto.randomUUID() } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -81,144 +81,288 @@ async function mp(path: string, method = "GET", body?: unknown) {
   return json;
 }
 
+type Usage = {
+  billingModel: string;
+  unitPriceCents: number;
+  activeScreens: number;
+  trialEndsAt: string;
+  trialActive: boolean;
+  trialDaysRemaining: number;
+  periodStart: string;
+  periodEnd: string;
+  periodDays: number;
+  screenDaysAccrued: number;
+  screenDaysProjected: number;
+  accruedAmountCents: number;
+  projectedAmountCents: number;
+};
+
+async function getUsage(organizationId: string) {
+  const { data, error } = await admin.rpc("screen_billing_summary", {
+    p_organization_id: organizationId,
+  });
+  if (error || !data) {
+    console.error("Billing summary failed", error);
+    throw new HttpError(500, "BILLING_SUMMARY_FAILED");
+  }
+  return data as Usage;
+}
+
+async function getSubscription(organizationId: string) {
+  const { data, error } = await admin
+    .from("screen_subscriptions")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .single();
+  if (error || !data) {
+    console.error("Subscription lookup failed", error);
+    throw new HttpError(404, "SUBSCRIPTION_NOT_FOUND");
+  }
+  return data;
+}
+
+async function syncProviderAmount(subscription: any, usage: Usage) {
+  const amountCents = Math.max(0, Number(usage.projectedAmountCents || 0));
+
+  await admin
+    .from("screen_subscriptions")
+    .update({ projected_amount_cents: amountCents })
+    .eq("id", subscription.id);
+
+  const providerId = String(subscription.provider_subscription_id || "");
+  const providerStatus = String(subscription.provider_status || "").toLowerCase();
+  const managedProvider = subscription.provider_plan_id === BILLING_MODEL_VERSION;
+  if (
+    !providerId ||
+    !managedProvider ||
+    ["canceled", "cancelled"].includes(providerStatus)
+  ) {
+    return { amountCents, providerSynced: false };
+  }
+
+  const previouslySynced = Number(subscription.last_synced_amount_cents || 0);
+
+  if (amountCents <= 0) {
+    if (["authorized", "payment_approved"].includes(providerStatus)) {
+      const updated = await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
+        status: "paused",
+      });
+      await admin
+        .from("screen_subscriptions")
+        .update({
+          last_synced_amount_cents: 0,
+          provider_status: String(updated.status || "paused"),
+        })
+        .eq("id", subscription.id);
+      return { amountCents, providerSynced: true };
+    }
+    return { amountCents, providerSynced: false };
+  }
+
+  const needsAmountUpdate = previouslySynced !== amountCents;
+  const needsResume = providerStatus === "paused";
+  if (!needsAmountUpdate && !needsResume) {
+    return { amountCents, providerSynced: false };
+  }
+
+  const payload: Record<string, unknown> = {
+    auto_recurring: {
+      transaction_amount: amountCents / 100,
+      currency_id: "BRL",
+    },
+  };
+  if (needsResume) payload.status = "authorized";
+
+  const updated = await mp(
+    `/preapproval/${encodeURIComponent(providerId)}`,
+    "PUT",
+    payload,
+  );
+  await admin
+    .from("screen_subscriptions")
+    .update({
+      projected_amount_cents: amountCents,
+      last_synced_amount_cents: amountCents,
+      provider_status: String(updated.status || providerStatus || "authorized"),
+    })
+    .eq("id", subscription.id);
+
+  return { amountCents, providerSynced: true };
+}
+
+async function summaryForUser(userId: string) {
+  const { data: membership, error: membershipError } = await admin
+    .from("organization_users")
+    .select("organization_id,role")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (membershipError || !membership)
+    throw new HttpError(404, "ORGANIZATION_NOT_FOUND");
+
+  const organizationId = membership.organization_id;
+  const [
+    { data: organization },
+    { data: subscription },
+    { data: payments },
+    usage,
+  ] = await Promise.all([
+    admin
+      .from("organizations")
+      .select("id,name,display_name,timezone,locale")
+      .eq("id", organizationId)
+      .single(),
+    admin
+      .from("screen_subscriptions")
+      .select("*")
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    admin
+      .from("billing_payments")
+      .select("id,provider_payment_id,status,amount_cents,currency,paid_at,period_start,period_end,created_at")
+      .eq("organization_id", organizationId)
+      .order("paid_at", { ascending: false, nullsFirst: false })
+      .limit(24),
+    getUsage(organizationId),
+  ]);
+
+  if (subscription) {
+    try {
+      await syncProviderAmount(subscription, usage);
+    } catch (error) {
+      console.error("Background amount sync from summary failed", error);
+    }
+  }
+
+  return {
+    organization,
+    membership,
+    subscription: subscription
+      ? { ...subscription, projected_amount_cents: usage.projectedAmountCents }
+      : null,
+    usage,
+    payments: payments || [],
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST")
-    return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
+  if (req.method !== "POST") return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
 
   try {
     const user = await requireUser(req);
     const body = await req.json().catch(() => ({}));
 
     if (body.action === "summary") {
-      const { data: membership, error: membershipError } = await admin
-        .from("organization_users")
-        .select("organization_id,role")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (membershipError || !membership)
-        throw new HttpError(404, "ORGANIZATION_NOT_FOUND");
-
-      const organizationId = membership.organization_id;
-      const [
-        { data: organization },
-        { data: subscription },
-        { data: payments },
-        { data: plans },
-      ] = await Promise.all([
-        admin.from("organizations").select("*").eq("id", organizationId).single(),
-        admin
-          .from("screen_subscriptions")
-          .select("*,plans:plans!screen_subscriptions_plan_id_fkey(*),pending_plan:plans!screen_subscriptions_pending_plan_id_fkey(*)")
-          .eq("organization_id", organizationId)
-          .maybeSingle(),
-        admin
-          .from("billing_payments")
-          .select(
-            "id,provider_payment_id,status,amount_cents,currency,paid_at,period_start,period_end,created_at",
-          )
-          .eq("organization_id", organizationId)
-          .order("paid_at", { ascending: false, nullsFirst: false })
-          .limit(24),
-        admin
-          .from("plans")
-          .select(
-            "id,code,name,description,price_cents,list_price_cents,promotion_percent,currency,billing_period,screen_limit,user_limit,trial_days,features,sort_order",
-          )
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true }),
-      ]);
-      return reply({
-        organization,
-        membership,
-        subscription,
-        payments: payments || [],
-        plans: plans || [],
-      });
+      return reply(await summaryForUser(user.id));
     }
 
     const organizationId = String(body.organizationId || "");
     if (!organizationId) throw new HttpError(400, "ORGANIZATION_REQUIRED");
-    await requireOrgRole(user.id, organizationId, ["owner"]);
 
-    const { data: subscription, error: subError } = await admin
-      .from("screen_subscriptions")
-      .select("*,plans:plans!screen_subscriptions_plan_id_fkey(*)")
-      .eq("organization_id", organizationId)
-      .single();
-    if (subError) {
-      console.error("Subscription lookup failed", subError);
-      throw new HttpError(500, "SUBSCRIPTION_LOOKUP_FAILED");
+    if (body.action === "sync") {
+      await requireOrgRole(user.id, organizationId, ["owner", "admin", "editor"]);
+      const [subscription, usage] = await Promise.all([
+        getSubscription(organizationId),
+        getUsage(organizationId),
+      ]);
+      const sync = await syncProviderAmount(subscription, usage);
+      return reply({ ok: true, usage, sync });
     }
-    if (!subscription)
-      throw new HttpError(404, "SUBSCRIPTION_NOT_FOUND");
+
+    await requireOrgRole(user.id, organizationId, ["owner"]);
+    const [subscription, usage] = await Promise.all([
+      getSubscription(organizationId),
+      getUsage(organizationId),
+    ]);
 
     if (body.action === "cancel") {
-      if (!subscription.provider_subscription_id)
-        throw new HttpError(409, "NO_PROVIDER_SUBSCRIPTION");
-      await mp(
-        `/preapproval/${encodeURIComponent(subscription.provider_subscription_id)}`,
-        "PUT",
-        { status: "cancelled" },
-      );
+      const providerId = String(subscription.provider_subscription_id || "");
+
+      if (usage.trialActive) {
+        if (providerId) {
+          await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
+            status: "canceled",
+          });
+        }
+        await admin
+          .from("screen_subscriptions")
+          .update({
+            status: "trial",
+            cancel_at_period_end: false,
+            canceled_at: null,
+            provider_status: providerId ? "canceled" : subscription.provider_status,
+            provider_plan_id: providerId ? null : subscription.provider_plan_id,
+            last_synced_amount_cents: 0,
+          })
+          .eq("id", subscription.id);
+        return reply({ ok: true, scheduled: false, trialContinues: true });
+      }
+
+      if (!providerId) {
+        await admin
+          .from("screen_subscriptions")
+          .update({
+            status: "canceled",
+            cancel_at_period_end: false,
+            canceled_at: new Date().toISOString(),
+          })
+          .eq("id", subscription.id);
+        return reply({ ok: true, scheduled: false });
+      }
+
+      await syncProviderAmount(subscription, usage);
       await admin
         .from("screen_subscriptions")
         .update({
           cancel_at_period_end: true,
           canceled_at: new Date().toISOString(),
-          provider_status: "cancelled",
-          pending_plan_id: null,
-          pending_plan_requested_at: null,
         })
         .eq("id", subscription.id);
-      return reply({ ok: true });
+      return reply({ ok: true, scheduled: true, cancelAt: usage.periodEnd });
     }
 
     if (body.action !== "checkout")
       throw new HttpError(400, "INVALID_ACTION");
 
-    const { data: plan } = await admin
-      .from("plans")
-      .select("*")
-      .eq("code", String(body.planCode || ""))
-      .eq("is_active", true)
-      .single();
-    if (!plan) throw new HttpError(404, "PLAN_NOT_FOUND");
+    if (usage.projectedAmountCents <= 0 || usage.activeScreens <= 0)
+      throw new HttpError(409, "CONNECT_A_SCREEN_FIRST");
 
     const returnUrl = CANONICAL_RETURN_URL;
-    const requestedAt = new Date().toISOString();
+    const providerId = String(subscription.provider_subscription_id || "");
+    const providerStatus = String(subscription.provider_status || "").toLowerCase();
 
     if (
-      subscription.provider_subscription_id &&
-      subscription.status === "active"
+      providerId &&
+      subscription.provider_plan_id === BILLING_MODEL_VERSION &&
+      providerStatus === "pending"
     ) {
-      await mp(
-        `/preapproval/${encodeURIComponent(subscription.provider_subscription_id)}`,
-        "PUT",
-        {
-          auto_recurring: {
-            transaction_amount: plan.price_cents / 100,
-            currency_id: "BRL",
-          },
-        },
-      );
+      await syncProviderAmount(subscription, usage);
+      const existing = await mp(`/preapproval/${encodeURIComponent(providerId)}`);
+      if (existing.init_point) return reply({ checkoutUrl: existing.init_point });
+    }
 
-      await admin
-        .from("screen_subscriptions")
-        .update({
-          pending_plan_id: plan.id,
-          pending_plan_requested_at: requestedAt,
-          provider_plan_id: plan.code,
-        })
-        .eq("id", subscription.id);
+    if (
+      providerId &&
+      ["authorized", "payment_approved", "paused"].includes(providerStatus)
+    ) {
+      await syncProviderAmount(subscription, usage);
+      return reply({ checkoutUrl: `${returnUrl}?billing=active` });
+    }
 
-      return reply({ checkoutUrl: `${returnUrl}?plan=pending` });
+    if (providerId && providerStatus === "pending") {
+      try {
+        await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
+          status: "canceled",
+        });
+      } catch (error) {
+        console.error("Could not cancel legacy pending preapproval", error);
+      }
     }
 
     const payload = {
-      reason: `PontoView — ${plan.name}`,
+      reason: "PontoView Telas - telas vinculadas",
       external_reference: `screens:${organizationId}`,
       payer_email: user.email,
       back_url: returnUrl,
@@ -226,7 +370,8 @@ Deno.serve(async (req) => {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: plan.price_cents / 100,
+        start_date: usage.periodEnd,
+        transaction_amount: usage.projectedAmountCents / 100,
         currency_id: "BRL",
       },
       status: "pending",
@@ -239,13 +384,18 @@ Deno.serve(async (req) => {
     await admin
       .from("screen_subscriptions")
       .update({
-        pending_plan_id: plan.id,
-        pending_plan_requested_at: requestedAt,
         provider: "mercadopago",
         provider_subscription_id: String(created.id),
-        provider_plan_id: plan.code,
+        provider_plan_id: BILLING_MODEL_VERSION,
         provider_status: String(created.status || "pending"),
         payer_email: user.email,
+        billing_started_at: usage.periodStart,
+        current_period_start: usage.periodStart,
+        current_period_end: usage.periodEnd,
+        projected_amount_cents: usage.projectedAmountCents,
+        last_synced_amount_cents: usage.projectedAmountCents,
+        cancel_at_period_end: false,
+        canceled_at: null,
       })
       .eq("id", subscription.id);
 
