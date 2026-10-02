@@ -278,6 +278,118 @@ body{display:block}
   .seasonal-qr{width:100%}
   .seasonal-qr-grid{grid-template-columns:92px minmax(0,1fr)}
 }
+@media(min-width:761px) and (max-aspect-ratio:4/5){
+  html,body{overflow:hidden}
+  .pv-seasonal{
+    height:100%;
+    min-height:0;
+  }
+  .seasonal-stage{
+    height:100%;
+    min-height:0;
+    grid-template-columns:1fr;
+    grid-template-rows:minmax(0,1.05fr) minmax(0,.95fr);
+    align-items:stretch;
+    padding:clamp(42px,5vw,68px);
+    gap:clamp(30px,3.6vh,56px);
+  }
+  .seasonal-copy{
+    align-self:stretch;
+    justify-content:center;
+    gap:clamp(16px,1.85vh,27px);
+  }
+  .seasonal-kicker{
+    padding:9px 13px;
+    font-size:clamp(12px,1.35vw,16px);
+  }
+  .seasonal-title{
+    max-width:10ch;
+    font-size:clamp(72px,11.5vw,122px);
+    line-height:.84;
+  }
+  .seasonal-lead{
+    max-width:27ch;
+    font-size:clamp(27px,3.6vw,39px);
+    line-height:1.1;
+  }
+  .seasonal-text{
+    max-width:40ch;
+    font-size:clamp(19px,2.25vw,26px);
+    line-height:1.42;
+  }
+  .seasonal-tags{
+    gap:11px;
+  }
+  .seasonal-tag{
+    padding:11px 15px;
+    border-radius:16px;
+    font-size:clamp(14px,1.6vw,18px);
+  }
+  .seasonal-tag::before{
+    width:9px;
+    height:9px;
+  }
+  .seasonal-visual{
+    height:100%;
+    min-height:0;
+    grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+    grid-template-rows:1fr;
+    gap:clamp(24px,4vw,48px);
+    align-items:center;
+  }
+  .seasonal-symbol-stage{
+    height:100%;
+    align-self:stretch;
+  }
+  .campaign-ribbon-wrap,
+  .seasonal-symbol{
+    width:min(92%,410px);
+  }
+  .seasonal-visual.no-qr{
+    grid-template-columns:1fr;
+    grid-template-rows:1fr;
+  }
+  .seasonal-visual.no-qr .seasonal-symbol{
+    width:min(68%,470px);
+  }
+  .seasonal-qr{
+    width:100%;
+    max-width:none;
+    justify-self:stretch;
+    align-self:center;
+    padding:clamp(18px,2.2vw,26px);
+    border-radius:clamp(24px,2.8vw,34px);
+  }
+  .seasonal-qr-grid{
+    grid-template-columns:clamp(118px,14vw,165px) minmax(0,1fr);
+    gap:clamp(16px,2.2vw,24px);
+  }
+  .seasonal-qr b{
+    font-size:clamp(22px,2.7vw,30px);
+  }
+  .seasonal-qr p{
+    font-size:clamp(15px,1.8vw,20px);
+    line-height:1.4;
+  }
+  .seasonal-qr small{
+    font-size:clamp(12px,1.45vw,16px);
+  }
+  .pv-seasonal::before{
+    width:min(72%,620px);
+    left:-26%;
+    top:-13%;
+  }
+  .pv-seasonal::after{
+    width:min(80%,720px);
+    right:-30%;
+    bottom:-18%;
+  }
+  .seasonal-wave{
+    bottom:-10%;
+    height:30%;
+  }
+}
+
 @media(max-height:560px) and (orientation:landscape){
   .seasonal-stage{padding:16px 22px;gap:18px}
   .seasonal-copy{gap:8px}
