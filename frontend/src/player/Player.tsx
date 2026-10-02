@@ -667,7 +667,17 @@ function PlayerLayout({ manifest, item, device, playbackCycle, canvasWidth, canv
   const brandPosition = widgetSettings.business?.position || "side_footer";
   const playerTheme = settings.theme === "dark" ? "dark" : "light";
   const sideWidthPercent = clampPlayerPercent(settings.side_width_percent, 24, 16, 38);
-  const barHeightPercent = clampPlayerPercent(settings.bar_height_percent, 15, 8, 24);
+  const configuredBarHeightPercent = clampPlayerPercent(settings.bar_height_percent, 15, 8, 24);
+
+  // In the L-frame, the media must keep the same canonical aspect ratio as the
+  // logical canvas (16:9 landscape or 9:16 portrait). Removing the same
+  // percentage from the canvas width (side rail) and height (information bar)
+  // preserves that ratio exactly and prevents the media host from creating
+  // internal black letterbox bands.
+  const barHeightPercent = settings.layout_mode === "lframe"
+    ? sideWidthPercent
+    : configuredBarHeightPercent;
+
   const layoutStyle = {
     "--pv-side-size": `${sideWidthPercent}%`,
     "--pv-bar-size": `${barHeightPercent}%`,
