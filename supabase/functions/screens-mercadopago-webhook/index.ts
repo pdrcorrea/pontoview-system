@@ -50,12 +50,21 @@ async function verify(req: Request) {
   );
 }
 
-async function mp(path: string) {
+async function mp(path: string, method = "GET", body?: unknown) {
   const response = await fetch(`${API}${path}`, {
-    headers: { Authorization: `Bearer ${Deno.env.get("MP_ACCESS_TOKEN") || ""}` },
+    method,
+    headers: {
+      Authorization: `Bearer ${Deno.env.get("MP_ACCESS_TOKEN") || ""}`,
+      "Content-Type": "application/json",
+      ...(method === "POST" ? { "X-Idempotency-Key": crypto.randomUUID() } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw new HttpError(502, "MERCADO_PAGO_LOOKUP_FAILED");
+  if (!response.ok) {
+    console.error("Mercado Pago error", response.status, json);
+    throw new HttpError(502, "MERCADO_PAGO_LOOKUP_FAILED");
+  }
   return json;
 }
 
@@ -65,10 +74,35 @@ function addMonth(value: string) {
   return date.toISOString();
 }
 
+type BillingUsage = {
+  unitPriceCents: number;
+  activeScreens: number;
+  trialActive: boolean;
+  periodStart: string;
+  periodEnd: string;
+  periodDays: number;
+  screenDaysAccrued: number;
+  screenDaysProjected: number;
+  accruedAmountCents: number;
+  projectedAmountCents: number;
+};
+
+async function usageFor(organizationId: string) {
+  const { data, error } = await admin.rpc("screen_billing_summary", {
+    p_organization_id: organizationId,
+  });
+  if (error || !data) {
+    console.error("Billing summary failed", error);
+    throw new HttpError(500, "BILLING_SUMMARY_FAILED");
+  }
+  return data as BillingUsage;
+}
+
 async function findSubscription(providerId: string, externalReference: string) {
+  const fields = "id,organization_id,status,provider_subscription_id,provider_status,provider_plan_id,trial_ends_at,current_period_start,current_period_end,grace_period_ends_at,cancel_at_period_end,billing_started_at,projected_amount_cents,last_synced_amount_cents";
   const byProvider = await admin
     .from("screen_subscriptions")
-    .select("id,organization_id,status,plan_id,pending_plan_id,provider_subscription_id,trial_ends_at,current_period_end")
+    .select(fields)
     .eq("provider_subscription_id", providerId)
     .maybeSingle();
   if (byProvider.data) return { ...byProvider.data, stale: false };
@@ -80,7 +114,7 @@ async function findSubscription(providerId: string, externalReference: string) {
 
   const byOrg = await admin
     .from("screen_subscriptions")
-    .select("id,organization_id,status,plan_id,pending_plan_id,provider_subscription_id,trial_ends_at,current_period_end")
+    .select(fields)
     .eq("organization_id", organizationId)
     .maybeSingle();
   if (!byOrg.data) return null;
@@ -109,6 +143,9 @@ async function syncPreapproval(data: any) {
 
   const raw = String(data.status || "").toLowerCase();
   const now = new Date();
+  const trialEnded = subscription.trial_ends_at
+    ? new Date(subscription.trial_ends_at).getTime() <= now.getTime()
+    : true;
   const update: Record<string, unknown> = {
     provider: "mercadopago",
     provider_subscription_id: providerId,
@@ -118,12 +155,15 @@ async function syncPreapproval(data: any) {
 
   if (raw === "cancelled" || raw === "canceled") {
     update.status = "canceled";
-    update.cancel_at_period_end = true;
+    update.cancel_at_period_end = false;
     update.canceled_at = now.toISOString();
-    update.pending_plan_id = null;
-    update.pending_plan_requested_at = null;
+  } else if (raw === "authorized") {
+    if (trialEnded) update.status = "active";
+    update.grace_period_ends_at = null;
+    update.canceled_at = null;
   } else if (raw === "paused") {
-    update.status = "suspended";
+    const usage = await usageFor(subscription.organization_id);
+    if (usage.projectedAmountCents > 0) update.status = "suspended";
   }
 
   const result = await admin
@@ -138,6 +178,42 @@ async function syncPreapproval(data: any) {
     stale: false,
     status: String(update.status || subscription.status),
   };
+}
+
+async function setNextProviderAmount(
+  providerId: string,
+  subscriptionId: string,
+  amountCents: number,
+) {
+  if (amountCents <= 0) {
+    const updated = await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
+      status: "paused",
+    });
+    await admin
+      .from("screen_subscriptions")
+      .update({
+        projected_amount_cents: 0,
+        last_synced_amount_cents: 0,
+        provider_status: String(updated.status || "paused"),
+      })
+      .eq("id", subscriptionId);
+    return;
+  }
+
+  const updated = await mp(`/preapproval/${encodeURIComponent(providerId)}`, "PUT", {
+    auto_recurring: {
+      transaction_amount: amountCents / 100,
+      currency_id: "BRL",
+    },
+  });
+  await admin
+    .from("screen_subscriptions")
+    .update({
+      projected_amount_cents: amountCents,
+      last_synced_amount_cents: amountCents,
+      provider_status: String(updated.status || "authorized"),
+    })
+    .eq("id", subscriptionId);
 }
 
 Deno.serve(async (req) => {
@@ -185,18 +261,23 @@ Deno.serve(async (req) => {
         invoice.last_modified ||
         invoice.date_created ||
         new Date().toISOString();
-      const periodEnd = addMonth(paidAt);
       const amountCents = Math.round(
         Number(invoice.transaction_amount || invoice.payment?.transaction_amount || 0) * 100,
       );
 
-      const { data: subscription } = await admin
+      const { data: subscription, error: subscriptionError } = await admin
         .from("screen_subscriptions")
-        .select("id,status,plan_id,pending_plan_id,trial_ends_at")
+        .select("id,status,trial_ends_at,current_period_start,current_period_end,cancel_at_period_end,provider_subscription_id")
         .eq("organization_id", synced.organizationId)
         .single();
+      if (subscriptionError || !subscription)
+        throw new HttpError(404, "SUBSCRIPTION_NOT_FOUND");
 
-      if (approved && subscription) {
+      if (approved) {
+        const closedUsage = await usageFor(synced.organizationId);
+        const periodStart = subscription.current_period_start || closedUsage.periodStart;
+        const periodEnd = subscription.current_period_end || closedUsage.periodEnd;
+
         await admin.from("billing_payments").upsert(
           {
             organization_id: synced.organizationId,
@@ -206,44 +287,59 @@ Deno.serve(async (req) => {
             amount_cents: amountCents,
             currency: "BRL",
             paid_at: paidAt,
-            period_start: paidAt,
+            period_start: periodStart,
             period_end: periodEnd,
-            provider_payload: { authorized_payment_id: id },
+            provider_payload: {
+              authorized_payment_id: id,
+              billing_model: "screen_day",
+              screen_days: closedUsage.screenDaysProjected,
+              unit_price_cents: closedUsage.unitPriceCents,
+            },
           },
           { onConflict: "provider_payment_id" },
         );
 
-        let activatePendingPlan = false;
-        if (subscription.pending_plan_id) {
-          const { data: pendingPlan } = await admin
-            .from("plans")
-            .select("id,code,price_cents")
-            .eq("id", subscription.pending_plan_id)
-            .maybeSingle();
-          activatePendingPlan = Boolean(
-            pendingPlan && Math.abs(Number(pendingPlan.price_cents) - amountCents) <= 1,
+        if (subscription.cancel_at_period_end) {
+          await mp(
+            `/preapproval/${encodeURIComponent(subscription.provider_subscription_id)}`,
+            "PUT",
+            { status: "canceled" },
           );
+          await admin
+            .from("screen_subscriptions")
+            .update({
+              status: "canceled",
+              provider_status: "canceled",
+              cancel_at_period_end: false,
+              canceled_at: new Date().toISOString(),
+              grace_period_ends_at: null,
+            })
+            .eq("id", subscription.id);
+          return reply({ ok: true, approved: true, canceled: true });
         }
 
-        const update: Record<string, unknown> = {
-          status: "active",
-          current_period_start: paidAt,
-          current_period_end: periodEnd,
-          grace_period_ends_at: null,
-          provider_status: "payment_approved",
-        };
-
-        if (activatePendingPlan && subscription.pending_plan_id) {
-          update.plan_id = subscription.pending_plan_id;
-          update.pending_plan_id = null;
-          update.pending_plan_requested_at = null;
-        }
-
+        const nextPeriodStart = periodEnd;
+        const nextPeriodEnd = addMonth(periodEnd);
         await admin
           .from("screen_subscriptions")
-          .update(update)
+          .update({
+            status: "active",
+            current_period_start: nextPeriodStart,
+            current_period_end: nextPeriodEnd,
+            grace_period_ends_at: null,
+            provider_status: "payment_approved",
+            projected_amount_cents: 0,
+            last_synced_amount_cents: 0,
+          })
           .eq("id", subscription.id);
-      } else if (subscription) {
+
+        const nextUsage = await usageFor(synced.organizationId);
+        await setNextProviderAmount(
+          String(subscription.provider_subscription_id),
+          subscription.id,
+          Number(nextUsage.projectedAmountCents || 0),
+        );
+      } else {
         const trialValid =
           subscription.status === "trial" &&
           subscription.trial_ends_at &&
