@@ -161,20 +161,92 @@
     }
 
     @media (orientation:portrait),(max-aspect-ratio:4/5){
-      .weather-stage{grid-template-columns:1fr!important;grid-template-rows:minmax(0,54%) minmax(0,46%)!important;gap:16px!important}
-      .weather-primary{grid-template-columns:minmax(120px,38%) minmax(0,62%);gap:14px}
-      .weather-orbit{width:min(38vw,280px)!important}
-      .weather-glyph{font-size:clamp(72px,13vw,112px)!important}
-      .temperature{font-size:clamp(68px,14vw,116px)!important}
-      .condition{font-size:clamp(18px,3.7vw,28px)!important}
-      .current-metrics{margin-top:13px!important;gap:7px}
-      .current-metric{padding:9px 10px!important}
-      .weather-alert{margin-top:8px;min-height:30px}
-      .forecast-panel{justify-content:flex-start!important}
-      .forecast-kicker{margin-bottom:5px!important}
-      .forecast-title{font-size:clamp(23px,5vw,36px)!important;margin-bottom:10px!important}
-      .forecast-card{padding:9px 10px!important;border-radius:14px!important;gap:2px 8px}
-      .forecast-card-icon{font-size:clamp(34px,7vw,48px)!important}
+      /*
+       * Retrato precisa escalar pela área real da tela.
+       * Evitamos tetos baixos em px porque em Full HD vertical eles faziam
+       * a tipografia parecer "miniatura" dentro de uma área muito grande.
+       */
+      .weather-stage{
+        grid-template-columns:1fr!important;
+        grid-template-rows:minmax(0,46%) minmax(0,54%)!important;
+        gap:2.2vmin!important;
+      }
+      .weather-hero{justify-content:center!important;overflow:hidden!important}
+      .weather-primary{
+        grid-template-columns:minmax(0,40%) minmax(0,60%);
+        gap:2vmin;
+        align-items:center;
+      }
+      .weather-orbit{width:min(40vmin,44vw)!important}
+      .weather-glyph{font-size:15vmin!important}
+      .weather-location{
+        gap:.8vmin;
+        margin:0 0 1.2vmin!important;
+        font-size:2vmin;
+      }
+      .temperature{font-size:13vmin!important}
+      .condition{font-size:3.25vmin!important;line-height:1.08}
+      .current-condition{margin-top:1.2vmin}
+      .range{
+        gap:2.5vmin;
+        margin-top:1.25vmin!important;
+        font-size:2vmin;
+      }
+      .current-metrics{
+        margin-top:2.1vmin!important;
+        gap:1vmin;
+      }
+      .current-metric{
+        padding:1.35vmin 1.45vmin!important;
+        border-radius:1.8vmin!important;
+      }
+      .current-metric small{
+        gap:.55vmin;
+        font-size:1.35vmin!important;
+        letter-spacing:.055em;
+      }
+      .current-metric b{
+        margin-top:.75vmin!important;
+        font-size:2.8vmin!important;
+      }
+      .weather-alert{
+        margin-top:1.1vmin;
+        min-height:4.2vmin;
+        padding:1vmin 1.25vmin;
+        border-radius:1.6vmin;
+        font-size:1.35vmin;
+      }
+      .forecast-panel{
+        justify-content:stretch!important;
+        overflow:hidden!important;
+      }
+      .forecast-kicker{
+        gap:.8vmin;
+        margin-bottom:.7vmin!important;
+        font-size:1.45vmin!important;
+      }
+      .forecast-title{
+        font-size:5.6vmin!important;
+        margin-bottom:1.5vmin!important;
+      }
+      .forecast-grid{
+        flex:1 1 auto!important;
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        grid-template-rows:repeat(2,minmax(0,1fr))!important;
+        gap:1.2vmin!important;
+      }
+      .forecast-card{
+        height:100%!important;
+        padding:1.7vmin!important;
+        border-radius:1.9vmin!important;
+        gap:.35vmin 1.1vmin;
+      }
+      .forecast-card-day{font-size:1.85vmin!important}
+      .forecast-card-date{font-size:1.35vmin!important}
+      .forecast-card-icon{font-size:6.8vmin!important}
+      .forecast-card-condition{font-size:1.8vmin!important;margin-top:.55vmin!important}
+      .forecast-card-rain{font-size:1.35vmin!important}
+      .forecast-card-temps{font-size:2.9vmin!important;gap:1vmin}
     }
 
     @media(prefers-reduced-motion:reduce){.weather-glyph,.weather-stage,.current-metric::after{animation:none!important}}
