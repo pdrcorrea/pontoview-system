@@ -483,6 +483,75 @@ body.pv-panel .pv-footer-brand{font-size:2.35vmin}
   }
 }
 
+
+/* Portrait scale hardening 5.0
+   Mantém os painéis informativos legíveis em 1080x1920, 1440x2560 e 4K
+   sem prender elementos principais a tetos fixos em pixels. */
+@media (orientation:portrait){
+  .panel-cultura .culture-stage{grid-template-rows:minmax(0,43%) minmax(0,57%);gap:2.2vmin}
+  .panel-cultura .story-title{font-size:7.2vmin;line-height:1.02}
+  .panel-cultura .story-text{font-size:2.55vmin;line-height:1.5}
+  .panel-cultura .story-kicker{font-size:1.65vmin}
+  .panel-cultura .visual-tag{font-size:1.35vmin}
+
+  .panel-curiosidades .discovery{grid-template-rows:minmax(0,55%) minmax(0,45%);gap:2.2vmin}
+  .panel-curiosidades .fact-title{font-size:7.2vmin;line-height:1.02}
+  .panel-curiosidades .fact-text{font-size:2.55vmin;line-height:1.5}
+  .panel-curiosidades .fact-kicker{font-size:1.65vmin}
+  .panel-curiosidades .fact-number{font-size:28vmin}
+  .panel-curiosidades .discovery-card{min-height:0!important}
+  .panel-curiosidades .topic{font-size:1.35vmin}
+
+  .panel-economia .market{grid-template-rows:minmax(0,38%) minmax(0,62%);gap:2.2vmin}
+  .panel-economia .hero-symbol{width:11vmin;height:11vmin;border-radius:3vmin;margin-bottom:2.2vmin}
+  .panel-economia .hero-symbol span{font-size:6vmin}
+  .panel-economia .market-label{font-size:1.55vmin}
+  .panel-economia .market-value{font-size:12.5vmin}
+  .panel-economia .market-name{font-size:2.5vmin}
+  .panel-economia .trend{font-size:1.75vmin;padding:1.1vmin 1.5vmin}
+  .panel-economia .market-grid{gap:1.5vmin}
+  .panel-economia .asset{padding:1.9vmin;border-radius:2.3vmin}
+  .panel-economia .asset-icon{width:5.5vmin;height:5.5vmin;border-radius:1.6vmin;margin-bottom:1.4vmin}
+  .panel-economia .asset-icon span{font-size:3.2vmin}
+  .panel-economia .asset-code{font-size:1.35vmin}
+  .panel-economia .asset-value{font-size:4.8vmin}
+  .panel-economia .asset-note{font-size:1.65vmin}
+
+  .panel-orientacoes .orientation{grid-template-rows:minmax(0,32%) minmax(0,68%);gap:2.2vmin}
+  .panel-orientacoes .orb{width:min(44vmin,48vw)}
+  .panel-orientacoes .orb span{font-size:15vmin}
+  .panel-orientacoes .message{padding:4vmin;border-radius:3vmin}
+  .panel-orientacoes .primary{font-size:7.8vmin;line-height:1.04}
+
+  .panel-saudacoes .greeting{grid-template-rows:minmax(0,56%) minmax(0,44%);gap:2.2vmin}
+  .panel-saudacoes .title{font-size:10.8vmin;line-height:.94}
+  .panel-saudacoes .subtitle{font-size:2.7vmin;line-height:1.45}
+  .panel-saudacoes .celestial{width:min(48vmin,52vw)}
+  .panel-saudacoes .celestial span{font-size:16vmin}
+
+  .panel-saude .health{grid-template-rows:minmax(0,31%) minmax(0,69%);gap:2.2vmin}
+  .panel-saude .orb{width:min(42vmin,48vw)}
+  .panel-saude .hero-icon{font-size:14vmin}
+  .panel-saude .tip{padding:4vmin;border-radius:3vmin}
+  .panel-saude .kicker{font-size:1.65vmin;margin-bottom:2vmin}
+  .panel-saude .headline{font-size:7vmin;line-height:1.04}
+  .panel-saude .hint{font-size:2.55vmin;line-height:1.45}
+
+  .panel-sustentabilidade .eco-stage{grid-template-rows:minmax(0,34%) minmax(0,66%);gap:2.2vmin}
+  .panel-sustentabilidade .eco-orbit{width:min(44vmin,50vw)}
+  .panel-sustentabilidade .eco-glyph{font-size:14vmin}
+  .panel-sustentabilidade .eco-value strong{font-size:6.8vmin}
+  .panel-sustentabilidade .eco-value span{font-size:1.55vmin}
+  .panel-sustentabilidade .eco-kicker{font-size:1.6vmin}
+  .panel-sustentabilidade .eco-headline{font-size:6.8vmin;line-height:1.03}
+  .panel-sustentabilidade .eco-text{font-size:2.45vmin;line-height:1.45}
+  .panel-sustentabilidade .eco-grid{gap:1.35vmin;margin-top:1.9vmin}
+  .panel-sustentabilidade .eco-card{padding:1.6vmin;border-radius:2.1vmin}
+  .panel-sustentabilidade .eco-card-icon{width:5vmin;height:5vmin}
+  .panel-sustentabilidade .eco-card-value{font-size:4.3vmin}
+  .panel-sustentabilidade .eco-card-note{font-size:1.6vmin}
+}
+
 @media (prefers-reduced-motion:reduce){
   body.pv-panel *{scroll-behavior:auto}
 }
