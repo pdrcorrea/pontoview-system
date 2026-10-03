@@ -83,9 +83,19 @@ export function Modal({
 }) {
   useEffect(() => {
     const close = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.classList.add("pv-modal-open");
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+
+    return () => {
+      window.removeEventListener("keydown", close);
+      document.body.classList.remove("pv-modal-open");
+      document.body.style.overflow = previousOverflow;
+    };
   }, [onClose]);
+
   return (
     <div
       className="modal-backdrop"
