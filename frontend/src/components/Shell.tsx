@@ -3,6 +3,7 @@ import {
   AppWindow,
   BadgeDollarSign,
   Building2,
+  ChevronDown,
   CircleHelp,
   Globe2,
   Headphones,
@@ -18,7 +19,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -30,12 +31,14 @@ const primary = [
   ["/telas", "Telas", Monitor],
   ["/apps", "Painéis PontoView", Sparkles],
 ] as const;
+
 const account = [
-  ["/conta", "Minha conta", UserRound],
+  ["/conta", "Perfil", UserRound],
   ["/empresa", "Empresa", Building2],
   ["/financeiro", "Financeiro", BadgeDollarSign],
   ["/ajuda", "Ajuda", CircleHelp],
   ["/suporte", "Contato e suporte", Headphones],
+  ["/configuracoes", "Configurações", Settings],
 ] as const;
 
 export function AppShell() {
@@ -44,12 +47,25 @@ export function AppShell() {
   const [brandIconFailed, setBrandIconFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const title = location.pathname.startsWith("/programacoes") ? "Programação de grupos" : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
-  const initials = (profile?.full_name || profile?.email || "PV").split(/\s+/).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
+  const accountRouteActive = useMemo(
+    () => account.some(([path]) => location.pathname.startsWith(path)),
+    [location.pathname],
+  );
+  const [accountOpen, setAccountOpen] = useState(accountRouteActive);
+  const title = location.pathname.startsWith("/programacoes")
+    ? "Programação de grupos"
+    : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
+  const initials = (profile?.full_name || profile?.email || "PV")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((x) => x[0])
+    .join("")
+    .toUpperCase();
 
   useEffect(() => {
     setOpen(false);
-  }, [location.pathname]);
+    if (accountRouteActive) setAccountOpen(true);
+  }, [location.pathname, accountRouteActive]);
 
   useEffect(() => {
     if (!open) return;
@@ -65,16 +81,38 @@ export function AppShell() {
     };
   }, [open]);
 
-  const leave = async () => { await signOut(); navigate("/login"); };
-  const links = (items: readonly (readonly [string, string, LucideIcon])[]) => items.map(([to, label, Icon]) => (
-    <NavLink key={to} to={to} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
-      <Icon size={18} /><span>{label}</span>
-    </NavLink>
-  ));
+  const leave = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
+  const links = (items: readonly (readonly [string, string, LucideIcon])[]) =>
+    items.map(([to, label, Icon]) => (
+      <NavLink
+        key={to}
+        to={to}
+        onClick={() => setOpen(false)}
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        <Icon size={18} />
+        <span>{label}</span>
+      </NavLink>
+    ));
+
   return (
     <div className="shell">
-      {open && <button className="sidebar-scrim" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
-      <aside id="main-sidebar" className={`sidebar ${open ? "open" : ""}`} aria-hidden={!open && undefined}>
+      {open && (
+        <button
+          className="sidebar-scrim"
+          aria-label="Fechar menu"
+          onClick={() => setOpen(false)}
+        />
+      )}
+      <aside
+        id="main-sidebar"
+        className={`sidebar ${open ? "open" : ""}`}
+        aria-hidden={!open && undefined}
+      >
         <div className="brand brand-icon-only">
           <span className="sidebar-brand-icon" aria-label="PontoView">
             {brandIconFailed ? (
@@ -87,33 +125,83 @@ export function AppShell() {
               />
             )}
           </span>
-          <button className="mobile-close" aria-label="Fechar menu" onClick={() => setOpen(false)}><X size={18} /></button>
+          <button
+            className="mobile-close"
+            aria-label="Fechar menu"
+            onClick={() => setOpen(false)}
+          >
+            <X size={18} />
+          </button>
         </div>
+
         <div className="nav-label">PontoView Telas</div>
         <nav>{links(primary)}</nav>
-        <div className="nav-label account-label">Sua conta</div>
-        <nav>{links(account)}</nav>
-        <NavLink className="settings" to="/configuracoes" onClick={() => setOpen(false)}><Settings size={18} /><span>Configurações</span></NavLink>
-        <a className="privacy-link" href="https://pontoview.com.br" target="_blank" rel="noreferrer">
-          <Globe2 size={18} /><span>Ecossistema PontoView</span>
-        </a>
-        <a className="privacy-link" href="https://pontoview.com.br/privacidade" target="_blank" rel="noreferrer">
-          <ShieldCheck size={18} /><span>Central de Privacidade</span>
-        </a>
+
+        <div className="account-menu-block">
+          <button
+            className={`account-menu-toggle ${accountOpen ? "open" : ""}`}
+            onClick={() => setAccountOpen((current) => !current)}
+            aria-expanded={accountOpen}
+          >
+            <UserRound size={18} />
+            <span>Minha conta</span>
+            <ChevronDown size={16} />
+          </button>
+          <nav className={`account-menu-content ${accountOpen ? "open" : ""}`}>
+            {links(account)}
+            <a
+              className="privacy-link"
+              href="https://pontoview.com.br/privacidade"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ShieldCheck size={18} />
+              <span>Privacidade</span>
+            </a>
+            <a
+              className="privacy-link"
+              href="https://pontoview.com.br"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Globe2 size={18} />
+              <span>Ecossistema PontoView</span>
+            </a>
+          </nav>
+        </div>
+
         <div className="org-card">
           <span className="avatar">{initials}</span>
-          <span><strong>{organization?.display_name || "Sua empresa"}</strong><small>{role === "owner" ? "Proprietário" : role}</small></span>
-          <button className="icon-button" title="Sair" onClick={leave}><LogOut size={17} /></button>
+          <span>
+            <strong>{organization?.display_name || "Sua empresa"}</strong>
+            <small>{role === "owner" ? "Proprietário" : role}</small>
+          </span>
+          <button className="icon-button" title="Sair" onClick={leave}>
+            <LogOut size={17} />
+          </button>
         </div>
       </aside>
+
       <main>
         <header className="topbar">
-          <button className="mobile-menu" aria-label="Abrir menu" aria-controls="main-sidebar" aria-expanded={open} onClick={() => setOpen(true)}><Menu /></button>
+          <button
+            className="mobile-menu"
+            aria-label="Abrir menu"
+            aria-controls="main-sidebar"
+            aria-expanded={open}
+            onClick={() => setOpen(true)}
+          >
+            <Menu />
+          </button>
           <div><strong>{title}</strong></div>
           <div className="top-actions">
             <span className="system-ok">● Conectado</span>
-            <NavLink className="help-button" to="/ajuda"><CircleHelp size={17} /></NavLink>
-            <NavLink className="top-avatar" to="/conta" title="Minha conta">{initials}</NavLink>
+            <NavLink className="help-button" to="/ajuda">
+              <CircleHelp size={17} />
+            </NavLink>
+            <NavLink className="top-avatar" to="/conta" title="Minha conta">
+              {initials}
+            </NavLink>
           </div>
         </header>
         <div className="page"><Outlet /></div>
