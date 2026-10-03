@@ -37,6 +37,7 @@ import "./account-experience.css";
 import "./pontoview-clean-preview.css";
 import "./pontoview-ux-polish.css";
 import "./mobile-account-nav.css";
+import "./mobile-dock-safety.css";
 import "./panelThumbs";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
