@@ -192,13 +192,42 @@ export function AppShell() {
             <NavLink className="help-button" to="/ajuda" title="Ajuda"><CircleHelp size={17} /></NavLink>
           </div>
         </header>
+
+        {accountRouteActive && (
+          <nav className="mobile-account-subnav" aria-label="Opções da conta">
+            <div className="mobile-account-subnav-track">
+              {account.map(([to, label, Icon]) => (
+                <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
+                  <Icon size={16} />
+                  <span>{label === "Contato e suporte" ? "Suporte" : label}</span>
+                </NavLink>
+              ))}
+              <a
+                className="external"
+                href="https://pontoview.com.br/privacidade"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ShieldCheck size={16} />
+                <span>Privacidade</span>
+              </a>
+            </div>
+          </nav>
+        )}
+
         <div className="page"><Outlet /></div>
       </main>
 
       <nav className="mobile-glass-nav" aria-label="Navegação principal">
         <div className="mobile-glass-track">
           {mobileNav.map(([to, label, Icon]) => (
-            <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                isActive || (to === "/conta" && accountRouteActive) ? "active" : ""
+              }
+            >
               <span className="mobile-glass-icon"><Icon size={20} /></span>
               <span>{label}</span>
             </NavLink>
