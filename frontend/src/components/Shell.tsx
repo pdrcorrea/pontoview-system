@@ -41,6 +41,16 @@ const account = [
   ["/configuracoes", "Configurações", Settings],
 ] as const;
 
+const mobileNav = [
+  ["/dashboard", "Início", LayoutDashboard],
+  ["/conteudo", "Conteúdo", AppWindow],
+  ["/playlists", "Playlists", ListVideo],
+  ["/mensagens", "Mensagens", MessageSquareText],
+  ["/telas", "Telas", Monitor],
+  ["/apps", "Painéis", Sparkles],
+  ["/conta", "Conta", UserRound],
+] as const;
+
 export function AppShell() {
   const { organization, profile, role, signOut } = useAuth();
   const [open, setOpen] = useState(false);
@@ -206,6 +216,17 @@ export function AppShell() {
         </header>
         <div className="page"><Outlet /></div>
       </main>
+
+      <nav className="mobile-glass-nav" aria-label="Navegação principal">
+        <div className="mobile-glass-track">
+          {mobileNav.map(([to, label, Icon]) => (
+            <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
+              <span className="mobile-glass-icon"><Icon size={20} /></span>
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
