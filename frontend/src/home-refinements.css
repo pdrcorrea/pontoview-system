@@ -1,1 +1,66 @@
-.pv-home-value-strip{max-width:1210px;margin:8px auto 18px;padding:0;border:1px solid #dfe7ef;border-radius:20px;background:#fff;box-shadow:0 16px 38px rgba(31,56,87,.06);overflow:hidden;display:grid;grid-template-columns:repeat(3,1fr);gap:0}.pv-home-value-strip article{min-height:118px;padding:24px 28px;display:flex;align-items:center;gap:16px;position:relative}.pv-home-value-strip article+article{border-left:1px solid #e6ecf2}.pv-home-value-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto;background:#eaf2fb;color:#0b5da8}.pv-home-value-icon svg{width:22px;height:22px}.pv-home-value-strip article>div{min-width:0}.pv-home-value-strip small,.pv-home-value-strip strong{display:block}.pv-home-value-strip small{font-size:8px;line-height:1.2;font-weight:800;letter-spacing:.15em;color:#7d8b9b}.pv-home-value-strip strong{margin-top:7px;font-size:17px;line-height:1.25;letter-spacing:-.025em;color:#1a2d46}.pv-home-value-strip article:nth-child(3) strong{max-width:270px}@media(max-width:900px){.pv-home-value-strip{margin-left:20px;margin-right:20px;grid-template-columns:1fr}.pv-home-value-strip article{min-height:96px}.pv-home-value-strip article+article{border-left:0;border-top:1px solid #e6ecf2}}@media(max-width:520px){.pv-home-value-strip article{padding:20px}.pv-home-value-icon{width:44px;height:44px;border-radius:13px}.pv-home-value-strip strong{font-size:15px}}
+.pv-home-value-strip{max-width:1210px;margin:8px auto 18px;padding:0;border:1px solid #dfe7ef;border-radius:20px;background:#fff;box-shadow:0 16px 38px rgba(31,56,87,.06);overflow:hidden;display:grid;grid-template-columns:repeat(3,1fr);gap:0}.pv-home-value-strip article{min-height:118px;padding:24px 28px;display:flex;align-items:center;gap:16px;position:relative}.pv-home-value-strip article+article{border-left:1px solid #e6ecf2}.pv-home-value-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto;background:#eaf2fb;color:#0b5da8}.pv-home-value-icon svg{width:22px;height:22px}.pv-home-value-strip article>div{min-width:0}.pv-home-value-strip small,.pv-home-value-strip strong{display:block}.pv-home-value-strip small{font-size:8px;line-height:1.2;font-weight:800;letter-spacing:.15em;color:#7d8b9b}.pv-home-value-strip strong{margin-top:7px;font-size:17px;line-height:1.25;letter-spacing:-.025em;color:#1a2d46}.pv-home-value-strip article:nth-child(3) strong{max-width:270px}
+
+/* Barra flutuante glass alinhada ao portal PontoView V10 */
+.pv-home{padding-top:100px}
+.pv-home-header{
+  position:fixed;
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:80;
+  width:min(1140px,calc(100% - 28px));
+  height:68px;
+  padding:0 14px 0 18px;
+  gap:24px;
+  background:rgba(255,255,255,.80);
+  border:1px solid rgba(255,255,255,.88);
+  border-radius:24px;
+  box-shadow:0 15px 42px rgba(0,42,76,.10);
+  backdrop-filter:blur(22px) saturate(155%);
+  -webkit-backdrop-filter:blur(22px) saturate(155%)
+}
+.pv-home-header .pv-home-brandmark{width:38px;height:38px;border-radius:12px;background:rgba(234,241,248,.82)}
+.pv-home-header .pv-home-brandname strong{font-size:17px}
+.pv-home-header .pv-home-nav{gap:4px}
+.pv-home-header .pv-home-nav a{
+  padding:10px 12px;
+  border-radius:11px;
+  transition:background .18s ease,color .18s ease
+}
+.pv-home-header .pv-home-nav a:hover{background:#edf6fb;color:#073f85}
+.pv-home-header .pv-home-actions{gap:8px}
+.pv-home-header .pv-home-link{padding:10px 12px;border-radius:11px}
+.pv-home-header .pv-home-link:hover{background:#edf6fb}
+.pv-home-header .pv-home-button-small{
+  min-height:42px;
+  border-radius:13px;
+  padding:0 15px;
+  box-shadow:0 8px 20px rgba(7,63,133,.12)
+}
+.pv-home-hero{padding-top:clamp(54px,6vw,86px)}
+
+@media(max-width:1120px){
+  .pv-home-header{gap:18px}
+}
+@media(max-width:900px){
+  .pv-home-value-strip{margin-left:20px;margin-right:20px;grid-template-columns:1fr}.pv-home-value-strip article{min-height:96px}.pv-home-value-strip article+article{border-left:0;border-top:1px solid #e6ecf2}
+}
+@media(max-width:760px){
+  .pv-home{padding-top:82px}
+  .pv-home-header{
+    top:12px;
+    width:calc(100% - 24px);
+    height:58px;
+    padding:0 10px 0 13px;
+    border-radius:20px;
+    gap:12px
+  }
+  .pv-home-header .pv-home-brandmark{width:34px;height:34px;border-radius:11px}
+  .pv-home-header .pv-home-brandname strong{font-size:15px}
+  .pv-home-header .pv-home-brandname small{font-size:8px}
+  .pv-home-header .pv-home-button-small{min-height:38px;padding:0 12px;border-radius:12px}
+  .pv-home-hero{padding-top:42px}
+}
+@media(max-width:520px){
+  .pv-home-value-strip article{padding:20px}.pv-home-value-icon{width:44px;height:44px;border-radius:13px}.pv-home-value-strip strong{font-size:15px}
+}
