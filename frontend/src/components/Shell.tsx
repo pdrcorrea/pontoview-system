@@ -10,18 +10,19 @@ import {
   LayoutDashboard,
   ListVideo,
   LogOut,
-  Menu,
   MessageSquareText,
   Monitor,
   Settings,
   ShieldCheck,
   Sparkles,
   UserRound,
-  X,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
+import { supabase } from "../lib/supabase";
 
 const primary = [
   ["/dashboard", "Visão geral", LayoutDashboard],
@@ -53,8 +54,6 @@ const mobileNav = [
 
 export function AppShell() {
   const { organization, profile, role, signOut } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [brandIconFailed, setBrandIconFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const accountRouteActive = useMemo(
@@ -62,6 +61,7 @@ export function AppShell() {
     [location.pathname],
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
+  const [screenHealth, setScreenHealth] = useState({ total: 0, online: 0 });
   const title = location.pathname.startsWith("/programacoes")
     ? "Programação de grupos"
     : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
@@ -73,23 +73,51 @@ export function AppShell() {
     .toUpperCase();
 
   useEffect(() => {
-    setOpen(false);
     if (accountRouteActive) setAccountOpen(true);
   }, [location.pathname, accountRouteActive]);
 
+  const loadScreenHealth = useCallback(async () => {
+    if (!organization) {
+      setScreenHealth({ total: 0, online: 0 });
+      return;
+    }
+    const result = await supabase
+      .from("screens")
+      .select("id,screen_status(last_seen)")
+      .eq("organization_id", organization.id)
+      .eq("is_active", true);
+    if (result.error) return;
+    const now = Date.now();
+    const rows = result.data || [];
+    const online = rows.filter((row) => {
+      const raw = row.screen_status as unknown as
+        | { last_seen?: string | null }
+        | Array<{ last_seen?: string | null }>
+        | null;
+      const status = Array.isArray(raw) ? raw[0] : raw;
+      return Boolean(status?.last_seen && now - new Date(status.last_seen).getTime() < 120000);
+    }).length;
+    setScreenHealth({ total: rows.length, online });
+  }, [organization]);
+
   useEffect(() => {
-    if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previous;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
+    void loadScreenHealth();
+    if (!organization) return;
+    const channel = supabase
+      .channel(`shell-screen-health:${organization.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "screen_status", filter: `organization_id=eq.${organization.id}` },
+        () => void loadScreenHealth(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "screens", filter: `organization_id=eq.${organization.id}` },
+        () => void loadScreenHealth(),
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [organization, loadScreenHealth]);
 
   const leave = async () => {
     await signOut();
@@ -98,50 +126,28 @@ export function AppShell() {
 
   const links = (items: readonly (readonly [string, string, LucideIcon])[]) =>
     items.map(([to, label, Icon]) => (
-      <NavLink
-        key={to}
-        to={to}
-        onClick={() => setOpen(false)}
-        className={({ isActive }) => (isActive ? "active" : "")}
-      >
+      <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
         <Icon size={18} />
         <span>{label}</span>
       </NavLink>
     ));
 
+  const offline = Math.max(0, screenHealth.total - screenHealth.online);
+
   return (
     <div className="shell">
-      {open && (
-        <button
-          className="sidebar-scrim"
-          aria-label="Fechar menu"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside
-        id="main-sidebar"
-        className={`sidebar ${open ? "open" : ""}`}
-        aria-hidden={!open && undefined}
-      >
-        <div className="brand brand-icon-only">
-          <span className="sidebar-brand-icon" aria-label="PontoView">
-            {brandIconFailed ? (
-              <b>PV</b>
-            ) : (
-              <img
-                src="/assets/icon.png"
-                alt="PontoView"
-                onError={() => setBrandIconFailed(true)}
-              />
-            )}
+      <aside id="main-sidebar" className="sidebar">
+        <div className="brand pv-full-brand">
+          <img src="/assets/logo.png" alt="PontoView" />
+          <span className="sidebar-product-badge">Telas</span>
+        </div>
+
+        <div className={`sidebar-screen-health ${offline > 0 ? "attention" : screenHealth.total ? "healthy" : "empty"}`}>
+          <span className="sidebar-health-icon">{offline > 0 ? <WifiOff /> : <Wifi />}</span>
+          <span>
+            <b>{screenHealth.total ? `${screenHealth.online}/${screenHealth.total} telas online` : "Nenhuma tela conectada"}</b>
+            <small>{offline > 0 ? `${offline} precisa${offline > 1 ? "m" : ""} de atenção` : screenHealth.total ? "Tudo funcionando" : "Conecte sua primeira tela"}</small>
           </span>
-          <button
-            className="mobile-close"
-            aria-label="Fechar menu"
-            onClick={() => setOpen(false)}
-          >
-            <X size={18} />
-          </button>
         </div>
 
         <div className="nav-label">PontoView Telas</div>
@@ -159,23 +165,11 @@ export function AppShell() {
           </button>
           <nav className={`account-menu-content ${accountOpen ? "open" : ""}`}>
             {links(account)}
-            <a
-              className="privacy-link"
-              href="https://pontoview.com.br/privacidade"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <ShieldCheck size={18} />
-              <span>Privacidade</span>
+            <a className="privacy-link" href="https://pontoview.com.br/privacidade" target="_blank" rel="noreferrer">
+              <ShieldCheck size={18} /><span>Privacidade</span>
             </a>
-            <a
-              className="privacy-link"
-              href="https://pontoview.com.br"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Globe2 size={18} />
-              <span>Ecossistema PontoView</span>
+            <a className="privacy-link" href="https://pontoview.com.br" target="_blank" rel="noreferrer">
+              <Globe2 size={18} /><span>Ecossistema PontoView</span>
             </a>
           </nav>
         </div>
@@ -186,32 +180,16 @@ export function AppShell() {
             <strong>{organization?.display_name || "Sua empresa"}</strong>
             <small>{role === "owner" ? "Proprietário" : role}</small>
           </span>
-          <button className="icon-button" title="Sair" onClick={leave}>
-            <LogOut size={17} />
-          </button>
+          <button className="icon-button" title="Sair" onClick={leave}><LogOut size={17} /></button>
         </div>
       </aside>
 
       <main>
         <header className="topbar">
-          <button
-            className="mobile-menu"
-            aria-label="Abrir menu"
-            aria-controls="main-sidebar"
-            aria-expanded={open}
-            onClick={() => setOpen(true)}
-          >
-            <Menu />
-          </button>
           <div><strong>{title}</strong></div>
           <div className="top-actions">
             <span className="system-ok">● Conectado</span>
-            <NavLink className="help-button" to="/ajuda">
-              <CircleHelp size={17} />
-            </NavLink>
-            <NavLink className="top-avatar" to="/conta" title="Minha conta">
-              {initials}
-            </NavLink>
+            <NavLink className="help-button" to="/ajuda" title="Ajuda"><CircleHelp size={17} /></NavLink>
           </div>
         </header>
         <div className="page"><Outlet /></div>

@@ -2,7 +2,13 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { AppShell } from "./components/Shell";
 import { LoadingScreen } from "./components/ui";
-import { AuthCallback, LoginPage, RecoveryPage, ResetPasswordPage, SignupPage } from "./pages/Auth";
+import {
+  AuthCallback,
+  LoginPage,
+  RecoveryPage,
+  ResetPasswordPage,
+  SignupPage,
+} from "./pages/Auth";
 import { HomePage } from "./pages/Home";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentReorganizedPage } from "./pages/ContentReorganized";
@@ -31,8 +37,96 @@ import "./account-experience.css";
 import "./pontoview-clean-preview.css";
 import "./pontoview-ux-polish.css";
 import "./panelThumbs";
+
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
-function isDedicatedPlayerHost() { return PLAYER_HOSTS.has(window.location.hostname.toLowerCase()); }
-function Protected() { const { loading, user, profile } = useAuth(); const location = useLocation(); if (loading) return <LoadingScreen label="Carregando sua PontoView" />; if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />; if (profile && !profile.onboarding_completed && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />; return <AppShell />; }
-function Guest({ children }: { children: React.ReactNode }) { const { loading, user } = useAuth(); if (loading) return <LoadingScreen />; return user ? <Navigate to="/dashboard" replace /> : children; }
-export default function App() { if (isDedicatedPlayerHost()) return <Routes><Route path="*" element={<PlayerPage />} /></Routes>; return <AuthProvider><Routes><Route path="/" element={<HomePage />} /><Route path="/player" element={<PlayerPage />} /><Route path="/player/:screenId" element={<PlayerPage />} /><Route path="/auth/confirmado" element={<AuthCallback />} /><Route path="/auth/callback" element={<AuthCallback />} /><Route path="/login" element={<Guest><LoginPage /></Guest>} /><Route path="/cadastro" element={<Guest><SignupPage /></Guest>} /><Route path="/recuperar-senha" element={<Guest><RecoveryPage /></Guest>} /><Route path="/redefinir-senha" element={<ResetPasswordPage />} /><Route element={<Protected />}><Route path="/onboarding" element={<OnboardingPage />} /><Route path="/dashboard" element={<DashboardPage />} /><Route path="/conteudo" element={<ContentReorganizedPage />} /><Route path="/playlists" element={<PlaylistsPage />} /><Route path="/programacoes" element={<SchedulesPage />} /><Route path="/mensagens" element={<MessagesSimplePage />} /><Route path="/telas" element={<ScreensSimplePage />} /><Route path="/apps" element={<PanelsCatalogPage />} /><Route path="/conta" element={<UserAccountPage />} /><Route path="/empresa" element={<AccountPage />} /><Route path="/financeiro" element={<BillingPage />} /><Route path="/ajuda" element={<HelpPage />} /><Route path="/suporte" element={<SupportPage />} /><Route path="/configuracoes" element={<SettingsPage />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></AuthProvider>; }
+
+function isDedicatedPlayerHost() {
+  return PLAYER_HOSTS.has(window.location.hostname.toLowerCase());
+}
+
+function Protected() {
+  const { loading, user, profile } = useAuth();
+  const location = useLocation();
+  if (loading) return <LoadingScreen label="Carregando sua PontoView" />;
+  if (!user)
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  if (
+    profile &&
+    !profile.onboarding_completed &&
+    location.pathname !== "/onboarding"
+  )
+    return <Navigate to="/onboarding" replace />;
+  return <AppShell />;
+}
+
+function Guest({ children }: { children: React.ReactNode }) {
+  const { loading, user } = useAuth();
+  if (loading) return <LoadingScreen />;
+  return user ? <Navigate to="/dashboard" replace /> : children;
+}
+
+export default function App() {
+  if (isDedicatedPlayerHost()) {
+    return (
+      <Routes>
+        <Route path="*" element={<PlayerPage />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/player" element={<PlayerPage />} />
+        <Route path="/player/:screenId" element={<PlayerPage />} />
+        <Route path="/auth/confirmado" element={<AuthCallback />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route
+          path="/login"
+          element={
+            <Guest>
+              <LoginPage />
+            </Guest>
+          }
+        />
+        <Route
+          path="/cadastro"
+          element={
+            <Guest>
+              <SignupPage />
+            </Guest>
+          }
+        />
+        <Route
+          path="/recuperar-senha"
+          element={
+            <Guest>
+              <RecoveryPage />
+            </Guest>
+          }
+        />
+        <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+
+        <Route element={<Protected />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/conteudo" element={<ContentReorganizedPage />} />
+          <Route path="/playlists" element={<PlaylistsPage />} />
+          <Route path="/programacoes" element={<SchedulesPage />} />
+          <Route path="/mensagens" element={<MessagesSimplePage />} />
+          <Route path="/telas" element={<ScreensSimplePage />} />
+          <Route path="/apps" element={<PanelsCatalogPage />} />
+          <Route path="/conta" element={<UserAccountPage />} />
+          <Route path="/empresa" element={<AccountPage />} />
+          <Route path="/financeiro" element={<BillingPage />} />
+          <Route path="/ajuda" element={<HelpPage />} />
+          <Route path="/suporte" element={<SupportPage />} />
+          <Route path="/configuracoes" element={<SettingsPage />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
+  );
+}
