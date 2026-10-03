@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   Gauge,
   Images,
   LayoutDashboard,
+  Menu,
   MonitorPlay,
   Play,
   PanelsTopLeft,
@@ -16,6 +17,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Unplug,
+  X,
   Youtube,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
@@ -66,6 +68,7 @@ const useCases = [
 
 export function HomePage() {
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -73,6 +76,14 @@ export function HomePage() {
     return () => {
       document.title = previousTitle;
     };
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const primaryTarget = user ? "/dashboard" : "/cadastro";
@@ -95,21 +106,51 @@ export function HomePage() {
           <a href="#como-funciona">Como funciona</a>
           <a href="#recursos">Recursos</a>
           <a href="#aplicacoes">Aplicações</a>
-          <a href="https://pontoview.com.br">Ecossistema PontoView</a>
         </nav>
 
-        <div className="pv-home-actions">
-          {!user && (
-            <Link className="pv-home-link" to="/login">
-              Entrar
-            </Link>
-          )}
-          <Link className="pv-home-button pv-home-button-small" to={primaryTarget}>
-            {primaryLabel}
-            <ArrowRight />
-          </Link>
-        </div>
+        <button
+          className="pv-home-menu-button"
+          type="button"
+          aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((current) => !current)}
+        >
+          {menuOpen ? <X /> : <Menu />}
+        </button>
       </header>
+
+      <div
+        className={`pv-home-menu-overlay${menuOpen ? " open" : ""}`}
+        aria-hidden={!menuOpen}
+        onClick={() => setMenuOpen(false)}
+      >
+        <div className="pv-home-menu-panel" onClick={(event) => event.stopPropagation()}>
+          <div className="pv-home-menu-head">
+            <span>PontoView Telas</span>
+            <button type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}><X /></button>
+          </div>
+          <div className="pv-home-menu-grid">
+            <Link to={primaryTarget} onClick={() => setMenuOpen(false)}>
+              <strong>{primaryLabel}</strong>
+              <span>{user ? "Acessar gestão das telas" : "Criar ou acessar sua Conta PontoView"}</span>
+            </Link>
+            {!user && (
+              <Link to="/login" onClick={() => setMenuOpen(false)}>
+                <strong>Entrar</strong>
+                <span>Acessar uma conta existente</span>
+              </Link>
+            )}
+            <a href="https://pontoview.com.br" onClick={() => setMenuOpen(false)}>
+              <strong>Ecossistema PontoView</strong>
+              <span>Conhecer os demais produtos</span>
+            </a>
+            <a href="https://pontoview.com.br/legal/privacidade/" onClick={() => setMenuOpen(false)}>
+              <strong>Privacidade</strong>
+              <span>Dados, integrações e transparência</span>
+            </a>
+          </div>
+        </div>
+      </div>
 
       <main>
         <section className="pv-home-hero">
@@ -337,7 +378,7 @@ export function HomePage() {
         <p>PontoView Telas · um produto PontoView</p>
         <nav aria-label="Links institucionais">
           <a href="https://pontoview.com.br">Ecossistema</a>
-          <a href="https://pontoview.com.br/privacidade">Privacidade</a>
+          <a href="https://pontoview.com.br/legal/privacidade/">Privacidade</a>
           <Link to="/login">Entrar</Link>
         </nav>
       </footer>
