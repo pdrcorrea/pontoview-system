@@ -11,8 +11,8 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
   z-index:80;
   width:min(1140px,calc(100% - 28px));
   height:68px;
-  padding:0 14px 0 18px;
-  gap:24px;
+  padding:0 12px 0 18px;
+  gap:22px;
   background:rgba(255,255,255,.80);
   border:1px solid rgba(255,255,255,.88);
   border-radius:24px;
@@ -22,7 +22,7 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
 }
 
 /* Assinatura PontoView Telas em linha única, sem moldura artificial */
-.pv-home-brand{gap:10px}
+.pv-home-brand{gap:10px;margin-right:auto}
 .pv-home-brandmark{
   width:40px;
   height:40px;
@@ -55,12 +55,15 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
 .pv-home-footer-brand .pv-home-brandname strong{font-size:16px}
 .pv-home-footer-brand .pv-home-brandname small{font-size:10px}
 
-/* Navegação com resposta visual discreta e scroll suave entre seções */
-.pv-home-header .pv-home-nav{gap:4px}
+/* Navegação central seguindo a mesma composição do portal */
+.pv-home-header .pv-home-nav{gap:4px;margin-left:0}
 .pv-home-header .pv-home-nav a{
   position:relative;
   padding:10px 12px;
   border-radius:11px;
+  color:#38526a;
+  font-size:13px;
+  font-weight:750;
   transition:background-color .22s ease,color .22s ease,transform .22s ease
 }
 .pv-home-header .pv-home-nav a::after{
@@ -84,15 +87,61 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
 .pv-home-header .pv-home-nav a:hover::after{transform:scaleX(1)}
 #como-funciona,#recursos,#aplicacoes{scroll-margin-top:108px}
 
-.pv-home-header .pv-home-actions{gap:8px}
-.pv-home-header .pv-home-link{padding:10px 12px;border-radius:11px;transition:background-color .2s ease,color .2s ease}
-.pv-home-header .pv-home-link:hover{background:#edf6fb}
-.pv-home-header .pv-home-button-small{
-  min-height:42px;
-  border-radius:13px;
-  padding:0 15px;
-  box-shadow:0 8px 20px rgba(7,63,133,.12)
+/* Botão de menu equivalente ao usado no portal */
+.pv-home-menu-button{
+  width:56px;
+  height:56px;
+  margin-left:16px;
+  border:0;
+  border-radius:17px;
+  background:#082947;
+  color:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  flex:0 0 auto;
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease
 }
+.pv-home-menu-button:hover{transform:translateY(-1px);background:#0b3559;box-shadow:0 10px 24px rgba(8,41,71,.14)}
+.pv-home-menu-button svg{width:28px;height:28px;stroke-width:1.9}
+
+/* Menu flutuante, mantendo ações comerciais sem poluir a barra */
+.pv-home-menu-overlay{
+  position:fixed;
+  inset:0;
+  z-index:75;
+  background:rgba(4,21,34,.16);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease
+}
+.pv-home-menu-overlay.open{opacity:1;pointer-events:auto}
+.pv-home-menu-panel{
+  position:absolute;
+  top:98px;
+  right:max(18px,calc((100vw - 1140px)/2));
+  width:min(410px,calc(100% - 36px));
+  padding:18px;
+  border-radius:28px;
+  background:rgba(255,255,255,.97);
+  border:1px solid rgba(255,255,255,.92);
+  box-shadow:0 26px 70px rgba(10,43,69,.17);
+  transform:translateY(-8px) scale(.98);
+  transition:transform .2s ease
+}
+.pv-home-menu-overlay.open .pv-home-menu-panel{transform:none}
+.pv-home-menu-head{display:flex;align-items:center;justify-content:space-between;padding:6px 7px 15px}
+.pv-home-menu-head>span{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#738a9d}
+.pv-home-menu-head button{width:38px;height:38px;border:0;border-radius:12px;background:#edf4f8;color:#14233a;display:grid;place-items:center;cursor:pointer}
+.pv-home-menu-head button svg{width:19px;height:19px}
+.pv-home-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv-home-menu-grid a{min-height:78px;padding:14px;border-radius:18px;background:#f6f9fb;border:1px solid #edf2f5;display:flex;flex-direction:column;justify-content:center;transition:background .18s ease,transform .18s ease}
+.pv-home-menu-grid a:hover{background:#ecf7fd;transform:translateY(-1px)}
+.pv-home-menu-grid strong{font-size:14px;color:#1d3049}
+.pv-home-menu-grid span{margin-top:4px;color:#7890a1;font-size:11px;line-height:1.4}
+
 .pv-home-hero{padding-top:clamp(54px,6vw,86px)}
 
 @media(max-width:1120px){
@@ -100,6 +149,8 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
 }
 @media(max-width:900px){
   .pv-home-value-strip{margin-left:20px;margin-right:20px;grid-template-columns:1fr}.pv-home-value-strip article{min-height:96px}.pv-home-value-strip article+article{border-left:0;border-top:1px solid #e6ecf2}
+  .pv-home-header .pv-home-nav a{padding:10px 9px;font-size:12px}
+  .pv-home-menu-button{margin-left:8px}
 }
 @media(max-width:760px){
   html{scroll-padding-top:90px}
@@ -108,7 +159,7 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
     top:12px;
     width:calc(100% - 24px);
     height:58px;
-    padding:0 10px 0 13px;
+    padding:0 8px 0 13px;
     border-radius:20px;
     gap:12px
   }
@@ -116,16 +167,24 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
   .pv-home-header .pv-home-brandname{gap:5px}
   .pv-home-header .pv-home-brandname strong{font-size:15px}
   .pv-home-header .pv-home-brandname small{font-size:9px}
-  .pv-home-header .pv-home-button-small{min-height:38px;padding:0 12px;border-radius:12px}
+  .pv-home-header .pv-home-nav{display:none}
+  .pv-home-menu-button{width:42px;height:42px;margin-left:auto;border-radius:13px}
+  .pv-home-menu-button svg{width:23px;height:23px}
+  .pv-home-menu-panel{top:auto;bottom:18px;left:12px;right:12px;width:auto}
+  .pv-home-menu-grid{grid-template-columns:1fr}
   .pv-home-hero{padding-top:42px}
   #como-funciona,#recursos,#aplicacoes{scroll-margin-top:90px}
 }
 @media(max-width:520px){
   .pv-home-value-strip article{padding:20px}.pv-home-value-icon{width:44px;height:44px;border-radius:13px}.pv-home-value-strip strong{font-size:15px}
-  .pv-home-brandname small{display:none}
+  .pv-home-brandname small{display:inline}
 }
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .pv-home-header .pv-home-nav a{transition:none}
-  .pv-home-header .pv-home-nav a::after{transition:none}
+  .pv-home-header .pv-home-nav a,
+  .pv-home-header .pv-home-nav a::after,
+  .pv-home-menu-button,
+  .pv-home-menu-overlay,
+  .pv-home-menu-panel,
+  .pv-home-menu-grid a{transition:none}
 }
