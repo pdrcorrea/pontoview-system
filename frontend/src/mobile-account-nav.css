@@ -1,0 +1,75 @@
+.mobile-account-subnav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .mobile-account-subnav {
+    position: sticky;
+    top: 60px;
+    z-index: 45;
+    display: block;
+    margin: 0;
+    padding: 8px 10px 9px;
+    border-bottom: 1px solid rgba(205, 216, 230, .72);
+    background: rgba(247, 250, 254, .82);
+    backdrop-filter: blur(18px) saturate(145%);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
+  }
+
+  .mobile-account-subnav-track {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 1px 2px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  .mobile-account-subnav-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-account-subnav a {
+    flex: 0 0 auto;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 11px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: #60758c;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+  }
+
+  .mobile-account-subnav a svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+  }
+
+  .mobile-account-subnav a:active {
+    transform: scale(.97);
+  }
+
+  .mobile-account-subnav a.active {
+    color: var(--pv-blue);
+    border-color: rgba(39, 100, 180, .12);
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 4px 14px rgba(25, 68, 122, .07);
+  }
+
+  .mobile-account-subnav a.external {
+    color: #586d83;
+  }
+
+  .mobile-account-subnav + .page {
+    padding-top: 14px;
+  }
+}
