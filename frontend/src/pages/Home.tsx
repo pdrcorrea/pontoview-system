@@ -87,14 +87,15 @@ export function HomePage() {
   }, []);
 
   const primaryTarget = user ? "/dashboard" : "/cadastro";
-  const primaryLabel = user ? "Abrir meu painel" : "Começar agora";
+  const primaryLabel = user ? "Abrir meu painel" : "Criar conta";
 
   return (
     <div className="pv-home">
       <header className="pv-home-header">
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas">
           <span className="pv-home-brandmark">
-            <img src="/assets/icon.png" alt="" />
+            <img className="pv-home-brand-logo" src="/assets/logo.png" alt="PontoView" />
+            <img className="pv-home-brand-icon" src="/assets/icon.png" alt="" />
           </span>
           <span className="pv-home-brandname">
             <strong>PontoView</strong>
@@ -107,6 +108,18 @@ export function HomePage() {
           <a href="#recursos">Recursos</a>
           <a href="#aplicacoes">Aplicações</a>
         </nav>
+
+        <div className="pv-home-header-actions">
+          {!user && (
+            <Link className="pv-home-header-login" to="/login">
+              Entrar
+            </Link>
+          )}
+          <Link className="pv-home-header-cta" to={primaryTarget}>
+            {primaryLabel}
+            <ArrowRight />
+          </Link>
+        </div>
 
         <button
           className="pv-home-menu-button"
@@ -129,24 +142,33 @@ export function HomePage() {
             <span>PontoView Telas</span>
             <button type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}><X /></button>
           </div>
-          <div className="pv-home-menu-grid">
-            <Link to={primaryTarget} onClick={() => setMenuOpen(false)}>
-              <strong>{primaryLabel}</strong>
-              <span>{user ? "Acessar gestão das telas" : "Criar ou acessar sua Conta PontoView"}</span>
-            </Link>
+          <div className="pv-home-menu-actions">
             {!user && (
-              <Link to="/login" onClick={() => setMenuOpen(false)}>
-                <strong>Entrar</strong>
-                <span>Acessar uma conta existente</span>
+              <Link className="pv-home-menu-login" to="/login" onClick={() => setMenuOpen(false)}>
+                Entrar
               </Link>
             )}
+            <Link className="pv-home-menu-primary" to={primaryTarget} onClick={() => setMenuOpen(false)}>
+              {primaryLabel}
+              <ArrowRight />
+            </Link>
+          </div>
+          <div className="pv-home-menu-grid">
             <a href="https://pontoview.com.br" onClick={() => setMenuOpen(false)}>
               <strong>Ecossistema PontoView</strong>
               <span>Conhecer os demais produtos</span>
             </a>
-            <a href="https://pontoview.com.br/legal/privacidade/" onClick={() => setMenuOpen(false)}>
-              <strong>Privacidade</strong>
-              <span>Dados, integrações e transparência</span>
+            <a href="https://pontoview.com.br/legal/" onClick={() => setMenuOpen(false)}>
+              <strong>Privacidade e segurança</strong>
+              <span>Dados, termos e transparência</span>
+            </a>
+            <a href="#como-funciona" onClick={() => setMenuOpen(false)}>
+              <strong>Como funciona</strong>
+              <span>Entender o fluxo do Telas</span>
+            </a>
+            <a href="#recursos" onClick={() => setMenuOpen(false)}>
+              <strong>Recursos</strong>
+              <span>Conhecer as principais ferramentas</span>
             </a>
           </div>
         </div>
@@ -167,7 +189,7 @@ export function HomePage() {
 
             <div className="pv-home-hero-actions">
               <Link className="pv-home-button" to={primaryTarget}>
-                {primaryLabel}
+                {user ? "Abrir meu painel" : "Começar agora"}
                 <ArrowRight />
               </Link>
               <a className="pv-home-button pv-home-button-secondary" href="#como-funciona">
@@ -364,7 +386,7 @@ export function HomePage() {
             <p>Crie sua Conta PontoView e comece a organizar suas telas em um só lugar.</p>
           </div>
           <Link className="pv-home-button pv-home-button-light" to={primaryTarget}>
-            {primaryLabel}
+            {user ? "Abrir meu painel" : "Começar agora"}
             <ArrowRight />
           </Link>
         </section>
@@ -372,7 +394,10 @@ export function HomePage() {
 
       <footer className="pv-home-footer">
         <Link className="pv-home-brand pv-home-footer-brand" to="/">
-          <span className="pv-home-brandmark"><img src="/assets/icon.png" alt="" /></span>
+          <span className="pv-home-brandmark">
+            <img className="pv-home-brand-logo" src="/assets/logo.png" alt="PontoView" />
+            <img className="pv-home-brand-icon" src="/assets/icon.png" alt="" />
+          </span>
           <span className="pv-home-brandname"><strong>PontoView</strong><small>Telas</small></span>
         </Link>
         <p>PontoView Telas · um produto PontoView</p>
