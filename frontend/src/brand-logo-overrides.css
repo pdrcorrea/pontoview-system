@@ -1,0 +1,52 @@
+/* Ajustes de contraste das assinaturas PontoView */
+
+/* Home e rodapé do Telas: usar a assinatura azul em fundos claros. */
+.pv-home-brand-logo {
+  content: url("https://pontoview.com.br/assets/PontoViewAzul.png");
+}
+
+/* Login, cadastro e fluxos de autenticação: assinatura branca sobre o painel azul.
+   O antigo wrapper quadrado do ícone é ocultado por completo para evitar sobreposição. */
+.auth-main-brand {
+  gap: 10px;
+}
+
+.auth-main-brand::before {
+  content: "";
+  display: block;
+  width: 168px;
+  height: 38px;
+  flex: 0 0 auto;
+  background: url("https://pontoview.com.br/assets/logobranco.png") left center / contain no-repeat;
+}
+
+.auth-main-brandmark {
+  display: none !important;
+}
+
+.auth-main-brand > span:last-child {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.auth-main-brand strong {
+  display: none;
+}
+
+.auth-main-brand small {
+  display: inline;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  text-transform: none;
+  color: rgba(255,255,255,.78);
+}
+
+@media (max-width: 1120px) {
+  .auth-main-brand::before {
+    width: 150px;
+    height: 34px;
+  }
+}

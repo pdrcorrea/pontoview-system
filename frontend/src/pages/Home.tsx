@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   Gauge,
   Images,
   LayoutDashboard,
+  Menu,
   MonitorPlay,
   Play,
   PanelsTopLeft,
@@ -16,6 +17,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Unplug,
+  X,
   Youtube,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
@@ -66,6 +68,7 @@ const useCases = [
 
 export function HomePage() {
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -75,15 +78,24 @@ export function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const primaryTarget = user ? "/dashboard" : "/cadastro";
-  const primaryLabel = user ? "Abrir meu painel" : "Começar agora";
+  const primaryLabel = user ? "Abrir meu painel" : "Criar conta";
 
   return (
     <div className="pv-home">
       <header className="pv-home-header">
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas">
           <span className="pv-home-brandmark">
-            <img src="/assets/icon.png" alt="" />
+            <img className="pv-home-brand-logo" src="/assets/logo.png" alt="PontoView" />
+            <img className="pv-home-brand-icon" src="/assets/icon.png" alt="" />
           </span>
           <span className="pv-home-brandname">
             <strong>PontoView</strong>
@@ -95,21 +107,72 @@ export function HomePage() {
           <a href="#como-funciona">Como funciona</a>
           <a href="#recursos">Recursos</a>
           <a href="#aplicacoes">Aplicações</a>
-          <a href="https://pontoview.com.br">Ecossistema PontoView</a>
         </nav>
 
-        <div className="pv-home-actions">
+        <div className="pv-home-header-actions">
           {!user && (
-            <Link className="pv-home-link" to="/login">
+            <Link className="pv-home-header-login" to="/login">
               Entrar
             </Link>
           )}
-          <Link className="pv-home-button pv-home-button-small" to={primaryTarget}>
+          <Link className="pv-home-header-cta" to={primaryTarget}>
             {primaryLabel}
             <ArrowRight />
           </Link>
         </div>
+
+        <button
+          className="pv-home-menu-button"
+          type="button"
+          aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((current) => !current)}
+        >
+          {menuOpen ? <X /> : <Menu />}
+        </button>
       </header>
+
+      <div
+        className={`pv-home-menu-overlay${menuOpen ? " open" : ""}`}
+        aria-hidden={!menuOpen}
+        onClick={() => setMenuOpen(false)}
+      >
+        <div className="pv-home-menu-panel" onClick={(event) => event.stopPropagation()}>
+          <div className="pv-home-menu-head">
+            <span>PontoView Telas</span>
+            <button type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}><X /></button>
+          </div>
+          <div className="pv-home-menu-actions">
+            {!user && (
+              <Link className="pv-home-menu-login" to="/login" onClick={() => setMenuOpen(false)}>
+                Entrar
+              </Link>
+            )}
+            <Link className="pv-home-menu-primary" to={primaryTarget} onClick={() => setMenuOpen(false)}>
+              {primaryLabel}
+              <ArrowRight />
+            </Link>
+          </div>
+          <div className="pv-home-menu-grid">
+            <a href="https://pontoview.com.br" onClick={() => setMenuOpen(false)}>
+              <strong>Ecossistema PontoView</strong>
+              <span>Conhecer os demais produtos</span>
+            </a>
+            <a href="https://pontoview.com.br/legal/" onClick={() => setMenuOpen(false)}>
+              <strong>Privacidade e segurança</strong>
+              <span>Dados, termos e transparência</span>
+            </a>
+            <a href="#como-funciona" onClick={() => setMenuOpen(false)}>
+              <strong>Como funciona</strong>
+              <span>Entender o fluxo do Telas</span>
+            </a>
+            <a href="#recursos" onClick={() => setMenuOpen(false)}>
+              <strong>Recursos</strong>
+              <span>Conhecer as principais ferramentas</span>
+            </a>
+          </div>
+        </div>
+      </div>
 
       <main>
         <section className="pv-home-hero">
@@ -126,7 +189,7 @@ export function HomePage() {
 
             <div className="pv-home-hero-actions">
               <Link className="pv-home-button" to={primaryTarget}>
-                {primaryLabel}
+                {user ? "Abrir meu painel" : "Começar agora"}
                 <ArrowRight />
               </Link>
               <a className="pv-home-button pv-home-button-secondary" href="#como-funciona">
@@ -323,7 +386,7 @@ export function HomePage() {
             <p>Crie sua Conta PontoView e comece a organizar suas telas em um só lugar.</p>
           </div>
           <Link className="pv-home-button pv-home-button-light" to={primaryTarget}>
-            {primaryLabel}
+            {user ? "Abrir meu painel" : "Começar agora"}
             <ArrowRight />
           </Link>
         </section>
@@ -331,13 +394,16 @@ export function HomePage() {
 
       <footer className="pv-home-footer">
         <Link className="pv-home-brand pv-home-footer-brand" to="/">
-          <span className="pv-home-brandmark"><img src="/assets/icon.png" alt="" /></span>
+          <span className="pv-home-brandmark">
+            <img className="pv-home-brand-logo" src="/assets/logo.png" alt="PontoView" />
+            <img className="pv-home-brand-icon" src="/assets/icon.png" alt="" />
+          </span>
           <span className="pv-home-brandname"><strong>PontoView</strong><small>Telas</small></span>
         </Link>
         <p>PontoView Telas · um produto PontoView</p>
         <nav aria-label="Links institucionais">
           <a href="https://pontoview.com.br">Ecossistema</a>
-          <a href="https://pontoview.com.br/privacidade">Privacidade</a>
+          <a href="https://pontoview.com.br/legal/privacidade/">Privacidade</a>
           <Link to="/login">Entrar</Link>
         </nav>
       </footer>
