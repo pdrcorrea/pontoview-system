@@ -5,13 +5,14 @@
   content: url("https://pontoview.com.br/assets/PontoViewAzul.png");
 }
 
-/* Login, cadastro e fluxos de autenticação: assinatura branca sobre o painel azul. */
+/* Login, cadastro e fluxos de autenticação: assinatura branca sobre o painel azul.
+   O wrapper antigo do ícone deixa de impor qualquer dimensão quadrada. */
 .auth-main-brand {
   gap: 10px;
 }
 
 .auth-main-brandmark {
-  width: 168px;
+  width: auto;
   height: auto;
   padding: 0;
   border: 0;
@@ -19,15 +20,19 @@
   background: transparent;
   box-shadow: none;
   overflow: visible;
-  display: block;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
 }
 
 .auth-main-brandmark img {
-  content: url("/assets/logo.png");
+  content: url("https://pontoview.com.br/assets/logobranco.png");
   display: block;
-  width: 100% !important;
+  width: 168px !important;
   height: auto !important;
+  max-width: none;
   object-fit: contain !important;
+  object-position: left center;
 }
 
 .auth-main-brand > span:last-child {
@@ -51,5 +56,5 @@
 }
 
 @media (max-width: 1120px) {
-  .auth-main-brandmark { width: 150px; }
+  .auth-main-brandmark img { width: 150px !important; }
 }
