@@ -1,0 +1,75 @@
+/* Evita que o dock móvel flutuante cubra conteúdo, ações e modais. */
+
+@media (max-width: 760px) {
+  :root {
+    --pv-mobile-dock-clearance: calc(118px + env(safe-area-inset-bottom));
+  }
+
+  /* Todas as páginas precisam conseguir rolar o último conteúdo acima do dock. */
+  .page {
+    padding-bottom: calc(var(--pv-mobile-dock-clearance) + 28px) !important;
+    scroll-padding-bottom: calc(var(--pv-mobile-dock-clearance) + 28px);
+  }
+
+  /* Barras de ação próprias também devem ficar acima do dock. */
+  .screen-mobile-save {
+    bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Enquanto um modal está aberto, o dock não deve competir com ele. */
+  body.pv-modal-open .mobile-glass-nav,
+  body.pv-modal-open .screen-mobile-save {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(calc(100% + 24px));
+  }
+
+  .mobile-glass-nav {
+    transition: opacity .18s ease, transform .22s ease, visibility .18s ease;
+  }
+
+  /* O modal passa a ocupar a camada superior e respeita a viewport real do Safari. */
+  .modal-backdrop {
+    z-index: 120 !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      10px
+      max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .pv-modal {
+    width: min(100%, 680px) !important;
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin: auto 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pv-modal .modal-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
+  }
+
+  .pv-modal .modal-actions,
+  .pv-modal .playlist-builder-actions {
+    position: relative;
+    z-index: 2;
+    margin-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  /* Editores longos deixam uma folga própria para os botões finais. */
+  .playlist-builder,
+  .playlist-editor,
+  .simplified-modal,
+  .privacy-request-form {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
