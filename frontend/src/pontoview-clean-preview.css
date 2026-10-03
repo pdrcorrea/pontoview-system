@@ -154,6 +154,9 @@ body { background: var(--pv-bg); color: var(--pv-text); }
 .pair-help { border-radius: 13px; background: #f5f8fc; }
 .pair-code { letter-spacing: .18em; font-size: 22px; text-align: center; }
 
+/* Dock móvel em glass: mesmos destinos do sistema, sem logo e sem menu sanduíche. */
+.mobile-glass-nav { display: none; }
+
 @media (max-width: 1100px) {
   .simple-screen-grid { grid-template-columns: 1fr; }
   .screen-editor-content.with-preview { grid-template-columns: 1fr; }
@@ -162,11 +165,23 @@ body { background: var(--pv-bg); color: var(--pv-text); }
 
 @media (max-width: 760px) {
   .shell { display: block; }
-  .sidebar { width: 244px; left: -260px; transition: left .22s ease; }
-  .sidebar.open { left: 0; }
-  .page { padding: 18px 14px 92px; }
-  .topbar { height: 62px; padding-inline: 14px; }
+  .sidebar,
+  .sidebar-scrim,
+  .mobile-menu { display: none !important; }
+
+  .page { padding: 18px 14px 118px; }
+  .topbar {
+    height: 60px;
+    padding-inline: 16px;
+    background: rgba(255,255,255,.86);
+    backdrop-filter: blur(18px) saturate(145%);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
+  }
+  .topbar > div:first-of-type strong { font-size: 15px; }
   .system-ok { display: none; }
+  .help-button { display: none; }
+  .top-avatar { width: 34px; height: 34px; }
+
   .head { align-items: center; }
   .head p { display: none; }
   .head h1 { font-size: 24px; }
@@ -181,5 +196,83 @@ body { background: var(--pv-bg); color: var(--pv-text); }
   .screen-config-tabs { overflow-x: auto; flex-wrap: nowrap; }
   .screen-config-tabs button { white-space: nowrap; padding: 9px 11px; }
   .visual-presets,.friendly-choice-grid,.theme-choice-grid,.position-choices { grid-template-columns: 1fr; }
-  .screen-mobile-save { display: flex; }
+  .screen-mobile-save {
+    display: flex;
+    bottom: 94px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    border: 1px solid rgba(204,216,231,.82);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(18,42,72,.10);
+  }
+
+  .mobile-glass-nav {
+    display: block;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 60;
+    border: 1px solid rgba(255,255,255,.72);
+    border-radius: 22px;
+    background: rgba(244,248,253,.74);
+    box-shadow: 0 14px 44px rgba(15,38,67,.18), inset 0 1px 0 rgba(255,255,255,.78);
+    backdrop-filter: blur(22px) saturate(155%);
+    -webkit-backdrop-filter: blur(22px) saturate(155%);
+    overflow: hidden;
+  }
+  .mobile-glass-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.08));
+  }
+  .mobile-glass-track {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(58px, 1fr));
+    gap: 2px;
+    overflow-x: auto;
+    padding: 7px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .mobile-glass-track::-webkit-scrollbar { display: none; }
+  .mobile-glass-track a {
+    min-width: 58px;
+    min-height: 62px;
+    padding: 7px 5px 6px;
+    border-radius: 15px;
+    color: #66778b;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+  }
+  .mobile-glass-track a:active { transform: scale(.96); }
+  .mobile-glass-track a.active {
+    color: var(--pv-blue);
+    background: rgba(255,255,255,.74);
+    box-shadow: 0 5px 16px rgba(24,77,146,.10), inset 0 0 0 1px rgba(255,255,255,.66);
+  }
+  .mobile-glass-icon {
+    width: 30px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+  }
+  .mobile-glass-track a.active .mobile-glass-icon {
+    background: var(--pv-blue-soft);
+  }
 }
