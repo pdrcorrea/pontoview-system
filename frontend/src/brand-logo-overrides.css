@@ -1,13 +1,53 @@
-/* Identidade oficial PontoView Telas */
+/* Identidade oficial PontoView Telas
+   Padrão do ecossistema: assinatura completa com 40px de altura visual no desktop. */
 
-/* Home e rodapé: assinatura azul local em fundos claros. */
-.pv-home-brand-logo {
-  content: url("/assets/TelasAzul.png");
+/* Home e rodapé: usar somente a assinatura oficial, sem o antigo texto "Telas" ao lado. */
+.pv-home-brand {
+  gap: 0 !important;
 }
 
-/* Sidebar: logo.png agora contém a assinatura completa do PontoView Telas. */
+.pv-home-brandmark {
+  width: auto !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+}
+
+.pv-home-brand-logo {
+  content: url("/assets/TelasAzul.png?v=20261004-2");
+  display: block !important;
+  width: auto !important;
+  height: 40px !important;
+  max-width: 150px !important;
+  object-fit: contain !important;
+}
+
+.pv-home-brand-icon,
+.pv-home-brandname {
+  display: none !important;
+}
+
+.pv-home-footer-brand .pv-home-brandmark {
+  width: auto !important;
+  height: 36px !important;
+}
+
+.pv-home-footer-brand .pv-home-brand-logo {
+  height: 36px !important;
+}
+
+/* Sidebar: logo.png contém a assinatura completa do PontoView Telas. */
 .sidebar-product-badge {
   display: none !important;
+}
+
+.pv-full-brand img {
+  display: block;
+  width: auto;
+  height: 34px;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 /* Login, cadastro e fluxos de autenticação: assinatura branca completa sobre o painel azul. */
@@ -18,10 +58,10 @@
 .auth-main-brand::before {
   content: "";
   display: block;
-  width: 190px;
-  height: 44px;
+  width: 136px;
+  height: 40px;
   flex: 0 0 auto;
-  background: url("/assets/TelasBranco.png") left center / contain no-repeat;
+  background: url("/assets/TelasBranco.png?v=20261004-2") left center / contain no-repeat;
 }
 
 .auth-main-brandmark,
@@ -31,7 +71,31 @@
 
 @media (max-width: 1120px) {
   .auth-main-brand::before {
-    width: 168px;
-    height: 40px;
+    width: 122px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 760px) {
+  .pv-home-brandmark {
+    width: auto !important;
+    height: 32px !important;
+  }
+
+  .pv-home-brand-logo {
+    display: block !important;
+    width: auto !important;
+    height: 32px !important;
+    max-width: 116px !important;
+  }
+
+  .pv-home-brand-icon,
+  .pv-home-brandname {
+    display: none !important;
+  }
+
+  .pv-home-footer-brand .pv-home-brandmark,
+  .pv-home-footer-brand .pv-home-brand-logo {
+    height: 32px !important;
   }
 }
