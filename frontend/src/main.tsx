@@ -9,6 +9,7 @@ import "./player-readability.css";
 import "./message-experience.css";
 import "./player-critical-fixes.css";
 import "./brand-logo-overrides.css";
+import "./home-mobile-value-fix.css";
 
 const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
