@@ -1,52 +1,37 @@
-/* Ajustes de contraste das assinaturas PontoView */
+/* Identidade oficial PontoView Telas */
 
-/* Home e rodapé do Telas: usar a assinatura azul em fundos claros. */
+/* Home e rodapé: assinatura azul local em fundos claros. */
 .pv-home-brand-logo {
-  content: url("https://pontoview.com.br/assets/PontoViewAzul.png");
+  content: url("/assets/TelasAzul.png");
 }
 
-/* Login, cadastro e fluxos de autenticação: assinatura branca sobre o painel azul.
-   O antigo wrapper quadrado do ícone é ocultado por completo para evitar sobreposição. */
+/* Sidebar: logo.png agora contém a assinatura completa do PontoView Telas. */
+.sidebar-product-badge {
+  display: none !important;
+}
+
+/* Login, cadastro e fluxos de autenticação: assinatura branca completa sobre o painel azul. */
 .auth-main-brand {
-  gap: 10px;
+  gap: 0;
 }
 
 .auth-main-brand::before {
   content: "";
   display: block;
-  width: 168px;
-  height: 38px;
+  width: 190px;
+  height: 44px;
   flex: 0 0 auto;
-  background: url("https://pontoview.com.br/assets/logobranco.png") left center / contain no-repeat;
+  background: url("/assets/TelasBranco.png") left center / contain no-repeat;
 }
 
-.auth-main-brandmark {
-  display: none !important;
-}
-
+.auth-main-brandmark,
 .auth-main-brand > span:last-child {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.auth-main-brand strong {
-  display: none;
-}
-
-.auth-main-brand small {
-  display: inline;
-  margin: 0;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: -.01em;
-  text-transform: none;
-  color: rgba(255,255,255,.78);
+  display: none !important;
 }
 
 @media (max-width: 1120px) {
   .auth-main-brand::before {
-    width: 150px;
-    height: 34px;
+    width: 168px;
+    height: 40px;
   }
 }
