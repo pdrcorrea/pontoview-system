@@ -1,0 +1,63 @@
+/* Mobile fix: proposta de valor da Home do PontoView Telas */
+@media (max-width: 760px) {
+  .pv-home .pv-home-value-strip {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+    overflow: hidden !important;
+  }
+
+  .pv-home .pv-home-value-strip article {
+    display: grid !important;
+    grid-template-columns: 46px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 14px !important;
+    min-height: 92px !important;
+    padding: 18px 20px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pv-home .pv-home-value-strip article + article {
+    border-left: 0 !important;
+    border-top: 1px solid #e6ecf2 !important;
+  }
+
+  .pv-home .pv-home-value-strip .pv-home-value-icon {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    max-width: 46px !important;
+    flex: 0 0 46px !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  .pv-home .pv-home-value-strip .pv-home-value-icon svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .pv-home .pv-home-value-strip article > div {
+    min-width: 0 !important;
+    width: auto !important;
+    overflow: visible !important;
+  }
+
+  .pv-home .pv-home-value-strip article small,
+  .pv-home .pv-home-value-strip article strong {
+    width: auto !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .pv-home .pv-home-value-strip article strong {
+    margin-top: 5px !important;
+    font-size: 15px !important;
+    line-height: 1.3 !important;
+  }
+}
