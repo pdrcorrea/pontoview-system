@@ -100,8 +100,14 @@ security invoker
 set search_path = public, auth
 as $$
 declare
+  v_user uuid := auth.uid();
   v_change_type text := 'update';
 begin
+  -- Atualizações de backend usam service_role e são registradas explicitamente pelas Edge Functions quando necessário.
+  if v_user is null then
+    return new;
+  end if;
+
   if old.status is distinct from new.status then
     v_change_type := 'status:' || old.status || '->' || new.status;
   end if;
@@ -109,7 +115,7 @@ begin
   insert into public.content_revisions(content_item_id, changed_by, change_type, snapshot)
   values (
     new.id,
-    auth.uid(),
+    v_user,
     v_change_type,
     jsonb_build_object('before', to_jsonb(old), 'after', to_jsonb(new))
   );
@@ -141,6 +147,9 @@ alter table public.content_revisions enable row level security;
 revoke all on table public.content_sources from anon, authenticated;
 revoke all on table public.content_items from anon, authenticated;
 revoke all on table public.content_revisions from anon, authenticated;
+grant select, insert, update, delete on table public.content_sources to service_role;
+grant select, insert, update, delete on table public.content_items to service_role;
+grant select, insert, update, delete on table public.content_revisions to service_role;
 
 -- Fonte técnica atual usada para a transição do fluxo legado screens-news.
 insert into public.content_sources (
