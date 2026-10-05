@@ -33,7 +33,11 @@ async function loadRuntimeConfig() {
   }
 }
 
-await loadRuntimeConfig();
-await import("./main.tsx");
+async function start() {
+  await loadRuntimeConfig();
+  await import("./main.tsx");
+}
+
+void start();
 
 export {};
