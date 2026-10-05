@@ -16,6 +16,25 @@ async function requireIngestAccess(req: Request) {
   return { mode: "user" as const, user, role };
 }
 
+function publicFeedUrl(value: string) {
+  let url: URL;
+  try { url = new URL(value); }
+  catch { throw new HttpError(400, "INVALID_SOURCE_URL"); }
+
+  if (url.protocol !== "https:") throw new HttpError(400, "SOURCE_URL_MUST_USE_HTTPS");
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (
+    host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
+    host === "0.0.0.0" || host === "::" || host === "::1" ||
+    /^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host) || /^100\.(6[4-9]|[78]\d|9\d|1[01]\d|12[0-7])\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    host === "169.254.169.254" || host === "metadata.google.internal"
+  ) throw new HttpError(400, "SOURCE_URL_NOT_PUBLIC");
+
+  return url.toString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
@@ -34,11 +53,13 @@ Deno.serve(async (req) => {
     if (sourceError) throw sourceError;
     if (!source || !source.is_active || !source.feed_url) throw new HttpError(503, "NEWS_SOURCE_UNAVAILABLE");
     if (!["api", "partner"].includes(String(source.source_type))) throw new HttpError(409, "SOURCE_INGESTION_NOT_SUPPORTED_YET");
+    const feedUrl = publicFeedUrl(String(source.feed_url));
 
     let providerItems: Record<string, unknown>[] = [];
     try {
-      const response = await fetch(source.feed_url, {
+      const response = await fetch(feedUrl, {
         headers: { Accept: "application/json", "User-Agent": "PontoView-ContentHub/3.0" },
+        redirect: "error",
       });
       if (!response.ok) throw new Error(`provider_http_${response.status}`);
       const json = await response.json();
