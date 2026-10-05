@@ -4,6 +4,8 @@ project_id = "pontoview-backend"
 verify_jwt = true
 [functions.content-news-ingest]
 verify_jwt = false
+[functions.content-news-cron]
+verify_jwt = false
 [functions.content-editorial]
 verify_jwt = true
 [functions.content-feed]
