@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
       .select("id,category,title,summary,source_name,source_url,image_url,source_published_at,published_at,expires_at")
       .eq("content_type", "news")
       .eq("status", "published")
+      .lte("published_at", now)
       .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order("published_at", { ascending: false })
       .limit(80);
@@ -74,8 +75,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Transição segura: o cache legado é somente leitura e não busca mais o provedor externo.
-    // Ele desaparece naturalmente quando a Central tiver volume suficiente de itens publicados.
     const { data: legacyRows } = await admin
       .from("news_cache")
       .select("id,source,category,title,summary,url,image_url,published_at")
