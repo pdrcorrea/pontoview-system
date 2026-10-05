@@ -21,9 +21,17 @@ interface AuthState {
   signOut: () => Promise<void>;
 }
 
+type AuthProviderMode = "full" | "session";
+
 const AuthContext = createContext<AuthState | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+  mode = "full",
+}: {
+  children: React.ReactNode;
+  mode?: AuthProviderMode;
+}) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -35,7 +43,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       nextSession === undefined
         ? (await supabase.auth.getSession()).data.session
         : nextSession;
+
     setSession(activeSession);
+
+    if (mode === "session") {
+      setProfile(null);
+      setOrganization(null);
+      setRole(null);
+      setLoading(false);
+      return;
+    }
+
     if (!activeSession?.user) {
       setProfile(null);
       setOrganization(null);
@@ -43,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
+
     const profileResult = await supabase
       .from("profiles")
       .select("id,email,full_name,avatar_url,onboarding_completed")
@@ -59,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .order("created_at")
       .limit(1)
       .maybeSingle();
+
     if (!membership.data) {
       await supabase.rpc("ensure_screen_organization", {
         p_name:
@@ -75,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .limit(1)
         .maybeSingle();
     }
+
     if (membership.data) {
       setRole(membership.data.role as OrganizationRole);
       const orgValue = membership.data.organizations as unknown;
@@ -83,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
     }
     setLoading(false);
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     void loadAccount();
@@ -108,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }),
     [loading, session, profile, organization, role, loadAccount],
   );
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -2,6 +2,12 @@ project_id = "pontoview-backend"
 
 [functions.content-resolver]
 verify_jwt = true
+[functions.content-news-ingest]
+verify_jwt = false
+[functions.content-editorial]
+verify_jwt = true
+[functions.content-feed]
+verify_jwt = false
 [functions.drive-oauth-start]
 verify_jwt = true
 [functions.drive-oauth-callback]

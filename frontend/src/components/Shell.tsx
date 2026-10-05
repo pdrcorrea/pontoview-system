@@ -12,6 +12,7 @@ import {
   LogOut,
   MessageSquareText,
   Monitor,
+  Newspaper,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -53,9 +54,11 @@ const mobileNav = [
 ] as const;
 
 export function AppShell() {
-  const { organization, profile, role, signOut } = useAuth();
+  const { organization, profile, role, user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const contentHubRole = String(user?.app_metadata?.content_hub_role || "");
+  const canUseContentHub = contentHubRole === "admin" || contentHubRole === "editor";
   const accountRouteActive = useMemo(
     () => account.some(([path]) => location.pathname.startsWith(path)),
     [location.pathname],
@@ -64,7 +67,9 @@ export function AppShell() {
   const [screenHealth, setScreenHealth] = useState({ total: 0, online: 0 });
   const title = location.pathname.startsWith("/programacoes")
     ? "Programação de grupos"
-    : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
+    : location.pathname.startsWith("/central-conteudo")
+      ? "Central de Conteúdo"
+      : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
   const initials = (profile?.full_name || profile?.email || "PV")
     .split(/\s+/)
     .slice(0, 2)
@@ -153,6 +158,18 @@ export function AppShell() {
         <div className="nav-label">PontoView Telas</div>
         <nav>{links(primary)}</nav>
 
+        {canUseContentHub && (
+          <>
+            <div className="nav-label">Editorial PontoView</div>
+            <nav>
+              <NavLink to="/central-conteudo" className={({ isActive }) => (isActive ? "active" : "")}>
+                <Newspaper size={18} />
+                <span>Central de Conteúdo</span>
+              </NavLink>
+            </nav>
+          </>
+        )}
+
         <div className="account-menu-block">
           <button
             className={`account-menu-toggle ${accountOpen ? "open" : ""}`}
@@ -202,12 +219,7 @@ export function AppShell() {
                   <span>{label === "Contato e suporte" ? "Suporte" : label}</span>
                 </NavLink>
               ))}
-              <a
-                className="external"
-                href="https://pontoview.com.br/privacidade"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a className="external" href="https://pontoview.com.br/privacidade" target="_blank" rel="noreferrer">
                 <ShieldCheck size={16} />
                 <span>Privacidade</span>
               </a>
@@ -224,14 +236,18 @@ export function AppShell() {
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) =>
-                isActive || (to === "/conta" && accountRouteActive) ? "active" : ""
-              }
+              className={({ isActive }) => isActive || (to === "/conta" && accountRouteActive) ? "active" : ""}
             >
               <span className="mobile-glass-icon"><Icon size={20} /></span>
               <span>{label}</span>
             </NavLink>
           ))}
+          {canUseContentHub && (
+            <NavLink to="/central-conteudo" className={({ isActive }) => (isActive ? "active" : "")}>
+              <span className="mobile-glass-icon"><Newspaper size={20} /></span>
+              <span>Editorial</span>
+            </NavLink>
+          )}
         </div>
       </nav>
     </div>
