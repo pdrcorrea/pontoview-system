@@ -17,6 +17,10 @@ create table if not exists public.content_sources (
   trust_level smallint not null default 1 check (trust_level between 0 and 5),
   attribution_label text,
   license_notes text,
+  last_ingested_at timestamptz,
+  last_ingest_status text check (last_ingest_status is null or last_ingest_status in ('ok','partial','error')),
+  last_ingest_count integer not null default 0 check (last_ingest_count >= 0),
+  last_ingest_error text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
