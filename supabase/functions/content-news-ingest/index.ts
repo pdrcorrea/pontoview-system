@@ -1,14 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { admin, cors, handleError, HttpError, reply } from "../_shared/common.ts";
+import { admin, cors, handleError, HttpError, reply, requireUser } from "../_shared/common.ts";
 import { editorialCheck, normalizeNewsItem, stableNewsSlug } from "../_shared/news-editorial.ts";
 
-const SOURCE_SLUG = "pontoview-news-provider";
+const DEFAULT_SOURCE_SLUG = "pontoview-news-provider";
+const editorialRoles = new Set(["admin", "editor"]);
 
-function requireIngestSecret(req: Request) {
+async function requireIngestAccess(req: Request) {
   const configured = Deno.env.get("CONTENT_HUB_INGEST_SECRET") || "";
   const received = req.headers.get("x-content-hub-secret") || "";
-  if (!configured) throw new HttpError(503, "CONTENT_HUB_INGEST_SECRET_MISSING");
-  if (!received || received !== configured) throw new HttpError(401, "INVALID_INGEST_SECRET");
+  if (configured && received && received === configured) return { mode: "secret" as const };
+
+  const user = await requireUser(req);
+  const role = String(user.app_metadata?.content_hub_role || "");
+  if (!editorialRoles.has(role)) throw new HttpError(403, "CONTENT_HUB_ACCESS_DENIED");
+  return { mode: "user" as const, user, role };
 }
 
 Deno.serve(async (req) => {
@@ -16,21 +21,24 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
 
   try {
-    requireIngestSecret(req);
+    await requireIngestAccess(req);
+    const body = await req.json().catch(() => ({}));
+    const sourceSlug = String(body?.source_slug || DEFAULT_SOURCE_SLUG).trim().slice(0, 100) || DEFAULT_SOURCE_SLUG;
 
     const { data: source, error: sourceError } = await admin
       .from("content_sources")
-      .select("id,name,feed_url,is_active,requires_review")
-      .eq("slug", SOURCE_SLUG)
+      .select("id,name,slug,source_type,feed_url,is_active,requires_review")
+      .eq("slug", sourceSlug)
       .maybeSingle();
 
     if (sourceError) throw sourceError;
     if (!source || !source.is_active || !source.feed_url) throw new HttpError(503, "NEWS_SOURCE_UNAVAILABLE");
+    if (!["api", "partner"].includes(String(source.source_type))) throw new HttpError(409, "SOURCE_INGESTION_NOT_SUPPORTED_YET");
 
     let providerItems: Record<string, unknown>[] = [];
     try {
       const response = await fetch(source.feed_url, {
-        headers: { Accept: "application/json", "User-Agent": "PontoView-ContentHub/2.0" },
+        headers: { Accept: "application/json", "User-Agent": "PontoView-ContentHub/3.0" },
       });
       if (!response.ok) throw new Error(`provider_http_${response.status}`);
       const json = await response.json();
@@ -106,7 +114,7 @@ Deno.serve(async (req) => {
     }).eq("id", source.id);
 
     return reply({
-      source: SOURCE_SLUG,
+      source: source.slug,
       received: providerItems.length,
       considered: rows.length,
       inserted,
