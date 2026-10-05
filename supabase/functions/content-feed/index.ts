@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
       .select("id,content_type,category,slug,title,summary,image_url,source_name,source_url,source_author,source_published_at,published_at,expires_at")
       .eq("content_type", contentType)
       .eq("status", "published")
+      .lte("published_at", now)
       .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order("published_at", { ascending: false })
       .limit(limit);
