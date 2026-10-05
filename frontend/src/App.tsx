@@ -41,6 +41,7 @@ import "./pontoview-ux-polish.css";
 import "./mobile-account-nav.css";
 import "./mobile-dock-safety.css";
 import "./panelThumbs";
+import "./content-ecosystem-theme.css";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 const CENTRAL_HOSTS = new Set(["central.pontoview.com.br"]);
@@ -67,20 +68,24 @@ function Guest({ children }: { children: React.ReactNode }) {
 
 function CentralHostApp() {
   return (
-    <Routes>
-      <Route path="/login" element={<CentralAdminLoginPage />} />
-      <Route path="*" element={<CentralAdminGate />} />
-    </Routes>
+    <AuthProvider mode="session">
+      <Routes>
+        <Route path="/login" element={<CentralAdminLoginPage />} />
+        <Route path="*" element={<CentralAdminGate />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
 function CentralPreviewApp() {
   return (
-    <Routes>
-      <Route path="/central-conteudo/login" element={<CentralAdminLoginPage />} />
-      <Route path="/central-conteudo" element={<CentralAdminGate />} />
-      <Route path="*" element={<Navigate to="/central-conteudo" replace />} />
-    </Routes>
+    <AuthProvider mode="session">
+      <Routes>
+        <Route path="/central-conteudo/login" element={<CentralAdminLoginPage />} />
+        <Route path="/central-conteudo" element={<CentralAdminGate />} />
+        <Route path="*" element={<Navigate to="/central-conteudo" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
