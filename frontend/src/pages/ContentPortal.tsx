@@ -22,6 +22,7 @@ type PublicContent = {
 
 type FeedResponse = { items: PublicContent[] };
 
+const PUBLIC_FUNCTIONS_URL = "https://fpdojntvnhiszagczfqr.supabase.co/functions/v1";
 const categories: Record<string, string> = {
   general: "Geral",
   local: "Local",
@@ -43,13 +44,20 @@ function publicBasePath() {
 }
 
 async function loadFeed() {
-  if (!functionsUrl) throw new Error("CONTENT_PORTAL_NOT_CONFIGURED");
-  const response = await fetch(`${functionsUrl}/content-feed?type=news&limit=50`, {
-    headers: supabasePublishableKey ? { apikey: supabasePublishableKey } : undefined,
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.error || "CONTENT_FEED_UNAVAILABLE");
-  return (data as FeedResponse).items || [];
+  const base = functionsUrl || PUBLIC_FUNCTIONS_URL;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(`${base}/content-feed?type=news&limit=50`, {
+      signal: controller.signal,
+      headers: supabasePublishableKey ? { apikey: supabasePublishableKey } : undefined,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error || "CONTENT_FEED_UNAVAILABLE");
+    return (data as FeedResponse).items || [];
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export function ContentPortalPage() {
@@ -63,6 +71,7 @@ export function ContentPortalPage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    setError(false);
     loadFeed()
       .then((rows) => { if (alive) setItems(rows); })
       .catch(() => { if (alive) setError(true); })
