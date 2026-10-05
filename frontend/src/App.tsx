@@ -42,6 +42,7 @@ import "./mobile-account-nav.css";
 import "./mobile-dock-safety.css";
 import "./panelThumbs";
 import "./content-ecosystem-theme.css";
+import "./content-portal-operational.css";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 const CENTRAL_HOSTS = new Set(["central.pontoview.com.br"]);
