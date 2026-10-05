@@ -12,7 +12,7 @@ import {
 import { HomePage } from "./pages/Home";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentReorganizedPage } from "./pages/ContentReorganized";
-import { ContentHubPage } from "./pages/ContentHub";
+import { CentralAdminGate, CentralAdminLoginPage } from "./pages/CentralAdmin";
 import { PanelsCatalogPage } from "./pages/PanelsCatalog";
 import { PlaylistsPage } from "./pages/PlaylistsV2";
 import { SchedulesPage } from "./pages/Schedules";
@@ -62,13 +62,6 @@ function Protected() {
   return <AppShell />;
 }
 
-function ContentHubGate() {
-  const { loading, user } = useAuth();
-  if (loading) return <LoadingScreen label="Abrindo a Central de Conteúdo" />;
-  const role = String(user?.app_metadata?.content_hub_role || "");
-  return ["admin", "editor"].includes(role) ? <ContentHubPage /> : <Navigate to="/dashboard" replace />;
-}
-
 function Guest({ children }: { children: React.ReactNode }) {
   const { loading, user } = useAuth();
   if (loading) return <LoadingScreen />;
@@ -92,6 +85,10 @@ export default function App() {
         <Route path="/player/:screenId" element={<PlayerPage />} />
         <Route path="/auth/confirmado" element={<AuthCallback />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+
+        <Route path="/central-conteudo/login" element={<CentralAdminLoginPage />} />
+        <Route path="/central-conteudo" element={<CentralAdminGate />} />
+
         <Route
           path="/login"
           element={
@@ -122,7 +119,6 @@ export default function App() {
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/conteudo" element={<ContentReorganizedPage />} />
-          <Route path="/central-conteudo" element={<ContentHubGate />} />
           <Route path="/playlists" element={<PlaylistsPage />} />
           <Route path="/programacoes" element={<SchedulesPage />} />
           <Route path="/mensagens" element={<MessagesSimplePage />} />
