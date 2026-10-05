@@ -13,6 +13,7 @@ import { HomePage } from "./pages/Home";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentReorganizedPage } from "./pages/ContentReorganized";
 import { CentralAdminGate, CentralAdminLoginPage } from "./pages/CentralAdmin";
+import { ContentPortalPage } from "./pages/ContentPortal";
 import { PanelsCatalogPage } from "./pages/PanelsCatalog";
 import { PlaylistsPage } from "./pages/PlaylistsV2";
 import { SchedulesPage } from "./pages/Schedules";
@@ -42,9 +43,11 @@ import "./mobile-dock-safety.css";
 import "./panelThumbs";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
+const CENTRAL_HOSTS = new Set(["central.pontoview.com.br"]);
+const CONTENT_HOSTS = new Set(["conteudo.pontoview.com.br"]);
 
-function isDedicatedPlayerHost() {
-  return PLAYER_HOSTS.has(window.location.hostname.toLowerCase());
+function hostname() {
+  return window.location.hostname.toLowerCase();
 }
 
 function Protected() {
@@ -68,14 +71,40 @@ function Guest({ children }: { children: React.ReactNode }) {
   return user ? <Navigate to="/dashboard" replace /> : children;
 }
 
+function CentralHostApp() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<CentralAdminLoginPage />} />
+        <Route path="*" element={<CentralAdminGate />} />
+      </Routes>
+    </AuthProvider>
+  );
+}
+
+function ContentHostApp() {
+  return (
+    <Routes>
+      <Route path="/" element={<ContentPortalPage />} />
+      <Route path="/:slug" element={<ContentPortalPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
-  if (isDedicatedPlayerHost()) {
+  const host = hostname();
+
+  if (PLAYER_HOSTS.has(host)) {
     return (
       <Routes>
         <Route path="*" element={<PlayerPage />} />
       </Routes>
     );
   }
+
+  if (CENTRAL_HOSTS.has(host)) return <CentralHostApp />;
+  if (CONTENT_HOSTS.has(host)) return <ContentHostApp />;
 
   return (
     <AuthProvider>
@@ -88,6 +117,8 @@ export default function App() {
 
         <Route path="/central-conteudo/login" element={<CentralAdminLoginPage />} />
         <Route path="/central-conteudo" element={<CentralAdminGate />} />
+        <Route path="/conteudo-publico" element={<ContentPortalPage />} />
+        <Route path="/conteudo-publico/:slug" element={<ContentPortalPage />} />
 
         <Route
           path="/login"
