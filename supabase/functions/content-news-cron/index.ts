@@ -4,7 +4,7 @@ import { admin, cors, handleError, HttpError, reply } from "../_shared/common.ts
 import { editorialCheck, normalizeNewsItem, stableNewsSlug } from "../_shared/news-editorial.ts";
 
 const CRON_TOKEN_SHA256 = "749f67d3a07654877570e9e1de5cf99a6edc44ea9feb936059457433e6df89bc";
-const MAX_ITEMS_PER_SOURCE = 40;
+const MAX_ITEMS_PER_SOURCE = 20;
 const MAX_FEED_BYTES = 5_000_000;
 
 type SourceRow = {
