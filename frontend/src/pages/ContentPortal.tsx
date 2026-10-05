@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Loader2, Newspaper, Search } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { functionsUrl, supabasePublishableKey } from "../lib/supabase";
 import "../content-portal.css";
 
@@ -22,14 +22,35 @@ type PublicContent = {
 
 type FeedResponse = { items: PublicContent[] };
 
+type PortalCategory = {
+  id: string;
+  label: string;
+};
+
 const PUBLIC_FUNCTIONS_URL = "https://fpdojntvnhiszagczfqr.supabase.co/functions/v1";
-const categories: Record<string, string> = {
+
+const portalCategories: PortalCategory[] = [
+  { id: "all", label: "Geral" },
+  { id: "national", label: "Nacional" },
+  { id: "international", label: "Internacional" },
+  { id: "economy", label: "Economia" },
+  { id: "sports", label: "Esportes" },
+  { id: "technology", label: "Tecnologia" },
+  { id: "health", label: "Saúde" },
+  { id: "celebrities", label: "Famosos" },
+];
+
+const categoryLabels: Record<string, string> = {
   general: "Geral",
-  local: "Local",
+  local: "Nacional",
+  national: "Nacional",
+  international: "Internacional",
   economy: "Economia",
   sports: "Esportes",
   technology: "Tecnologia",
   health: "Saúde",
+  celebrities: "Famosos",
+  entertainment: "Famosos",
 };
 
 function formatDate(value?: string | null) {
@@ -41,6 +62,17 @@ function formatDate(value?: string | null) {
 
 function publicBasePath() {
   return window.location.hostname.toLowerCase() === "conteudo.pontoview.com.br" ? "" : "/conteudo-publico";
+}
+
+function categoryLabel(value: string) {
+  return categoryLabels[value] || "Geral";
+}
+
+function matchesCategory(itemCategory: string, selectedCategory: string) {
+  if (selectedCategory === "all") return true;
+  if (selectedCategory === "national") return itemCategory === "national" || itemCategory === "local";
+  if (selectedCategory === "celebrities") return itemCategory === "celebrities" || itemCategory === "entertainment";
+  return itemCategory === selectedCategory;
 }
 
 async function loadFeed() {
@@ -62,11 +94,15 @@ async function loadFeed() {
 
 export function ContentPortalPage() {
   const { slug } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedCategory = searchParams.get("tema") || "all";
+  const initialCategory = portalCategories.some((item) => item.id === requestedCategory) ? requestedCategory : "all";
+
   const [items, setItems] = useState<PublicContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] = useState(initialCategory);
 
   useEffect(() => {
     let alive = true;
@@ -79,29 +115,45 @@ export function ContentPortalPage() {
     return () => { alive = false; };
   }, []);
 
+  useEffect(() => {
+    const next = searchParams.get("tema") || "all";
+    setCategory(portalCategories.some((item) => item.id === next) ? next : "all");
+  }, [searchParams]);
+
   const selected = slug ? items.find((item) => item.slug === slug) : null;
   const visible = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("pt-BR");
     return items.filter((item) => {
-      if (category !== "all" && item.category !== category) return false;
+      if (!matchesCategory(item.category, category)) return false;
       if (!term) return true;
       return `${item.title} ${item.summary || ""} ${item.source_name}`.toLocaleLowerCase("pt-BR").includes(term);
     });
   }, [items, search, category]);
 
+  const activeCategoryLabel = portalCategories.find((item) => item.id === category)?.label || "Geral";
+
+  function selectCategory(nextCategory: string) {
+    setCategory(nextCategory);
+    if (nextCategory === "all") setSearchParams({}, { replace: true });
+    else setSearchParams({ tema: nextCategory }, { replace: true });
+  }
+
   if (slug && !loading && selected) {
     return (
       <div className="content-portal">
         <header className="content-portal-header compact">
-          <Link className="content-portal-brand" to={publicBasePath() || "/"}>
-            <img src="/assets/icon.png" alt="" />
-            <span><strong>PontoView</strong><small>Conteúdo</small></span>
-          </Link>
+          <div className="content-portal-header-inner">
+            <Link className="content-portal-brand" to={publicBasePath() || "/"}>
+              <img src="/assets/icon.png" alt="" />
+              <strong>Conteúdo</strong>
+            </Link>
+            <Link className="content-portal-header-back" to={publicBasePath() || "/"}><ArrowLeft size={16}/>Voltar ao portal</Link>
+          </div>
         </header>
         <main className="content-portal-article-wrap">
           <Link className="content-portal-back" to={publicBasePath() || "/"}><ArrowLeft size={17}/>Voltar</Link>
           <article className="content-portal-article">
-            <span className="content-portal-category">{categories[selected.category] || selected.category}</span>
+            <span className="content-portal-category">{categoryLabel(selected.category)}</span>
             <h1>{selected.title}</h1>
             {selected.summary && <p className="content-portal-lead">{selected.summary}</p>}
             <div className="content-portal-meta">
@@ -125,38 +177,62 @@ export function ContentPortalPage() {
   }
 
   return (
-    <div className="content-portal">
-      <header className="content-portal-header">
+    <div className="content-portal content-portal-operational">
+      <header className="content-portal-header content-portal-nav-shell">
         <div className="content-portal-header-inner">
-          <Link className="content-portal-brand" to={publicBasePath() || "/"}>
+          <Link className="content-portal-brand" to={publicBasePath() || "/"} onClick={()=>selectCategory("all")}>
             <img src="/assets/icon.png" alt="" />
-            <span><strong>PontoView</strong><small>Conteúdo</small></span>
+            <strong>Conteúdo</strong>
           </Link>
-          <span className="content-portal-badge">Portal informativo</span>
+
+          <nav className="content-portal-nav" aria-label="Temas do conteúdo">
+            {portalCategories.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={category === item.id ? "active" : ""}
+                onClick={() => selectCategory(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <label className="content-portal-search content-portal-search-header">
+            <Search size={17}/>
+            <input value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Buscar" aria-label="Buscar no conteúdo" />
+          </label>
         </div>
       </header>
 
       <main className="content-portal-main">
-        <section className="content-portal-intro">
-          <span>INFORMAÇÃO COM ORIGEM</span>
-          <h1>Conteúdo para entender o que importa.</h1>
-          <p>Notícias e informações selecionadas pela PontoView, sempre com identificação da fonte.</p>
-        </section>
-
-        <section className="content-portal-toolbar">
-          <label className="content-portal-search"><Search size={18}/><input value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Buscar no conteúdo" /></label>
-          <div className="content-portal-filters">
-            <button className={category === "all" ? "active" : ""} onClick={()=>setCategory("all")}>Todos</button>
-            {Object.entries(categories).map(([id,label]) => <button key={id} className={category === id ? "active" : ""} onClick={()=>setCategory(id)}>{label}</button>)}
+        <section className="content-portal-intro content-portal-intro-compact">
+          <div className="content-portal-intro-copy">
+            <span>INFORMAÇÃO COM ORIGEM</span>
+            <h1>Conteúdo para entender o que importa.</h1>
+            <p>Notícias e informações selecionadas pela PontoView, com leitura objetiva e identificação clara da fonte.</p>
+          </div>
+          <div className="content-portal-intro-note">
+            <span>CURADORIA PONTOVIEW</span>
+            <strong>Informação clara.<br/>Fonte identificada.</strong>
+            <small>O que chega às telas também pode ser consultado por aqui.</small>
           </div>
         </section>
 
-        {loading ? <div className="content-portal-state"><Loader2 className="spin"/><span>Carregando conteúdo…</span></div> : error ? <div className="content-portal-state"><Newspaper/><strong>Não foi possível carregar o conteúdo agora.</strong><span>Tente novamente em alguns instantes.</span></div> : visible.length === 0 ? <div className="content-portal-state"><Newspaper/><strong>{items.length ? "Nenhum resultado encontrado." : "Ainda não há conteúdos publicados."}</strong><span>{items.length ? "Tente outra busca ou categoria." : "Assim que um item for aprovado e publicado na Central, ele aparecerá aqui."}</span></div> : <section className="content-portal-grid">
-          {visible.map((item) => (
-            <Link className="content-portal-card" key={item.id} to={`${publicBasePath()}/${item.slug}`}>
+        <section className="content-portal-content-head">
+          <div>
+            <span>{category === "all" ? "ÚLTIMAS PUBLICAÇÕES" : "TEMA"}</span>
+            <h2>{category === "all" ? "Agora no Conteúdo" : activeCategoryLabel}</h2>
+          </div>
+          {!loading && !error && <small>{visible.length} {visible.length === 1 ? "publicação" : "publicações"}</small>}
+        </section>
+
+        {loading ? <div className="content-portal-state"><Loader2 className="spin"/><span>Carregando conteúdo…</span></div> : error ? <div className="content-portal-state"><Newspaper/><strong>Não foi possível carregar o conteúdo agora.</strong><span>Tente novamente em alguns instantes.</span></div> : visible.length === 0 ? <div className="content-portal-state"><Newspaper/><strong>{items.length ? "Nenhum resultado encontrado." : "Ainda não há conteúdos publicados."}</strong><span>{items.length ? "Tente outro tema ou ajuste a busca." : "Assim que um item for aprovado e publicado na Central, ele aparecerá aqui."}</span></div> : <section className="content-portal-grid content-portal-grid-editorial">
+          {visible.map((item, index) => (
+            <Link className={`content-portal-card ${index === 0 ? "featured" : ""}`} key={item.id} to={`${publicBasePath()}/${item.slug}`}>
               <div className="content-portal-card-image">{item.image_url ? <img src={item.image_url} alt="" /> : <span><Newspaper size={28}/></span>}</div>
               <div className="content-portal-card-body">
-                <div className="content-portal-card-top"><span>{categories[item.category] || item.category}</span><small>{item.source_name}</small></div>
+                <div className="content-portal-card-top"><span>{categoryLabel(item.category)}</span><small>{item.source_name}</small></div>
                 <h2>{item.title}</h2>
                 {item.summary && <p>{item.summary}</p>}
                 <footer><span>{formatDate(item.source_published_at || item.published_at)}</span><ArrowUpRight size={17}/></footer>
@@ -166,7 +242,7 @@ export function ContentPortalPage() {
         </section>}
       </main>
 
-      <footer className="content-portal-footer"><span>PontoView Conteúdo</span><span>Informação certa, na tela certa, no momento certo.</span></footer>
+      <footer className="content-portal-footer"><span>Conteúdo · PontoView</span><span>Informação certa, na tela certa, no momento certo.</span></footer>
     </div>
   );
 }
