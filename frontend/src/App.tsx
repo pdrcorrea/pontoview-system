@@ -54,14 +54,8 @@ function Protected() {
   const { loading, user, profile } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingScreen label="Carregando sua PontoView" />;
-  if (!user)
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  if (
-    profile &&
-    !profile.onboarding_completed &&
-    location.pathname !== "/onboarding"
-  )
-    return <Navigate to="/onboarding" replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  if (profile && !profile.onboarding_completed && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
   return <AppShell />;
 }
 
@@ -73,12 +67,20 @@ function Guest({ children }: { children: React.ReactNode }) {
 
 function CentralHostApp() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<CentralAdminLoginPage />} />
-        <Route path="*" element={<CentralAdminGate />} />
-      </Routes>
-    </AuthProvider>
+    <Routes>
+      <Route path="/login" element={<CentralAdminLoginPage />} />
+      <Route path="*" element={<CentralAdminGate />} />
+    </Routes>
+  );
+}
+
+function CentralPreviewApp() {
+  return (
+    <Routes>
+      <Route path="/central-conteudo/login" element={<CentralAdminLoginPage />} />
+      <Route path="/central-conteudo" element={<CentralAdminGate />} />
+      <Route path="*" element={<Navigate to="/central-conteudo" replace />} />
+    </Routes>
   );
 }
 
@@ -92,19 +94,27 @@ function ContentHostApp() {
   );
 }
 
+function ContentPreviewApp() {
+  return (
+    <Routes>
+      <Route path="/conteudo-publico" element={<ContentPortalPage />} />
+      <Route path="/conteudo-publico/:slug" element={<ContentPortalPage />} />
+      <Route path="*" element={<Navigate to="/conteudo-publico" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   const host = hostname();
+  const path = window.location.pathname;
 
   if (PLAYER_HOSTS.has(host)) {
-    return (
-      <Routes>
-        <Route path="*" element={<PlayerPage />} />
-      </Routes>
-    );
+    return <Routes><Route path="*" element={<PlayerPage />} /></Routes>;
   }
-
   if (CENTRAL_HOSTS.has(host)) return <CentralHostApp />;
   if (CONTENT_HOSTS.has(host)) return <ContentHostApp />;
+  if (path.startsWith("/central-conteudo")) return <CentralPreviewApp />;
+  if (path.startsWith("/conteudo-publico")) return <ContentPreviewApp />;
 
   return (
     <AuthProvider>
@@ -114,36 +124,9 @@ export default function App() {
         <Route path="/player/:screenId" element={<PlayerPage />} />
         <Route path="/auth/confirmado" element={<AuthCallback />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-
-        <Route path="/central-conteudo/login" element={<CentralAdminLoginPage />} />
-        <Route path="/central-conteudo" element={<CentralAdminGate />} />
-        <Route path="/conteudo-publico" element={<ContentPortalPage />} />
-        <Route path="/conteudo-publico/:slug" element={<ContentPortalPage />} />
-
-        <Route
-          path="/login"
-          element={
-            <Guest>
-              <LoginPage />
-            </Guest>
-          }
-        />
-        <Route
-          path="/cadastro"
-          element={
-            <Guest>
-              <SignupPage />
-            </Guest>
-          }
-        />
-        <Route
-          path="/recuperar-senha"
-          element={
-            <Guest>
-              <RecoveryPage />
-            </Guest>
-          }
-        />
+        <Route path="/login" element={<Guest><LoginPage /></Guest>} />
+        <Route path="/cadastro" element={<Guest><SignupPage /></Guest>} />
+        <Route path="/recuperar-senha" element={<Guest><RecoveryPage /></Guest>} />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
         <Route element={<Protected />}>
