@@ -44,6 +44,7 @@ create table if not exists public.content_items (
   expires_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  constraint content_items_source_url_unique unique (source_id, source_url),
   constraint content_items_published_requirements check (
     status <> 'published' or (
       length(btrim(title)) > 0 and
@@ -52,10 +53,6 @@ create table if not exists public.content_items (
     )
   )
 );
-
-create unique index if not exists content_items_source_url_unique
-  on public.content_items(source_id, source_url)
-  where source_id is not null and source_url is not null;
 
 create index if not exists content_items_distribution_idx
   on public.content_items(content_type, status, category, published_at desc)
