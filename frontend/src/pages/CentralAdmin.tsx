@@ -1,18 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { KeyRound, Loader2, LockKeyhole, LogOut, ShieldCheck } from "lucide-react";
+import { Loader2, LockKeyhole, LogOut, Mail, ShieldCheck } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { FormMessage, LoadingScreen } from "../components/ui";
 import { supabase } from "../lib/supabase";
 import { ContentHubPage } from "./ContentHub";
 import "../central-admin.css";
 
-const CENTRAL_ADMIN_EMAIL = "phcorrea97@gmail.com";
-
-function isCentralAdmin(user: { email?: string | null; app_metadata?: Record<string, unknown> } | null | undefined) {
-  const email = String(user?.email || "").trim().toLowerCase();
-  const role = String(user?.app_metadata?.content_hub_role || "");
-  return email === CENTRAL_ADMIN_EMAIL && role === "admin";
+function isCentralAdmin(user: { app_metadata?: Record<string, unknown> } | null | undefined) {
+  return String(user?.app_metadata?.content_hub_role || "") === "admin";
 }
 
 export function CentralAdminLoginPage() {
@@ -36,27 +32,28 @@ export function CentralAdminLoginPage() {
     setError(null);
 
     const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") || "").trim();
     const password = String(form.get("password") || "");
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: CENTRAL_ADMIN_EMAIL,
+        email,
         password,
       });
 
       if (signInError) throw signInError;
       if (!isCentralAdmin(data.user)) {
         await supabase.auth.signOut();
-        setError("Esta conta não possui acesso à Central de Conteúdo.");
+        setError("Acesso administrativo não autorizado.");
         return;
       }
 
       navigate("/central-conteudo", { replace: true });
     } catch (reason) {
       setError(
-        reason instanceof Error && reason.message !== "Failed to fetch"
-          ? "Não foi possível autenticar o acesso administrativo."
-          : "A Central ainda não conseguiu se conectar ao serviço de autenticação.",
+        reason instanceof Error && reason.message === "Failed to fetch"
+          ? "A Central ainda não conseguiu se conectar ao serviço de autenticação."
+          : "Não foi possível autenticar o acesso administrativo.",
       );
     } finally {
       setBusy(false);
@@ -78,18 +75,24 @@ export function CentralAdminLoginPage() {
           Área editorial privada para revisão e publicação dos conteúdos distribuídos pela PontoView.
         </p>
 
-        <div className="central-admin-account">
-          <span><KeyRound size={17} /></span>
-          <div>
-            <small>Administrador autorizado</small>
-            <strong>{CENTRAL_ADMIN_EMAIL}</strong>
-          </div>
-        </div>
-
         <form onSubmit={submit} className="central-admin-form">
           <label>
+            E-mail
+            <span className="central-admin-field">
+              <Mail size={18} />
+              <input
+                name="email"
+                type="email"
+                required
+                autoComplete="username"
+                placeholder="E-mail administrativo"
+                autoFocus
+              />
+            </span>
+          </label>
+          <label>
             Senha
-            <span className="central-admin-password">
+            <span className="central-admin-field">
               <LockKeyhole size={18} />
               <input
                 name="password"
@@ -97,7 +100,6 @@ export function CentralAdminLoginPage() {
                 required
                 autoComplete="current-password"
                 placeholder="Sua senha de acesso"
-                autoFocus
               />
             </span>
           </label>
@@ -109,7 +111,7 @@ export function CentralAdminLoginPage() {
         </form>
 
         <small className="central-admin-footnote">
-          Não há cadastro público. O acesso é liberado individualmente pela administração da PontoView.
+          Acesso restrito à administração da PontoView. Não há cadastro público.
         </small>
       </section>
     </main>
