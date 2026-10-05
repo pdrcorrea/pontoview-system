@@ -1,10 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-export const supabasePublishableKey = (import.meta.env
-  .VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY) as
-  | string
-  | undefined;
+declare global {
+  interface Window {
+    __PONTOVIEW_CONFIG__?: {
+      supabaseUrl?: string;
+      supabaseKey?: string;
+    };
+  }
+}
+
+const runtimeConfig = typeof window !== "undefined" ? window.__PONTOVIEW_CONFIG__ : undefined;
+const url = (import.meta.env.VITE_SUPABASE_URL || runtimeConfig?.supabaseUrl) as string | undefined;
+export const supabasePublishableKey = (
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  runtimeConfig?.supabaseKey
+) as string | undefined;
 
 export const isSupabaseConfigured = Boolean(url && supabasePublishableKey);
 
