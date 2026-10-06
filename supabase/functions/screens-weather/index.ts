@@ -18,14 +18,20 @@ const condition = (code: number) => ({
   95: "Trovoadas", 96: "Trovoadas com granizo", 99: "Trovoadas com granizo",
 } as Record<number, string>)[code] || "Tempo variável";
 
+const BRAZIL_STATES: Record<string, string> = {
+  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará",
+  DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso",
+  MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná",
+  PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
+  RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo",
+  SE: "Sergipe", TO: "Tocantins",
+};
+const STATE_TO_UF = Object.fromEntries(Object.entries(BRAZIL_STATES).map(([uf, state]) => [normalizeText(state), uf]));
+
 function finiteValue(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function citySearchName(value: string) {
-  return value.split(/[·,]/)[0]?.trim() || value.trim();
 }
 
 function normalizeText(value: unknown) {
@@ -34,6 +40,88 @@ function normalizeText(value: unknown) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+}
+
+function parseLocationQuery(value: string) {
+  const raw = value.trim();
+  const parts = raw.split(/[,·]/).map((part) => part.trim()).filter(Boolean);
+  let city = parts[0] || raw;
+  let region = parts.slice(1).join(" ").trim();
+
+  if (parts.length === 1) {
+    const match = raw.match(/^(.*?)[\s-]+([A-Za-z]{2})$/);
+    if (match && BRAZIL_STATES[match[2].toUpperCase()]) {
+      city = match[1].trim();
+      region = match[2].toUpperCase();
+    }
+  }
+
+  const normalizedRegion = normalizeText(region);
+  const uf = BRAZIL_STATES[region.toUpperCase()]
+    ? region.toUpperCase()
+    : STATE_TO_UF[normalizedRegion] || null;
+
+  return { raw, city: city.trim(), region, uf };
+}
+
+function citySearchName(value: string) {
+  return parseLocationQuery(value).city || value.trim();
+}
+
+function rowUf(row: Record<string, any>) {
+  if (String(row?.country_code || "").toUpperCase() !== "BR") return null;
+  return STATE_TO_UF[normalizeText(row?.admin1)] || null;
+}
+
+function locationLabel(row: Record<string, any>) {
+  const countryCode = String(row?.country_code || "").toUpperCase();
+  const uf = rowUf(row);
+  if (countryCode === "BR") return [row?.name, uf || row?.admin1].filter(Boolean).join(", ");
+  return [row?.name, row?.admin1, row?.country].filter(Boolean).join(", ");
+}
+
+async function searchLocations(value: string) {
+  const parsed = parseLocationQuery(value);
+  if (!parsed.city || parsed.city.length < 2) return [];
+
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(parsed.city)}&count=10&language=pt&format=json`;
+  const payload = await fetchJson(url, 5000);
+  const rows = (Array.isArray(payload?.results) ? payload.results : [])
+    .filter((row: any) => validLat(Number(row?.latitude)) && validLon(Number(row?.longitude)));
+
+  const sorted = [...rows].sort((a: any, b: any) => {
+    const score = (row: any) => {
+      const countryCode = String(row?.country_code || "").toUpperCase();
+      const uf = rowUf(row);
+      let points = 0;
+      if (countryCode === "BR") points += 30;
+      if (parsed.uf && uf === parsed.uf) points += 100;
+      if (normalizeText(row?.name) === normalizeText(parsed.city)) points += 20;
+      if (parsed.region && normalizeText(row?.admin1) === normalizeText(parsed.region)) points += 80;
+      return points;
+    };
+    return score(b) - score(a);
+  });
+
+  const seen = new Set<string>();
+  return sorted
+    .map((row: any) => ({
+      name: String(row.name || "").trim(),
+      state: String(row.admin1 || "").trim() || null,
+      state_code: rowUf(row),
+      country: String(row.country || "").trim() || null,
+      country_code: String(row.country_code || "").toUpperCase() || null,
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      label: locationLabel(row),
+    }))
+    .filter((row: any) => {
+      const candidateKey = `${row.latitude.toFixed(4)},${row.longitude.toFixed(4)}`;
+      if (seen.has(candidateKey)) return false;
+      seen.add(candidateKey);
+      return true;
+    })
+    .slice(0, 8);
 }
 
 function parseAlertGeometry(raw: unknown): Record<string, any> | null {
@@ -174,19 +262,13 @@ async function fetchJson(url: string, timeoutMs = 7000) {
 }
 
 async function geocode(name: string) {
-  const query = citySearchName(name);
-  if (!query) throw new HttpError(400, "INVALID_WEATHER_LOCATION");
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=pt&format=json`;
-  const payload = await fetchJson(url, 5000);
-  const rows = Array.isArray(payload?.results) ? payload.results : [];
-  const preferred = rows.find((row: any) => String(row.country_code || "").toUpperCase() === "BR") || rows[0];
-  if (!preferred || !validLat(Number(preferred.latitude)) || !validLon(Number(preferred.longitude))) {
-    throw new HttpError(400, "WEATHER_LOCATION_NOT_FOUND");
-  }
+  const rows = await searchLocations(name);
+  const preferred = rows[0];
+  if (!preferred) throw new HttpError(400, "WEATHER_LOCATION_NOT_FOUND");
   return {
-    name: [preferred.name, preferred.admin1].filter(Boolean).join(", "),
-    latitude: Number(preferred.latitude),
-    longitude: Number(preferred.longitude),
+    name: preferred.label,
+    latitude: preferred.latitude,
+    longitude: preferred.longitude,
   };
 }
 
@@ -285,13 +367,21 @@ async function loadWeather(location: { name: string; latitude: number; longitude
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    let config: Record<string, any> = {};
     const hasPlayerAuth = Boolean(req.headers.get("x-screen-id") && req.headers.get("x-screen-token"));
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+
+    if (!hasPlayerAuth && body?.action === "locations") {
+      const query = String(body?.query || body?.name || "").trim();
+      if (query.length < 2) return reply({ locations: [] }, 200, { "Cache-Control": "public, max-age=300" });
+      const locations = await searchLocations(query);
+      return reply({ locations }, 200, { "Cache-Control": "public, max-age=300" });
+    }
+
+    let config: Record<string, any> = {};
     if (hasPlayerAuth) {
       const manifest = await requirePlayer(req);
       config = manifest?.settings?.weather_location || {};
     } else {
-      const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
       config = {
         name: String(body?.name || "").trim(),
         latitude: body?.latitude,
