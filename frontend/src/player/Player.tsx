@@ -129,22 +129,19 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-news-row.headline-only { align-content: center; }
   .footer-news-row.has-details { align-content: center; }
   .footer-news-row.expanded { height: 100%; }
-  .footer-news-content { min-width: 0; display: grid; gap: .22em; align-content: center; }
-  .footer-news-main {
-    min-width: 0;
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: .28em .7em;
-  }
-  .footer-news-meta { min-width: 0; flex: 0 0 auto; display: flex; align-items: center; }
+  .footer-news-content { min-width: 0; display: grid; grid-template-columns: auto minmax(0,1fr); grid-template-areas: "source headline" "source details"; column-gap: .85em; row-gap: .28em; align-items: center; align-content: center; overflow: hidden; }
+  .footer-news-main { display: contents; }
+  .footer-news-meta { grid-area: source; min-width: 0; display: flex; align-items: center; align-self: center; }
+  .footer-news-meta .news-source { flex-direction: column; align-items: center; gap: .3em; max-width: 7.5em; text-align: center; }
+  .footer-news-meta .news-source strong { max-width: 7.5em; font-size: .68em; }
   .footer-news-details {
     min-width: 0;
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    padding-left: calc(1.7em + .7em);
+    grid-area: details;
+    padding-left: 0;
     color: #65798b;
     font-size: .72em;
     font-weight: 480;
@@ -200,14 +197,14 @@ const PLAYER_RUNTIME_STYLE = `
   .footer-service-row.content-very-long { font-size: .68em; line-height: 1.12; }
   .footer-service-row.content-very-long .footer-service-label { font-size: .82em; }
   .footer-news-row .news-source { font-size: .68em; opacity: .86; }
-  .footer-news-row .footer-headline { flex: 1 1 18em; min-width: 0; font-size: clamp(.78em, 1em, 1.06em); font-weight: 720; line-height: 1.16 !important; white-space: normal !important; overflow-wrap: anywhere; word-break: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .footer-news-row .footer-headline { grid-area: headline; min-width: 0; font-size: clamp(.78em, 1em, 1.06em); font-weight: 760; line-height: 1.16 !important; white-space: normal !important; overflow-wrap: break-word; word-break: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .footer-news-row.has-details .footer-headline { -webkit-line-clamp: 2; }
   .player-lframe > footer.news-only .footer-headline { -webkit-line-clamp: 3; }
-  .footer-news-content { overflow: hidden; }
-  .footer-news-details { overflow-wrap: anywhere; word-break: normal; white-space: normal; }
-  .pv-orientation-canvas.logical-portrait .footer-news-main { gap: .2em .5em; }
-  .pv-orientation-canvas.logical-portrait .footer-news-row .footer-headline { flex-basis: 100%; -webkit-line-clamp: 3; }
-  .pv-orientation-canvas.logical-portrait .footer-news-details { padding-left: 0; -webkit-line-clamp: 3; }
+  .footer-news-details { overflow-wrap: break-word; word-break: normal; white-space: normal; }
+  .pv-orientation-canvas.logical-portrait .footer-news-content { grid-template-columns: auto minmax(0,1fr); column-gap: .55em; }
+  .pv-orientation-canvas.logical-portrait .footer-news-meta .news-source strong { display: none; }
+  .pv-orientation-canvas.logical-portrait .footer-news-row .footer-headline { -webkit-line-clamp: 3; }
+  .pv-orientation-canvas.logical-portrait .footer-news-details { -webkit-line-clamp: 3; }
   .player-lframe.news-preset-compact .footer-news-row { font-size: .82em; }
   .player-lframe.news-preset-compact .footer-news-details { display: none; }
   .player-lframe.news-preset-compact .footer-news-qr { width: clamp(34px, 2.6vw, 48px); height: clamp(34px, 2.6vw, 48px); }
@@ -767,7 +764,8 @@ function PlayerLayout({ manifest, item, device, playbackCycle, canvasWidth, canv
   const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
   const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
   const showNewsDetails = Boolean(currentNews?.details) && !currentInfo;
-  const showNewsQr = Boolean(currentNews?.publicUrl);
+  const newsPublicUrl = currentNews ? (currentNews.publicUrl || `https://conteudo.pontoview.com.br/`) : "";
+  const showNewsQr = Boolean(currentNews);
   const currentSide = sideSlides.length ? sideSlides[sideIndex % sideSlides.length] : null;
   const logoUrl = String(manifest.organization.settings?.logoUrl || "");
 
@@ -796,7 +794,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, canvasWidth, canv
             </div>
             {showNewsDetails && <span className="footer-news-details">{currentNews.details}</span>}
           </div>
-          {showNewsQr && <span className="footer-news-qr" aria-hidden="true"><img src={newsQrUrl(currentNews.publicUrl)} alt="" /></span>}
+          {showNewsQr && <span className="footer-news-qr" aria-hidden="true"><img src={newsQrUrl(newsPublicUrl)} alt="" /></span>}
         </> : <span />}
       </div>
       {currentInfo && (
