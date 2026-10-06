@@ -303,7 +303,7 @@
 
 <script src="../shared/pv.js?v=9"></script>
 <script>
-const WORKER='https://pontoview-api.pedrhc258.workers.dev/api/news';
+const CONTENT_FEED='https://fpdojntvnhiszagczfqr.supabase.co/functions/v1/content-feed?type=news&limit=5';
 const copy=document.getElementById('copy'),
 title=document.getElementById('title'),
 desc=document.getElementById('desc'),
@@ -474,21 +474,21 @@ function render(x){
   desc.textContent=body;
   desc.style.display=body?'-webkit-box':'none';
 
-  source.textContent=x.source||x.sourceDomain||'Fonte';
+  source.textContent=x.source||x.sourceDomain||x.source_name||'Fonte';
 
-  const f=faviconUrl(x.link||x.url||x.sourceUrl||'');
+  const f=faviconUrl(x.link||x.url||x.sourceUrl||x.source_url||'');
   favicon.src=f;
   favicon.style.display=f?'block':'none';
   favicon.onerror=()=>favicon.style.display='none';
 
   setImage(x.image||x.image_url||x.imageUrl);
 
-  const link=x.link||x.url||x.sourceUrl||'';
+  const link=x.link||x.url||x.sourceUrl||x.source_url||'';
   if(link){
     qrImg.src=PV.qrUrl(link);
     qr.classList.remove('hidden');
-    qrTitle.textContent=(x.link||x.url)?'Leia a matéria':'Acesse a fonte';
-    qrHint.textContent=(x.link||x.url)?'Aponte a câmera do celular':'Abra o portal da fonte'
+    qrTitle.textContent='Leia a matéria';
+    qrHint.textContent='Aponte a câmera do celular'
   }else{
     qr.classList.add('hidden');
     qrImg.removeAttribute('src')
@@ -526,8 +526,21 @@ async function fetchNews(){
     const playerNews=await newsFromPlayer();
     if(Array.isArray(playerNews.items)&&playerNews.items.length)return playerNews
   }catch{}
-  const data=await PV.fromApi('/api/noticias',()=>PV.fetchJSON(WORKER));
-  return {...data,items:PV.filterSafeNews(Array.isArray(data?.items)?data.items:Array.isArray(data)?data:[])}
+
+  const response=await fetch(CONTENT_FEED,{headers:{Accept:'application/json'},cache:'no-store'});
+  if(!response.ok)throw new Error('Central indisponível');
+  const data=await response.json();
+  const items=Array.isArray(data?.items)?data.items:[];
+  return {
+    source:'PontoView Content Hub',
+    fromPlayer:false,
+    items:PV.filterSafeNews(items.map(item=>({
+      ...item,
+      source:item.source_name||item.source,
+      url:item.source_url||item.url,
+      link:item.source_url||item.link||item.url
+    })))
+  }
 }
 
 async function load(){
