@@ -11,7 +11,7 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const CENTRAL_CACHE_MS = 10 * 60_000;
+const CENTRAL_CACHE_MS = 2 * 60 * 60_000;
 const MAX_CENTRAL_ROWS = 40;
 const MAX_PLAYER_ITEMS = 16;
 
