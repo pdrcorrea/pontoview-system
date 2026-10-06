@@ -97,6 +97,17 @@ export interface OperatingHours {
 export type PlayerTheme = "light" | "dark";
 export type BrandPosition = "side_header" | "side_footer" | "bar_left" | "bar_right";
 
+export interface WeatherLocation {
+  name?: string;
+  city?: string | null;
+  state?: string | null;
+  state_code?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
 export interface ScreenWidgetSettings {
   clock?: { preset?: "classic" | "minimal" | "editorial" };
   weather?: { preset?: "complete" | "essential" | "forecast" };
@@ -113,11 +124,7 @@ export interface ScreenSettings {
   side_width_percent: number;
   bar_height_percent: number;
   widgets: Record<string, boolean>;
-  weather_location: {
-    name?: string;
-    latitude?: number | null;
-    longitude?: number | null;
-  } | null;
+  weather_location: WeatherLocation | null;
   news_categories: string[];
   theme: PlayerTheme;
   widget_settings: ScreenWidgetSettings;
@@ -184,29 +191,4 @@ export interface PlayerManifest {
       metadata: Record<string, unknown>;
     };
   }>;
-  messages: Array<{
-    id: string;
-    title: string | null;
-    body: string;
-    displayLocation?: MessageDisplayLocation;
-    priority?: MessagePriority;
-    durationMode?: MessageDurationMode;
-    durationSeconds?: number | null;
-    styleVariant?: MessageStyleVariant;
-    isExclusive?: boolean;
-    contentType?: InformationType;
-    eventAt?: string | null;
-  }>;
-  news: Array<{
-    id: string;
-    source?: string;
-    title: string;
-    summary: string | null;
-    category: string;
-    url: string;
-    public_url?: string;
-    image_url?: string | null;
-    published_at: string;
-  }>;
-  syncedAt: string;
 }
