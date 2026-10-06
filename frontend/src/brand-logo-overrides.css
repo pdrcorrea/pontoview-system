@@ -1,101 +1,212 @@
 /* Identidade oficial PontoView Telas
-   Padrão do ecossistema: assinatura completa com 40px de altura visual no desktop. */
+   Ícone como asset + assinatura tipográfica em Nunito Sans. */
 
-/* Home e rodapé: usar somente a assinatura oficial, sem o antigo texto "Telas" ao lado. */
+.pv-home-brand,
+.pv-full-brand,
+.auth-main-brand {
+  font-family: "Nunito Sans", ui-rounded, "Segoe UI", sans-serif;
+}
+
+/* Home e rodapé */
 .pv-home-brand {
-  gap: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }
 
 .pv-home-brandmark {
-  width: auto !important;
+  width: 40px !important;
   height: 40px !important;
   display: flex !important;
   align-items: center !important;
-  flex: 0 0 auto !important;
+  justify-content: center !important;
+  flex: 0 0 40px !important;
 }
 
 .pv-home-brand-logo {
-  content: url("/assets/TelasAzul.png?v=20261004-2");
+  display: none !important;
+}
+
+.pv-home-brand-icon {
+  content: url("/assets/TelasIconAzul.png?v=20261006-1");
   display: block !important;
-  width: auto !important;
+  width: 40px !important;
   height: 40px !important;
-  max-width: 150px !important;
   object-fit: contain !important;
 }
 
-.pv-home-brand-icon,
 .pv-home-brandname {
-  display: none !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 7px !important;
+  line-height: 1 !important;
+  color: inherit;
 }
 
-.pv-home-footer-brand .pv-home-brandmark {
-  width: auto !important;
+.pv-home-brandname strong {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0 !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.035em;
+}
+
+.pv-home-brandname strong::before {
+  content: "Ponto";
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.pv-home-brandname strong::after {
+  content: "View";
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.pv-home-brandname small {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  opacity: 0.76;
+}
+
+.pv-home-footer-brand .pv-home-brandmark,
+.pv-home-footer-brand .pv-home-brand-icon {
+  width: 36px !important;
   height: 36px !important;
+  flex-basis: 36px !important;
 }
 
-.pv-home-footer-brand .pv-home-brand-logo {
-  height: 36px !important;
-}
-
-/* Sidebar: logo.png contém a assinatura completa do PontoView Telas. */
-.sidebar-product-badge {
-  display: none !important;
+/* Sidebar: ícone do produto + PontoView Telas em texto. */
+.pv-full-brand {
+  position: relative;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 36px;
+  gap: 10px;
 }
 
 .pv-full-brand img {
+  content: url("/assets/TelasIconBranco.png?v=20261006-1");
   display: block;
-  width: auto;
+  width: 34px;
   height: 34px;
-  max-width: 100%;
+  flex: 0 0 34px;
   object-fit: contain;
 }
 
-/* Login, cadastro e fluxos de autenticação: assinatura branca completa sobre o painel azul. */
+.pv-full-brand::before {
+  content: "Ponto";
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: inherit;
+  margin-left: 1px;
+}
+
+.pv-full-brand::after {
+  content: "View";
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  color: inherit;
+  margin-left: -10px;
+}
+
+.sidebar-product-badge {
+  display: inline-flex !important;
+  align-items: center;
+  margin-left: -5px;
+  padding-left: 7px;
+  border-left: 1px solid currentColor;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  opacity: 0.62;
+}
+
+/* Login, cadastro e fluxos de autenticação */
 .auth-main-brand {
-  gap: 0;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }
 
 .auth-main-brand::before {
-  content: "";
-  display: block;
-  width: 136px;
-  height: 40px;
-  flex: 0 0 auto;
-  background: url("/assets/TelasBranco.png?v=20261004-2") left center / contain no-repeat;
+  content: none !important;
 }
 
-.auth-main-brandmark,
+.auth-main-brandmark {
+  display: flex !important;
+  width: 40px !important;
+  height: 40px !important;
+  flex: 0 0 40px !important;
+}
+
+.auth-main-brandmark img {
+  content: url("/assets/TelasIconBranco.png?v=20261006-1");
+}
+
 .auth-main-brand > span:last-child {
-  display: none !important;
+  display: inline-flex !important;
+  align-items: baseline;
+  gap: 7px;
+  line-height: 1;
 }
 
-@media (max-width: 1120px) {
-  .auth-main-brand::before {
-    width: 122px;
-    height: 36px;
-  }
+.auth-main-brand > span:last-child > strong {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0 !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.035em;
+}
+
+.auth-main-brand > span:last-child > strong::before {
+  content: "Ponto";
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.auth-main-brand > span:last-child > strong::after {
+  content: "View";
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.auth-main-brand > span:last-child > small {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  opacity: 0.72;
 }
 
 @media (max-width: 760px) {
-  .pv-home-brandmark {
-    width: auto !important;
-    height: 32px !important;
+  .pv-home-brand {
+    gap: 8px !important;
   }
 
-  .pv-home-brand-logo {
-    display: block !important;
-    width: auto !important;
+  .pv-home-brandmark,
+  .pv-home-brand-icon {
+    width: 32px !important;
     height: 32px !important;
-    max-width: 116px !important;
+    flex-basis: 32px !important;
   }
 
-  .pv-home-brand-icon,
-  .pv-home-brandname {
-    display: none !important;
+  .pv-home-brandname strong::before,
+  .pv-home-brandname strong::after {
+    font-size: 17px;
+  }
+
+  .pv-home-brandname small {
+    font-size: 11px !important;
   }
 
   .pv-home-footer-brand .pv-home-brandmark,
-  .pv-home-footer-brand .pv-home-brand-logo {
+  .pv-home-footer-brand .pv-home-brand-icon {
+    width: 32px !important;
     height: 32px !important;
+    flex-basis: 32px !important;
   }
 }
