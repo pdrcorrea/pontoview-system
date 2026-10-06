@@ -1,6 +1,6 @@
 import { Check, LoaderCircle, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { invokeFunction } from "../lib/supabase";
 import type { WeatherLocation } from "../types";
 import "./WeatherLocationPicker.css";
 
@@ -10,6 +10,10 @@ type LocationOption = WeatherLocation & {
   state_code?: string | null;
   country?: string | null;
   country_code?: string | null;
+};
+
+type LocationSearchResponse = {
+  locations?: LocationOption[];
 };
 
 export function WeatherLocationPicker({
@@ -47,21 +51,24 @@ export function WeatherLocationPicker({
     const timer = window.setTimeout(async () => {
       setLoading(true);
       setMessage(null);
-      const { data, error } = await supabase.functions.invoke("screens-weather", {
-        body: { action: "locations", query: normalizedQuery },
-      });
 
-      if (requestId !== requestRef.current) return;
-      setLoading(false);
-      if (error) {
+      try {
+        const data = await invokeFunction<LocationSearchResponse>("screens-weather", {
+          action: "locations",
+          query: normalizedQuery,
+        });
+
+        if (requestId !== requestRef.current) return;
+        const locations = Array.isArray(data?.locations) ? data.locations : [];
+        setOptions(locations);
+        setMessage(locations.length ? null : "Nenhuma cidade encontrada.");
+      } catch {
+        if (requestId !== requestRef.current) return;
         setOptions([]);
         setMessage("Não foi possível pesquisar cidades agora.");
-        return;
+      } finally {
+        if (requestId === requestRef.current) setLoading(false);
       }
-
-      const locations = Array.isArray(data?.locations) ? data.locations as LocationOption[] : [];
-      setOptions(locations);
-      setMessage(locations.length ? null : "Nenhuma cidade encontrada.");
     }, 350);
 
     return () => window.clearTimeout(timer);
