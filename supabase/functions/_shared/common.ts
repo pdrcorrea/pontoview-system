@@ -5,7 +5,7 @@ export const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 export const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false, autoRefreshToken: false } });
 export const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-screen-id, x-screen-token, x-signature, x-request-id",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-screen-id, x-screen-token, x-signature, x-request-id",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 export const reply = (body: unknown, status = 200, headers: HeadersInit = {}) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } });
