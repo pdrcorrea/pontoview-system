@@ -7,97 +7,83 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../shared/pontoview.css?v=8">
-<link rel="stylesheet" href="../shared/responsive.css?v=8">
 <style>
 :root{
-  --news-bg:#f4f4f1;
-  --news-text:#15171a;
-  --news-muted:#70757d;
-  --news-pv:#013e8d;
-  --news-blue:#4966ff;
-  --news-cyan:#57d5ff;
-  --news-violet:#8c6cff;
+  --bg:#f4f4f1;
+  --text:#15171a;
+  --muted:#70757d;
+  --pv:#013e8d;
+  --blue:#4966ff;
+  --cyan:#57d5ff;
+  --violet:#8c6cff;
+  --ease:cubic-bezier(.2,.8,.2,1);
 }
-
-body.panel-noticias{
-  color:var(--news-text);
-  background:var(--news-bg);
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{
+  background:var(--bg);
+  color:var(--text);
   font-family:"Manrope","Helvetica Neue",Arial,sans-serif;
 }
 
-.panel-noticias .pv-ambient{
-  inset:0;
-  background:none;
-  animation:none;
-}
-
-.panel-noticias .pv-ambient::before,
-.panel-noticias .pv-ambient::after{
-  border:0;
-  animation:none;
-  opacity:.14;
-}
-
-.panel-noticias .pv-ambient::before{
-  width:clamp(110px,15vw,240px);
-  aspect-ratio:1;
-  right:clamp(-90px,-5vw,-45px);
-  top:clamp(-95px,-6vw,-48px);
-  border-radius:34%;
-  background:linear-gradient(135deg,var(--news-cyan),var(--news-blue));
-  transform:rotate(18deg);
-}
-
-.panel-noticias .pv-ambient::after{
-  width:clamp(80px,10vw,160px);
-  aspect-ratio:1;
-  left:clamp(-70px,-4vw,-30px);
-  bottom:clamp(-65px,-4vw,-25px);
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--news-violet),var(--news-blue));
-}
-
-.panel-noticias .pv-shell{
-  padding:clamp(28px,3.8vw,64px) clamp(30px,4.1vw,70px);
-  display:block;
-}
-
-.news-stage{
+.stage{
   width:100%;
   height:100%;
-  min-height:0;
+  padding:clamp(28px,3.8vw,64px) clamp(30px,4.1vw,72px);
   display:grid;
   grid-template-rows:auto minmax(0,1fr) auto;
-  gap:clamp(18px,2.7vh,30px);
+  gap:clamp(18px,2.6vh,30px);
   position:relative;
-  z-index:2;
-  animation:newsPanelIn .72s cubic-bezier(.2,.8,.2,1) both;
+  overflow:hidden;
+  animation:panelIn .72s var(--ease) both;
 }
 
-.news-header{
-  min-width:0;
+.stage::before,
+.stage::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  opacity:.14;
+}
+.stage::before{
+  width:clamp(130px,16vw,260px);
+  aspect-ratio:1;
+  right:clamp(-105px,-5vw,-52px);
+  top:clamp(-105px,-6vw,-52px);
+  border-radius:34%;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  transform:rotate(18deg);
+}
+.stage::after{
+  width:clamp(90px,10vw,170px);
+  aspect-ratio:1;
+  left:clamp(-75px,-4vw,-34px);
+  bottom:clamp(-72px,-4vw,-28px);
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--violet),var(--blue));
+}
+
+.header{
+  position:relative;
+  z-index:3;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:24px;
-  animation:newsHeaderIn .55s .10s ease-out both;
+  min-width:0;
+  animation:headerIn .55s .08s ease-out both;
 }
-
-.news-title{
-  font-size:clamp(16px,1.05vw,22px);
+.kicker{
+  font-size:clamp(15px,1.05vw,22px);
   line-height:1;
   letter-spacing:.16em;
   text-transform:uppercase;
   font-weight:800;
-  color:var(--news-text);
 }
-
-.news-source{
-  min-width:0;
+.source{
   max-width:48%;
-  font-size:clamp(15px,1vw,19px);
-  color:var(--news-muted);
+  color:var(--muted);
+  font-size:clamp(14px,1vw,19px);
   font-weight:600;
   white-space:nowrap;
   overflow:hidden;
@@ -106,34 +92,32 @@ body.panel-noticias{
 }
 
 .media{
+  position:relative;
+  z-index:2;
+  width:100%;
   min-width:0;
   min-height:0;
-  position:relative;
   overflow:hidden;
   border-radius:clamp(18px,1.45vw,24px);
   background:
     radial-gradient(circle at 22% 24%,rgba(87,213,255,.16),transparent 20%),
     radial-gradient(circle at 78% 24%,rgba(140,108,255,.13),transparent 24%),
     linear-gradient(135deg,#f2f2ef,#e8e7e2);
-  animation:newsMediaIn .75s .16s cubic-bezier(.2,.8,.2,1) both;
+  animation:mediaIn .75s .14s var(--ease) both;
 }
-
 .media::before{
   content:"";
   position:absolute;
-  z-index:2;
-  left:0;
-  top:0;
-  bottom:0;
+  z-index:3;
+  left:0;top:0;bottom:0;
   width:clamp(4px,.35vw,7px);
-  background:linear-gradient(180deg,var(--news-cyan),var(--news-blue),var(--news-violet));
+  background:linear-gradient(180deg,var(--cyan),var(--blue),var(--violet));
   pointer-events:none;
 }
-
 .media::after{
   content:"";
   position:absolute;
-  z-index:1;
+  z-index:2;
   inset:0;
   background:
     linear-gradient(0deg,rgba(255,255,255,.13),transparent 42%),
@@ -141,20 +125,19 @@ body.panel-noticias{
   opacity:.62;
   pointer-events:none;
 }
-
-.media img.photo{
-  position:relative;
-  z-index:0;
+.photo{
+  position:absolute;
+  z-index:1;
+  inset:0;
   width:100%;
   height:100%;
   object-fit:cover;
   display:none;
-  animation:pvImageBreath 14s ease-in-out infinite;
+  animation:imageBreath 14s ease-in-out infinite;
 }
-
-.media.has-image img.photo{display:block}
+.media.has-image .photo{display:block}
 .media.has-image::after{
-  background:linear-gradient(180deg,rgba(255,255,255,.015),rgba(7,28,55,.08));
+  background:linear-gradient(180deg,rgba(255,255,255,.01),rgba(4,24,52,.08));
   opacity:1;
 }
 
@@ -165,62 +148,51 @@ body.panel-noticias{
   display:grid;
   place-items:center;
 }
-
 .media.has-image .fallback{display:none}
-
 .pv-symbol{
   width:min(29%,230px);
   min-width:155px;
   filter:drop-shadow(0 12px 20px rgba(1,62,141,.10));
-  animation:newsSymbolIn .72s .34s cubic-bezier(.16,.84,.32,1) both;
+  animation:symbolIn .72s .32s cubic-bezier(.16,.84,.32,1) both;
 }
+.pv-symbol svg{display:block;width:100%;height:auto}
 
-.pv-symbol svg{
-  display:block;
-  width:100%;
-  height:auto;
-}
-
-.news-bottom{
+.bottom{
+  position:relative;
+  z-index:3;
   min-width:0;
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   gap:clamp(18px,2vw,32px);
   align-items:end;
-  animation:newsBottomIn .65s .30s cubic-bezier(.2,.8,.2,1) both;
+  animation:bottomIn .65s .28s var(--ease) both;
 }
-
 .headline{
   margin:0;
-  width:100%;
-  max-width:19ch;
+  max-width:20ch;
   font-size:clamp(34px,3.35vw,62px);
   line-height:1.05;
   letter-spacing:-.045em;
   font-weight:800;
-  color:var(--news-text);
   text-wrap:balance;
   overflow-wrap:normal;
   word-break:normal;
   hyphens:none;
 }
-
 .qr{
   display:flex;
   flex-direction:column;
   align-items:center;
+  justify-content:flex-end;
   gap:clamp(6px,.65vw,10px);
   flex:0 0 auto;
 }
-
 .qr.hidden{display:none}
-
 .qr-frame{
   padding:4px;
   border-radius:clamp(13px,1vw,17px);
-  background:linear-gradient(135deg,var(--news-cyan),var(--news-blue),var(--news-violet));
+  background:linear-gradient(135deg,var(--cyan),var(--blue),var(--violet));
 }
-
 .qr img{
   width:clamp(78px,5.2vw,104px);
   height:clamp(78px,5.2vw,104px);
@@ -228,126 +200,87 @@ body.panel-noticias{
   border-radius:clamp(9px,.65vw,12px);
   background:#fff;
 }
-
 .qr-label{
+  color:var(--muted);
   font-size:clamp(11px,.78vw,15px);
   line-height:1.2;
   font-weight:700;
-  color:var(--news-muted);
   text-align:center;
 }
-
-.news-brand{
+.brand{
   position:absolute;
-  z-index:3;
-  right:clamp(8px,.4vw,12px);
+  z-index:4;
+  right:clamp(8px,.45vw,13px);
   top:50%;
   transform:translateY(-50%) rotate(90deg);
   transform-origin:right center;
+  color:rgba(21,23,26,.18);
   font-size:clamp(8px,.58vw,11px);
+  font-weight:700;
   letter-spacing:.18em;
   text-transform:uppercase;
-  color:rgba(21,23,26,.20);
-  font-weight:700;
   pointer-events:none;
 }
 
-@keyframes newsPanelIn{
-  from{opacity:0;transform:translateY(16px) scale(.992)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
+@keyframes panelIn{from{opacity:0;transform:translateY(14px) scale(.994)}to{opacity:1;transform:none}}
+@keyframes headerIn{from{opacity:0;transform:translateY(-9px)}to{opacity:1;transform:none}}
+@keyframes mediaIn{from{opacity:0;transform:translateY(10px);clip-path:inset(0 100% 0 0 round 22px)}to{opacity:1;transform:none;clip-path:inset(0 0 0 0 round 22px)}}
+@keyframes symbolIn{from{opacity:0;transform:scale(.86) rotate(-4deg)}to{opacity:1;transform:none}}
+@keyframes bottomIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes imageBreath{50%{transform:scale(1.018)}}
 
-@keyframes newsHeaderIn{
-  from{opacity:0;transform:translateY(-10px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-@keyframes newsMediaIn{
-  from{opacity:0;transform:translateY(12px);clip-path:inset(0 100% 0 0 round 22px)}
-  to{opacity:1;transform:translateY(0);clip-path:inset(0 0 0 0 round 22px)}
-}
-
-@keyframes newsSymbolIn{
-  from{opacity:0;transform:scale(.86) rotate(-4deg)}
-  to{opacity:1;transform:scale(1) rotate(0)}
-}
-
-@keyframes newsBottomIn{
-  from{opacity:0;transform:translateY(16px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-@media (max-width:1100px) and (orientation:landscape){
-  .news-stage{gap:18px}
-  .headline{font-size:clamp(32px,4.2vw,52px);max-width:21ch}
-  .qr img{width:76px;height:76px}
-}
-
-@media(orientation:portrait),(max-aspect-ratio:4/5){
-  .panel-noticias .pv-shell{
+@media (orientation:portrait),(max-aspect-ratio:4/5){
+  .stage{
     padding:clamp(28px,5vw,54px) clamp(24px,5vw,52px) clamp(24px,4vw,42px);
-  }
-  .news-stage{
-    grid-template-rows:auto minmax(0,1fr) auto;
     gap:clamp(18px,2.2vh,28px);
   }
-  .news-source{max-width:54%}
-  .media{min-height:0}
-  .headline{
-    max-width:16ch;
-    font-size:clamp(34px,7.2vw,70px);
-    line-height:1.04;
-  }
+  .source{max-width:54%}
+  .headline{max-width:16ch;font-size:clamp(34px,7.2vw,70px);line-height:1.04}
   .qr img{width:clamp(76px,12vw,96px);height:clamp(76px,12vw,96px)}
-  .news-brand{display:none}
+  .brand{display:none}
 }
-
 @media(max-width:560px) and (orientation:portrait){
-  .news-title{font-size:14px}
-  .news-source{font-size:14px}
-  .news-bottom{gap:14px}
+  .kicker,.source{font-size:14px}
+  .bottom{gap:14px}
   .headline{font-size:clamp(30px,7.4vw,46px)}
   .qr img{width:72px;height:72px}
   .qr-label{font-size:10px}
 }
-
 @media(prefers-reduced-motion:reduce){
-  .news-stage,.news-header,.media,.pv-symbol,.news-bottom,.media img.photo{animation:none!important}
+  .stage,.header,.media,.pv-symbol,.bottom,.photo{animation:none!important}
 }
 </style>
 </head>
-<body class="pv-panel panel-noticias">
-<div class="pv-ambient"></div>
-<div class="pv-shell">
-  <main class="news-stage">
-    <header class="news-header">
-      <div class="news-title">Notícias</div>
-      <div class="news-source" id="source">Fonte</div>
-    </header>
+<body>
+<main class="stage">
+  <header class="header">
+    <div class="kicker">Notícias</div>
+    <div class="source" id="source">Fonte</div>
+  </header>
 
-    <section class="media" id="media">
-      <div class="fallback" aria-hidden="true">
-        <div class="pv-symbol">
-          <svg viewBox="40 30 215 205" xmlns="http://www.w3.org/2000/svg" role="presentation">
-            <circle cx="144.5" cy="136.5" r="47.5" fill="#013e8d"/>
-            <path d="M190 45 L188 48 L189 55 L208 68 L220 83 L226 98 L228 108 L233 111 L238 110 L242 105 L240 93 L238 90 L237 85 L227 67 L213 53 L204 47 L196 43 Z" fill="#013e8d"/>
-            <path d="M55 144 L51 148 L52 163 L56 177 L65 194 L74 204 L89 215 L104 222 L109 221 L112 218 L113 215 L112 211 L107 207 L101 205 L91 199 L81 190 L73 179 L69 170 L66 158 L65 148 L63 145 L59 143 Z" fill="#013e8d"/>
-          </svg>
-        </div>
+  <section class="media" id="media">
+    <div class="fallback" aria-hidden="true">
+      <div class="pv-symbol">
+        <svg viewBox="40 30 215 205" xmlns="http://www.w3.org/2000/svg" role="presentation">
+          <circle cx="144.5" cy="136.5" r="47.5" fill="#013e8d"/>
+          <path d="M190 45 L188 48 L189 55 L208 68 L220 83 L226 98 L228 108 L233 111 L238 110 L242 105 L240 93 L238 90 L237 85 L227 67 L213 53 L204 47 L196 43 Z" fill="#013e8d"/>
+          <path d="M55 144 L51 148 L52 163 L56 177 L65 194 L74 204 L89 215 L104 222 L109 221 L112 218 L113 215 L112 211 L107 207 L101 205 L91 199 L81 190 L73 179 L69 170 L66 158 L65 148 L63 145 L59 143 Z" fill="#013e8d"/>
+        </svg>
       </div>
-      <img class="photo" id="image" alt="">
-    </section>
+    </div>
+    <img class="photo" id="image" alt="">
+  </section>
 
-    <section class="news-bottom" id="copy">
-      <h1 class="headline" id="title">Carregando notícias...</h1>
-      <div class="qr hidden" id="qr">
-        <div class="qr-frame"><img id="qrImg" alt="QR Code"></div>
-        <div class="qr-label">Saiba mais</div>
-      </div>
-    </section>
-  </main>
-  <div class="news-brand">PontoView</div>
-</div>
+  <section class="bottom" id="copy">
+    <h1 class="headline" id="title">Carregando notícias...</h1>
+    <div class="qr hidden" id="qr">
+      <div class="qr-frame"><img id="qrImg" alt="QR Code"></div>
+      <div class="qr-label">Saiba mais</div>
+    </div>
+  </section>
+
+  <div class="brand">PontoView</div>
+</main>
 
 <script src="../shared/pv.js?v=9"></script>
 <script>
@@ -360,146 +293,78 @@ image=document.getElementById('image'),
 qr=document.getElementById('qr'),
 qrImg=document.getElementById('qrImg');
 
-function clean(t){
-  return PV.clean(t).replace(/📲|👉|🔗/g,'')
-}
-
-function safeItem(x){
-  return !!(x&&x.title)&&PV.newsEditorialCheck(x).allowed
-}
-
+function clean(t){return PV.clean(t).replace(/📲|👉|🔗/g,'')}
+function safeItem(x){return !!(x&&x.title)&&PV.newsEditorialCheck(x).allowed}
 function normalizeImage(u){
   u=String(u||'').trim();
   if(u.startsWith('//'))u='https:'+u;
   return /^https?:\/\//i.test(u)?u:''
 }
-
 function proxyImage(u){
   const v=normalizeImage(u);
-  return v
-    ?'https://images.weserv.nl/?url='+encodeURIComponent(v.replace(/^https?:\/\//,''))+'&w=1600&h=1200&fit=cover&output=webp'
-    :''
+  return v?'https://images.weserv.nl/?url='+encodeURIComponent(v.replace(/^https?:\/\//,''))+'&w=1600&h=1000&fit=cover&output=webp':''
 }
-
 function setImage(u){
   const original=normalizeImage(u);
   media.classList.remove('has-image');
   image.removeAttribute('src');
   if(!original)return;
-
   const candidates=[proxyImage(original),original].filter(Boolean);
   let i=0;
-
   const next=()=>{
-    if(i>=candidates.length){
-      media.classList.remove('has-image');
-      image.removeAttribute('src');
-      return
-    }
-    image.onload=()=>{
-      media.classList.add('has-image');
-      image.onload=null;
-      image.onerror=null
-    };
+    if(i>=candidates.length){media.classList.remove('has-image');image.removeAttribute('src');return}
+    image.onload=()=>{media.classList.add('has-image');image.onload=null;image.onerror=null};
     image.onerror=next;
     image.src=candidates[i++]
   };
-
   next()
 }
-
 function headlineLines(){
   const style=getComputedStyle(title);
   const fontSize=parseFloat(style.fontSize)||32;
   const lineHeight=parseFloat(style.lineHeight)||fontSize*1.05;
   return Math.max(1,Math.round(title.scrollHeight/lineHeight))
 }
-
-function maxHeadlineLines(){
-  return matchMedia('(orientation: portrait)').matches?5:3
-}
-
 function preferredHeadlineSize(){
-  const length=(title.textContent||'').trim().length;
+  const n=(title.textContent||'').trim().length;
   const portrait=matchMedia('(orientation: portrait)').matches;
-  const viewportLimit=portrait
-    ?Math.max(34,Math.min(70,window.innerWidth*.072))
-    :Math.max(34,Math.min(62,window.innerWidth*.0335));
-
-  let byLength;
   if(portrait){
-    if(length>130)byLength=32;
-    else if(length>100)byLength=36;
-    else if(length>75)byLength=42;
-    else if(length>50)byLength=50;
-    else byLength=60
-  }else{
-    if(length>130)byLength=30;
-    else if(length>105)byLength=34;
-    else if(length>80)byLength=38;
-    else if(length>60)byLength=44;
-    else if(length>42)byLength=50;
-    else byLength=58
+    if(n>130)return 32;if(n>100)return 36;if(n>75)return 42;if(n>50)return 50;return 60
   }
-
-  return Math.min(viewportLimit,byLength)
+  if(n>130)return 30;if(n>105)return 34;if(n>80)return 38;if(n>60)return 44;if(n>42)return 50;return 58
 }
-
 let fitFrame=0;
-
 function fitCopy(){
   cancelAnimationFrame(fitFrame);
   fitFrame=requestAnimationFrame(()=>{
     const portrait=matchMedia('(orientation: portrait)').matches;
+    const maxLines=portrait?5:3;
     const minFont=portrait?28:28;
-    const maxLines=maxHeadlineLines();
     let size=preferredHeadlineSize();
-
+    const viewportMax=portrait?Math.min(70,innerWidth*.072):Math.min(62,innerWidth*.0335);
+    size=Math.min(size,Math.max(minFont,viewportMax));
     title.style.fontSize=size+'px';
     title.style.lineHeight=portrait?'1.04':'1.05';
-
-    const copyFits=()=>copy.scrollHeight<=copy.clientHeight+1;
-    const headlineFits=()=>headlineLines()<=maxLines;
-
-    while(size>minFont&&(!headlineFits()||!copyFits())){
-      size-=1;
-      title.style.fontSize=size+'px'
-    }
+    const fits=()=>headlineLines()<=maxLines&&copy.scrollHeight<=copy.clientHeight+1;
+    while(size>minFont&&!fits()){size-=1;title.style.fontSize=size+'px'}
   })
 }
-
 function render(x){
   if(!safeItem(x))throw new Error('Notícia inválida');
-
   title.textContent=clean(x.title)||'Notícia';
   source.textContent=x.source||x.sourceDomain||x.source_name||'Fonte';
-
   setImage(x.image||x.image_url||x.imageUrl);
-
-  const link=x.link||x.url||x.sourceUrl||x.source_url||'';
-  if(link){
-    qrImg.src=PV.qrUrl(link);
-    qr.classList.remove('hidden')
-  }else{
-    qr.classList.add('hidden');
-    qrImg.removeAttribute('src')
-  }
-
+  const link=x.public_url||x.publicUrl||x.content_url||x.contentUrl||x.link||x.url||x.sourceUrl||x.source_url||'';
+  if(link){qrImg.src=PV.qrUrl(link);qr.classList.remove('hidden')}
+  else{qr.classList.add('hidden');qrImg.removeAttribute('src')}
   requestAnimationFrame(()=>requestAnimationFrame(fitCopy))
 }
-
 function newsFromPlayer(timeout=1400){
   return new Promise((resolve,reject)=>{
     if(window.parent===window){reject(new Error('standalone'));return}
     const requestId='pv-news-'+Date.now()+'-'+Math.random().toString(36).slice(2);
     let done=false;
-    const finish=(fn,value)=>{
-      if(done)return;
-      done=true;
-      clearTimeout(timer);
-      window.removeEventListener('message',onMessage);
-      fn(value)
-    };
+    const finish=(fn,value)=>{if(done)return;done=true;clearTimeout(timer);removeEventListener('message',onMessage);fn(value)};
     const onMessage=(event)=>{
       if(event.origin!==location.origin)return;
       const data=event.data||{};
@@ -507,17 +372,15 @@ function newsFromPlayer(timeout=1400){
       finish(resolve,{items:PV.filterSafeNews(data.items||[]),source:'PontoView',fromPlayer:true})
     };
     const timer=setTimeout(()=>finish(reject,new Error('timeout')),timeout);
-    window.addEventListener('message',onMessage);
+    addEventListener('message',onMessage);
     window.parent.postMessage({type:'pv-news-request',requestId},location.origin)
   })
 }
-
 async function fetchNews(){
   try{
     const playerNews=await newsFromPlayer();
     if(Array.isArray(playerNews.items)&&playerNews.items.length)return playerNews
   }catch{}
-
   const response=await fetch(CONTENT_FEED,{headers:{Accept:'application/json'},cache:'no-store'});
   if(!response.ok)throw new Error('Central indisponível');
   const data=await response.json();
@@ -533,14 +396,12 @@ async function fetchNews(){
     })))
   }
 }
-
 async function load(){
   try{
     const d=await fetchNews();
     const items=PV.filterSafeNews(Array.isArray(d.items)?d.items:[]).filter(safeItem);
     if(!items.length)throw new Error('Sem notícias seguras');
-    const item=PV.pickForRefresh(items,'noticias',x=>String(x.link||x.url||x.title));
-    render(item)
+    render(PV.pickForRefresh(items,'noticias',x=>String(x.link||x.url||x.title)))
   }catch{
     title.textContent='Novas notícias em breve';
     source.textContent='PontoView';
@@ -550,17 +411,9 @@ async function load(){
     requestAnimationFrame(fitCopy)
   }
 }
-
-window.addEventListener('resize',fitCopy);
-
-if('ResizeObserver' in window){
-  new ResizeObserver(fitCopy).observe(copy)
-}
-
-if(document.fonts&&document.fonts.ready){
-  document.fonts.ready.then(fitCopy).catch(()=>{})
-}
-
+addEventListener('resize',fitCopy);
+if('ResizeObserver' in window)new ResizeObserver(fitCopy).observe(copy);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitCopy).catch(()=>{});
 load();
 </script>
 </body>
