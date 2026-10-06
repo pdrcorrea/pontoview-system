@@ -1,0 +1,148 @@
+.weather-location-picker {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.weather-location-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.weather-location-input-wrap > svg:first-child {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  opacity: .55;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.weather-location-input-wrap input {
+  width: 100%;
+  padding-left: 42px !important;
+  padding-right: 42px !important;
+}
+
+.weather-location-spinner,
+.weather-location-confirmed {
+  position: absolute;
+  right: 14px;
+  width: 18px;
+  height: 18px;
+}
+
+.weather-location-spinner {
+  animation: weather-location-spin .8s linear infinite;
+  opacity: .65;
+}
+
+.weather-location-confirmed {
+  color: var(--success, #18864b);
+}
+
+.weather-location-results {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .12);
+}
+
+.weather-location-option {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, .07);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.weather-location-option:last-of-type {
+  border-bottom: 0;
+}
+
+.weather-location-option:hover,
+.weather-location-option:focus-visible {
+  background: rgba(15, 23, 42, .045);
+  outline: 0;
+}
+
+.weather-location-option > svg {
+  width: 18px;
+  height: 18px;
+  opacity: .58;
+}
+
+.weather-location-option span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.weather-location-option b,
+.weather-location-option small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather-location-option b {
+  font-size: .93rem;
+}
+
+.weather-location-option small {
+  font-size: .78rem;
+  opacity: .62;
+}
+
+.weather-location-message {
+  padding: 14px;
+  font-size: .84rem;
+  opacity: .65;
+}
+
+.weather-location-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(24, 134, 75, .08);
+  color: var(--success, #18864b);
+  font-weight: 700;
+}
+
+.weather-location-selected svg {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes weather-location-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .weather-location-results {
+    border-radius: 14px;
+  }
+
+  .weather-location-option {
+    min-height: 62px;
+  }
+}
