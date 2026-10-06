@@ -25,7 +25,10 @@ export function WeatherLocationPicker({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const requestRef = useRef(0);
-  const selectedCoordinates = Number.isFinite(value?.latitude) && Number.isFinite(value?.longitude);
+  const selectedCoordinates = typeof value?.latitude === "number"
+    && Number.isFinite(value.latitude)
+    && typeof value?.longitude === "number"
+    && Number.isFinite(value.longitude);
 
   useEffect(() => {
     setQuery(value?.name || "");
