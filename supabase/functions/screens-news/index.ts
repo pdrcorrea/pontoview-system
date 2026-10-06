@@ -25,6 +25,7 @@ type CentralNews = {
   url: string | null;
   image_url: string | null;
   published_at: string;
+  public_url: string;
 };
 
 let centralCache: { at: number; items: CentralNews[] } = { at: 0, items: [] };
@@ -70,7 +71,7 @@ async function loadCentralNews(now: string) {
 
   const { data, error } = await admin
     .from("content_items")
-    .select("id,category,title,summary,source_name,source_url,image_url,source_published_at,published_at,expires_at")
+    .select("id,slug,category,title,summary,source_name,source_url,image_url,source_published_at,published_at,expires_at")
     .eq("content_type", "news")
     .eq("status", "published")
     .lte("published_at", now)
@@ -91,6 +92,7 @@ async function loadCentralNews(now: string) {
       url: item.source_url,
       image_url: item.image_url,
       published_at: item.source_published_at || item.published_at,
+      public_url: `https://conteudo.pontoview.com.br/${encodeURIComponent(item.slug)}`,
     })),
   };
 
