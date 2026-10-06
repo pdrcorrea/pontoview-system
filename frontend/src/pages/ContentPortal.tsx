@@ -139,7 +139,7 @@ export function ContentPortalPage() {
       if (!matchesCategory(item.category, category)) return false;
       if (!term) return true;
       return `${item.title} ${item.source_name}`.toLocaleLowerCase("pt-BR").includes(term);
-    });
+    }).slice(0, 5);
   }, [items, search, category]);
 
   function selectCategory(nextCategory: string) {
