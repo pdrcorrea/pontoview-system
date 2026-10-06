@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Building2,
   CalendarClock,
@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { WeatherLocationPicker } from "../components/WeatherLocationPicker";
 import {
   AsyncButton,
   EmptyState,
@@ -45,7 +46,7 @@ import {
 import { defaultOperatingHours, normalizeOperatingHours, operatingHoursSummary } from "../lib/operatingHours";
 import { CURRENT_PLAYER_VERSION } from "../lib/playerVersion";
 import { supabase } from "../lib/supabase";
-import type { OperatingHours, Playlist, Screen, ScreenRotation, ScreenSettings, ScreenStatus } from "../types";
+import type { OperatingHours, Playlist, Screen, ScreenRotation, ScreenSettings, ScreenStatus, WeatherLocation } from "../types";
 
 const defaultSettings: ScreenSettings = {
   screen_id: "",
@@ -504,9 +505,9 @@ function ScreenEditor({
     widgets: { ...current.widgets, [key]: !current.widgets[key] },
   }));
 
-  const setWeatherName = (value: string) => setSettings((current) => ({
+  const setWeatherLocation = (value: WeatherLocation | null) => setSettings((current) => ({
     ...current,
-    weather_location: value.trim() ? { name: value, latitude: null, longitude: null } : null,
+    weather_location: value,
   }));
 
   const toggleNewsCategory = (category: string) => setSettings((current) => {
@@ -514,7 +515,6 @@ function ScreenEditor({
     let news_categories: string[];
 
     if (category === "general") {
-      // "Geral" significa todas as categorias e, por isso, é exclusivo.
       news_categories = ["general"];
     } else {
       const specific = selected.filter((item) => item !== "general");
@@ -522,7 +522,6 @@ function ScreenEditor({
         ? specific.filter((item) => item !== category)
         : [...specific, category];
 
-      // Nunca deixa o seletor sem uma opção válida.
       if (!news_categories.length) news_categories = ["general"];
     }
 
@@ -687,7 +686,7 @@ function ScreenEditor({
               settings={settings}
               setSettings={setSettings}
               toggleWidget={toggleWidget}
-              setWeatherName={setWeatherName}
+              setWeatherLocation={setWeatherLocation}
               toggleNewsCategory={toggleNewsCategory}
             />
           )}
@@ -846,16 +845,15 @@ function VisualSettings({
   settings,
   setSettings,
   toggleWidget,
-  setWeatherName,
+  setWeatherLocation,
   toggleNewsCategory,
 }: {
   settings: ScreenSettings;
   setSettings: React.Dispatch<React.SetStateAction<ScreenSettings>>;
   toggleWidget: (key: string) => void;
-  setWeatherName: (value: string) => void;
+  setWeatherLocation: (value: WeatherLocation | null) => void;
   toggleNewsCategory: (category: string) => void;
 }) {
-  const weatherInputRef = useRef<HTMLInputElement>(null);
   const [activeConfig, setActiveConfig] = useState<"clock" | "weather" | "news" | "messages" | "business" | null>(null);
   const updateWidgetSettings = (key: keyof ScreenSettings["widget_settings"], patch: Record<string, string>) => {
     setSettings((current) => ({
@@ -873,11 +871,6 @@ function VisualSettings({
       : settings.widgets.clock && settings.widgets.weather && settings.widgets.news && settings.widgets.messages && settings.widgets.business
         ? "full"
         : "";
-
-  useEffect(() => {
-    if (!settings.widgets.weather) return;
-    window.requestAnimationFrame(() => weatherInputRef.current?.focus());
-  }, [settings.widgets.weather]);
 
   const applyPreset = (preset: "clean" | "info" | "full") => {
     if (preset === "clean") {
@@ -1012,7 +1005,7 @@ function VisualSettings({
                     ["essential", "Essencial", "Temperatura e condição"],
                     ["forecast", "Previsão", "Atual e próximos dias"],
                   ]} />
-                  <label className="simple-field widget-config-field">Cidade do clima<input ref={weatherInputRef} value={String(settings.weather_location?.name || "")} onChange={(event) => setWeatherName(event.target.value)} placeholder="Ex.: Colatina, ES" /></label>
+                  <WeatherLocationPicker value={settings.weather_location} onChange={setWeatherLocation} />
                   <small>Alertas meteorológicos continuam automáticos e aparecem junto ao clima.</small>
                 </WidgetConfig>
               )}
