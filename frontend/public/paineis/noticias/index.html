@@ -30,15 +30,13 @@ body{
   height:100%;
   padding:clamp(28px,3.8vw,64px) clamp(30px,4.1vw,72px);
   display:grid;
-  grid-template-rows:auto minmax(0,1fr) auto;
-  gap:clamp(18px,2.6vh,30px);
+  grid-template-rows:auto minmax(0,1fr);
+  gap:clamp(18px,2.4vh,28px);
   position:relative;
   overflow:hidden;
   animation:panelIn .72s var(--ease) both;
 }
-
-.stage::before,
-.stage::after{
+.stage::before,.stage::after{
   content:"";
   position:absolute;
   pointer-events:none;
@@ -103,17 +101,6 @@ body{
     linear-gradient(135deg,#f3f2ef,#e8e7e2);
   animation:mediaIn .75s .14s var(--ease) both;
 }
-.media::after{
-  content:"";
-  position:absolute;
-  z-index:2;
-  inset:0;
-  background:
-    linear-gradient(0deg,rgba(255,255,255,.10),transparent 40%),
-    linear-gradient(120deg,transparent 20%,rgba(255,255,255,.30) 20% 21%,transparent 21% 44%,rgba(255,255,255,.18) 44% 45%,transparent 45%);
-  opacity:.58;
-  pointer-events:none;
-}
 .photo{
   position:absolute;
   z-index:1;
@@ -125,10 +112,6 @@ body{
   animation:imageBreath 14s ease-in-out infinite;
 }
 .media.has-image .photo{display:block}
-.media.has-image::after{
-  background:linear-gradient(180deg,rgba(255,255,255,.01),rgba(4,24,52,.06));
-  opacity:1;
-}
 
 .fallback{
   position:absolute;
@@ -146,19 +129,37 @@ body{
 }
 .pv-symbol svg{display:block;width:100%;height:auto}
 
-.bottom{
-  position:relative;
+.overlay{
+  position:absolute;
   z-index:3;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  padding:clamp(22px,2.2vw,36px);
+  background:linear-gradient(
+    180deg,
+    rgba(244,244,241,0) 0%,
+    rgba(244,244,241,0) 42%,
+    rgba(244,244,241,.16) 58%,
+    rgba(244,244,241,.74) 78%,
+    rgba(244,244,241,.97) 100%
+  );
+  pointer-events:none;
+}
+.overlay-content{
   min-width:0;
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
-  gap:clamp(20px,2vw,36px);
+  gap:clamp(18px,2vw,34px);
   align-items:end;
-  animation:bottomIn .65s .28s var(--ease) both;
+  animation:copyIn .65s .28s var(--ease) both;
+  pointer-events:auto;
 }
 .headline{
   margin:0;
-  max-width:none;
+  max-width:18ch;
+  color:var(--text);
   font-size:clamp(44px,4.4vw,82px);
   line-height:1.02;
   letter-spacing:-.05em;
@@ -235,38 +236,49 @@ body{
 @keyframes headerIn{from{opacity:0;transform:translateY(-9px)}to{opacity:1;transform:none}}
 @keyframes mediaIn{from{opacity:0;transform:translateY(10px);clip-path:inset(0 100% 0 0 round 22px)}to{opacity:1;transform:none;clip-path:inset(0 0 0 0 round 22px)}}
 @keyframes symbolIn{from{opacity:0;transform:scale(.86) rotate(-4deg)}to{opacity:1;transform:none}}
-@keyframes bottomIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes copyIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes imageBreath{50%{transform:scale(1.018)}}
 
 @media (orientation:portrait),(max-aspect-ratio:4/5){
   .stage{
-    padding:clamp(30px,5vw,56px) clamp(26px,5vw,54px) clamp(28px,4.5vw,48px);
-    gap:clamp(18px,2vh,26px);
-    grid-template-rows:auto minmax(0,54%) minmax(0,1fr);
+    padding:clamp(30px,5vw,56px) clamp(24px,5vw,50px) clamp(24px,4vw,42px);
+    gap:clamp(16px,2vh,24px);
   }
   .source{max-width:54%}
-  .media{min-height:0}
-  .bottom{
-    min-height:0;
-    align-items:start;
-    align-content:start;
-    grid-template-columns:minmax(0,1fr) auto;
-    padding-top:clamp(4px,.8vh,12px);
+  .overlay{
+    padding:clamp(20px,3vw,30px);
+    background:linear-gradient(
+      180deg,
+      rgba(244,244,241,0) 0%,
+      rgba(244,244,241,0) 36%,
+      rgba(244,244,241,.16) 52%,
+      rgba(244,244,241,.78) 74%,
+      rgba(244,244,241,.98) 100%
+    );
   }
-  .headline{max-width:none;font-size:clamp(46px,8.8vw,92px);line-height:1.01}
-  .qr{align-self:end;justify-content:flex-end}
+  .overlay-content{
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:16px;
+    align-items:end;
+  }
+  .headline{
+    max-width:none;
+    font-size:clamp(46px,8.8vw,92px);
+    line-height:1.01;
+  }
   .qr img{width:clamp(80px,11vw,100px);height:clamp(80px,11vw,100px)}
   .brand{display:none}
 }
 @media(max-width:560px) and (orientation:portrait){
   .kicker,.source{font-size:14px}
-  .bottom{gap:14px}
-  .headline{font-size:clamp(32px,8vw,50px)}
+  .overlay{padding:18px}
+  .overlay-content{gap:12px}
+  .headline{font-size:clamp(34px,8vw,54px)}
   .qr img{width:72px;height:72px}
   .qr-label{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){
-  .stage,.header,.media,.pv-symbol,.bottom,.photo{animation:none!important}
+  .stage,.header,.media,.pv-symbol,.overlay-content,.photo{animation:none!important}
 }
 </style>
 </head>
@@ -288,13 +300,15 @@ body{
       </div>
     </div>
     <img class="photo" id="image" alt="">
-  </section>
 
-  <section class="bottom" id="copy">
-    <h1 class="headline" id="title">Carregando notícias...</h1>
-    <div class="qr hidden" id="qr">
-      <div class="qr-frame"><img id="qrImg" alt="QR Code"></div>
-      <div class="qr-label">Saiba mais</div>
+    <div class="overlay">
+      <div class="overlay-content" id="copy">
+        <h1 class="headline" id="title">Carregando notícias...</h1>
+        <div class="qr hidden" id="qr">
+          <div class="qr-frame"><img id="qrImg" alt="QR Code"></div>
+          <div class="qr-label">Saiba mais</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -350,7 +364,7 @@ function setImage(u){
 function headlineLines(){
   const style=getComputedStyle(title);
   const fontSize=parseFloat(style.fontSize)||32;
-  const lineHeight=parseFloat(style.lineHeight)||fontSize*1.05;
+  const lineHeight=parseFloat(style.lineHeight)||fontSize*1.02;
   return Math.max(1,Math.round(title.scrollHeight/lineHeight));
 }
 function preferredHeadlineSize(){
@@ -382,8 +396,7 @@ function fitCopy(){
     size=Math.min(size,Math.max(minFont,viewportMax));
     title.style.fontSize=size+'px';
     title.style.lineHeight=portrait?'1.01':'1.02';
-    const fits=()=>headlineLines()<=maxLines&&copy.scrollHeight<=copy.clientHeight+1;
-    while(size>minFont&&!fits()){
+    while(size>minFont&&headlineLines()>maxLines){
       size-=1;
       title.style.fontSize=size+'px';
     }
@@ -466,7 +479,7 @@ async function load(){
 }
 window.addEventListener('resize',fitCopy);
 if('ResizeObserver' in window){
-  new ResizeObserver(fitCopy).observe(copy);
+  new ResizeObserver(fitCopy).observe(media);
 }
 if(document.fonts&&document.fonts.ready){
   document.fonts.ready.then(fitCopy).catch(()=>{});
