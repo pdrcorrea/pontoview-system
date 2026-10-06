@@ -44,8 +44,6 @@
   color: inherit;
 }
 
-/* O JSX contém “PontoView” em um strong. Recompomos sem coordenadas absolutas
-   para preservar o contraste Ponto 800 / View 400 em qualquer largura. */
 .pv-home-brandname strong,
 .auth-main-brand > span:last-child > strong {
   display: inline-flex !important;
@@ -82,7 +80,7 @@
   height: 36px !important;
 }
 
-/* Sidebar: nada de margens negativas. Cada parte ocupa seu próprio espaço. */
+/* Sidebar: estrutura real no JSX. Nenhum pseudo-elemento participa da marca. */
 .pv-full-brand {
   display: inline-flex !important;
   align-items: center !important;
@@ -90,10 +88,16 @@
   min-width: 0;
   min-height: 36px;
   overflow: visible !important;
+  line-height: 1;
 }
 
-.pv-full-brand img {
-  content: url("/assets/TelasIconBranco.png?v=20261006-2");
+.pv-full-brand::before,
+.pv-full-brand::after {
+  content: none !important;
+  display: none !important;
+}
+
+.pv-full-brand-icon {
   display: block !important;
   width: 34px !important;
   height: 34px !important;
@@ -101,25 +105,22 @@
   object-fit: contain !important;
 }
 
-.pv-full-brand::before,
-.pv-full-brand::after {
-  display: inline;
-  line-height: 1;
-  letter-spacing: -0.035em;
+.pv-full-brand-wordmark {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 0 !important;
+  min-width: 0;
   color: inherit;
-  flex: 0 0 auto;
+  letter-spacing: -0.035em;
+  line-height: 1;
 }
 
-.pv-full-brand::before {
-  content: "Ponto";
-  margin-right: -9px;
+.pv-full-brand-wordmark strong {
   font-size: 17px;
   font-weight: 800;
 }
 
-.pv-full-brand::after {
-  content: "View";
-  margin-right: -4px;
+.pv-full-brand-wordmark > span {
   font-size: 17px;
   font-weight: 400;
 }
@@ -127,7 +128,7 @@
 .sidebar-product-badge {
   display: inline-flex !important;
   align-items: center;
-  margin: 0 !important;
+  margin: 0 0 0 1px !important;
   padding: 0 !important;
   border: 0 !important;
   font-size: 11px !important;
@@ -166,8 +167,6 @@
   line-height: 1;
 }
 
-/* Em espaços realmente estreitos, a assinatura some por inteiro e fica só o ícone.
-   Nunca mostramos “ícone + Telas” sem PontoView. */
 @media (max-width: 420px) {
   .pv-home-brandname small { display: none !important; }
 }
