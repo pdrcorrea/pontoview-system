@@ -11,6 +11,24 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const CENTRAL_CACHE_MS = 10 * 60_000;
+const MAX_CENTRAL_ROWS = 40;
+const MAX_PLAYER_ITEMS = 16;
+
+type CentralNews = {
+  id: string;
+  content_id: string;
+  source: string;
+  category: string;
+  title: string;
+  summary: string | null;
+  url: string | null;
+  image_url: string | null;
+  published_at: string;
+};
+
+let centralCache: { at: number; items: CentralNews[] } = { at: 0, items: [] };
+
 function reply(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -27,24 +45,57 @@ async function requirePlayer(req: Request) {
   return data as Record<string, any>;
 }
 
-function normalize(value: unknown) {
-  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+function categoryAlias(value: string) {
+  const normalized = String(value || "general").toLowerCase();
+  if (normalized === "local") return "national";
+  if (normalized === "entertainment") return "celebrities";
+  if (normalized === "tech") return "technology";
+  return normalized;
 }
 
-function safeLegacy(item: Record<string, unknown>) {
-  const title = normalize(item.title);
-  const url = normalize(item.url);
-  const blocked = ["veja", "entenda", "saiba", "confira", "descubra", "assista", "clique", "leia", "conheca", "aprenda", "relembre"];
-  if (blocked.some((term) => new RegExp(`(^|[^a-z0-9])${term}([^a-z0-9]|$)`).test(title))) return false;
-  if (title.includes("o que se sabe") || title.includes("o que sabemos") || title.includes("passo a passo") || title.includes("onde assistir") || title.includes("melhores momentos")) return false;
-  if (/\?$/.test(title.trim())) return false;
-  if (url.includes("/opiniao/") || url.includes("/coluna/") || url.includes("/colunas/") || url.includes("/blog/") || url.includes("/blogs/")) return false;
-  return true;
+function requestedCategories(manifest: Record<string, any>) {
+  const raw = Array.isArray(manifest.settings?.news_categories)
+    ? manifest.settings.news_categories.slice(0, 8).map(String)
+    : ["general"];
+  return Array.from(new Set(raw.map(categoryAlias)));
 }
 
-function filterCategories<T extends { category?: string }>(items: T[], categories: string[]) {
+function filterCategories(items: CentralNews[], categories: string[]) {
   if (!categories.length || categories.includes("general")) return items;
-  return items.filter((item) => categories.includes(String(item.category || "general")));
+  const selected = items.filter((item) => categories.includes(categoryAlias(item.category)));
+  return selected.length ? selected : items;
+}
+
+async function loadCentralNews(now: string) {
+  if (centralCache.items.length && Date.now() - centralCache.at < CENTRAL_CACHE_MS) return centralCache.items;
+
+  const { data, error } = await admin
+    .from("content_items")
+    .select("id,category,title,summary,source_name,source_url,image_url,source_published_at,published_at,expires_at")
+    .eq("content_type", "news")
+    .eq("status", "published")
+    .lte("published_at", now)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order("source_published_at", { ascending: false, nullsFirst: false })
+    .limit(MAX_CENTRAL_ROWS);
+  if (error) throw error;
+
+  centralCache = {
+    at: Date.now(),
+    items: (data || []).map((item) => ({
+      id: item.id,
+      content_id: item.id,
+      source: item.source_name,
+      category: categoryAlias(item.category || "general"),
+      title: item.title,
+      summary: item.summary,
+      url: item.source_url,
+      image_url: item.image_url,
+      published_at: item.source_published_at || item.published_at,
+    })),
+  };
+
+  return centralCache.items;
 }
 
 Deno.serve(async (req) => {
@@ -53,69 +104,18 @@ Deno.serve(async (req) => {
 
   try {
     const manifest = await requirePlayer(req);
-    const categories = Array.isArray(manifest.settings?.news_categories)
-      ? manifest.settings.news_categories.slice(0, 6).map(String)
-      : ["general"];
+    const categories = requestedCategories(manifest);
     const now = new Date().toISOString();
-
-    const { data: centralRows, error: centralError } = await admin
-      .from("content_items")
-      .select("id,category,title,summary,source_name,source_url,image_url,source_published_at,published_at,expires_at")
-      .eq("content_type", "news")
-      .eq("status", "published")
-      .lte("published_at", now)
-      .or(`expires_at.is.null,expires_at.gt.${now}`)
-      .order("source_published_at", { ascending: false, nullsFirst: false })
-      .limit(50);
-    if (centralError) throw centralError;
-
-    const centralItems = filterCategories((centralRows || []).map((item) => ({
-      id: item.id,
-      content_id: item.id,
-      source: item.source_name,
-      category: item.category || "general",
-      title: item.title,
-      summary: item.summary,
-      url: item.source_url,
-      image_url: item.image_url,
-      published_at: item.source_published_at || item.published_at,
-    })), categories).slice(0, 16);
-
-    if (centralItems.length >= 5) {
-      return reply({
-        items: centralItems,
-        cached: true,
-        source: "PontoView Content Hub",
-        migrationFallback: false,
-      });
-    }
-
-    const { data: legacyRows } = await admin
-      .from("news_cache")
-      .select("id,source,category,title,summary,url,image_url,published_at")
-      .order("published_at", { ascending: false })
-      .limit(80);
-
-    const centralUrls = new Set(centralItems.map((item) => item.url).filter(Boolean));
-    const legacyItems = filterCategories(((legacyRows || []) as Record<string, unknown>[])
-      .filter(safeLegacy)
-      .map((item) => ({
-        id: String(item.id),
-        source: String(item.source || "PontoView Notícias"),
-        category: String(item.category || "general"),
-        title: String(item.title || ""),
-        summary: item.summary ? String(item.summary) : null,
-        url: item.url ? String(item.url) : null,
-        image_url: item.image_url ? String(item.image_url) : null,
-        published_at: String(item.published_at || now),
-      }))
-      .filter((item) => item.title && (!item.url || !centralUrls.has(item.url))), categories);
+    const centralItems = await loadCentralNews(now);
+    const items = filterCategories(centralItems, categories).slice(0, MAX_PLAYER_ITEMS);
 
     return reply({
-      items: [...centralItems, ...legacyItems].slice(0, 16),
-      cached: true,
-      source: centralItems.length ? "PontoView Content Hub + legado" : "PontoView legado",
-      migrationFallback: true,
+      items,
+      cached: Date.now() - centralCache.at < CENTRAL_CACHE_MS,
+      source: "PontoView Content Hub",
+      centralOnly: true,
+      migrationFallback: false,
+      categories,
     });
   } catch (error) {
     console.error(error);
