@@ -204,6 +204,7 @@ export interface PlayerManifest {
     summary: string | null;
     category: string;
     url: string;
+    public_url?: string;
     image_url?: string | null;
     published_at: string;
   }>;
