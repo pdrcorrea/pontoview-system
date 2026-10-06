@@ -509,12 +509,25 @@ function ScreenEditor({
     weather_location: value.trim() ? { name: value, latitude: null, longitude: null } : null,
   }));
 
-  const toggleNewsCategory = (category: string) => setSettings((current) => ({
-    ...current,
-    news_categories: current.news_categories.includes(category)
-      ? current.news_categories.filter((item) => item !== category)
-      : [...current.news_categories, category],
-  }));
+  const toggleNewsCategory = (category: string) => setSettings((current) => {
+    const selected = current.news_categories.length ? current.news_categories : ["general"];
+    let news_categories: string[];
+
+    if (category === "general") {
+      // "Geral" significa todas as categorias e, por isso, é exclusivo.
+      news_categories = ["general"];
+    } else {
+      const specific = selected.filter((item) => item !== "general");
+      news_categories = specific.includes(category)
+        ? specific.filter((item) => item !== category)
+        : [...specific, category];
+
+      // Nunca deixa o seletor sem uma opção válida.
+      if (!news_categories.length) news_categories = ["general"];
+    }
+
+    return { ...current, news_categories };
+  });
 
   const setOperatingHours = (next: OperatingHours) => setSettings((current) => ({
     ...current,
