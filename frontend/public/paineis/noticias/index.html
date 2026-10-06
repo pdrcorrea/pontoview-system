@@ -240,19 +240,29 @@ body{
 
 @media (orientation:portrait),(max-aspect-ratio:4/5){
   .stage{
-    padding:clamp(28px,5vw,54px) clamp(24px,5vw,52px) clamp(24px,4vw,42px);
-    gap:clamp(18px,2.2vh,28px);
+    padding:clamp(30px,5vw,56px) clamp(26px,5vw,54px) clamp(28px,4.5vw,48px);
+    gap:clamp(18px,2vh,26px);
+    grid-template-rows:auto minmax(0,54%) minmax(0,1fr);
   }
   .source{max-width:54%}
-  .headline{max-width:none;font-size:clamp(42px,8.2vw,82px);line-height:1.01}
-  .qr img{width:clamp(80px,12vw,100px);height:clamp(80px,12vw,100px)}
+  .media{min-height:0}
+  .bottom{
+    min-height:0;
+    align-items:start;
+    align-content:start;
+    grid-template-columns:minmax(0,1fr) auto;
+    padding-top:clamp(4px,.8vh,12px);
+  }
+  .headline{max-width:none;font-size:clamp(46px,8.8vw,92px);line-height:1.01}
+  .qr{align-self:end;justify-content:flex-end}
+  .qr img{width:clamp(80px,11vw,100px);height:clamp(80px,11vw,100px)}
   .brand{display:none}
 }
 @media(max-width:560px) and (orientation:portrait){
   .kicker,.source{font-size:14px}
   .bottom{gap:14px}
   .headline{font-size:clamp(32px,8vw,50px)}
-  .qr img{width:76px;height:76px}
+  .qr img{width:72px;height:72px}
   .qr-label{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -347,11 +357,11 @@ function preferredHeadlineSize(){
   const n=(title.textContent||'').trim().length;
   const portrait=matchMedia('(orientation: portrait)').matches;
   if(portrait){
-    if(n>130)return 36;
-    if(n>100)return 40;
-    if(n>75)return 46;
-    if(n>50)return 54;
-    return 64;
+    if(n>130)return 42;
+    if(n>100)return 48;
+    if(n>75)return 56;
+    if(n>50)return 66;
+    return 78;
   }
   if(n>130)return 36;
   if(n>105)return 40;
@@ -365,10 +375,10 @@ function fitCopy(){
   cancelAnimationFrame(fitFrame);
   fitFrame=requestAnimationFrame(()=>{
     const portrait=matchMedia('(orientation: portrait)').matches;
-    const maxLines=portrait?5:4;
-    const minFont=portrait?30:34;
+    const maxLines=portrait?6:4;
+    const minFont=portrait?38:34;
     let size=preferredHeadlineSize();
-    const viewportMax=portrait?Math.min(82,innerWidth*.082):Math.min(86,innerWidth*.044);
+    const viewportMax=portrait?Math.min(92,innerWidth*.088):Math.min(86,innerWidth*.044);
     size=Math.min(size,Math.max(minFont,viewportMax));
     title.style.fontSize=size+'px';
     title.style.lineHeight=portrait?'1.01':'1.02';
