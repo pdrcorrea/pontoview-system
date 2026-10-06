@@ -429,11 +429,11 @@ export function PlayerPage() {
         if (shouldRefresh) {
           try {
             const news = await fetch(`${functionsUrl}/screens-news`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": activeDevice.screenId, "x-screen-token": activeDevice.token }, body: "{}" }).then((response) => response.ok ? response.json() : null);
-            if (Array.isArray(news?.items) && news.items.length) newsFetch.current = { key: categories, at: Date.now(), items: news.items };
+            if (Array.isArray(news?.items)) newsFetch.current = { key: categories, at: Date.now(), items: news.items };
             else newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() };
           } catch { newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() }; }
         }
-        if (newsFetch.current.items.length) next.news = newsFetch.current.items;
+        next.news = newsFetch.current.items;
       } else next.news = [];
 
       localStorage.setItem(`pv_manifest_${activeDevice.screenId}`, JSON.stringify(next));
