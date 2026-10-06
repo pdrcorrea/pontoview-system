@@ -1,101 +1,173 @@
-/* Identidade oficial PontoView Telas
-   Padrão do ecossistema: assinatura completa com 40px de altura visual no desktop. */
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700;800&display=swap");
 
-/* Home e rodapé: usar somente a assinatura oficial, sem o antigo texto "Telas" ao lado. */
+/* PontoView Telas: ícone como asset e assinatura tipográfica fluida. */
+.pv-home-brand,
+.pv-full-brand,
+.auth-main-brand {
+  font-family: "Nunito Sans", ui-rounded, "Segoe UI", sans-serif;
+  white-space: nowrap;
+}
+
+/* Home e rodapé */
 .pv-home-brand {
-  gap: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: clamp(8px, 1vw, 12px) !important;
+  min-width: 0;
 }
 
 .pv-home-brandmark {
-  width: auto !important;
-  height: 40px !important;
+  width: clamp(32px, 3vw, 40px) !important;
+  height: clamp(32px, 3vw, 40px) !important;
   display: flex !important;
   align-items: center !important;
+  justify-content: center !important;
   flex: 0 0 auto !important;
 }
 
-.pv-home-brand-logo {
-  content: url("/assets/TelasAzul.png?v=20261004-2");
+.pv-home-brand-logo { display: none !important; }
+
+.pv-home-brand-icon {
+  content: url("/assets/TelasIconAzul.png?v=20261006-2");
   display: block !important;
-  width: auto !important;
-  height: 40px !important;
-  max-width: 150px !important;
+  width: 100% !important;
+  height: 100% !important;
   object-fit: contain !important;
 }
 
-.pv-home-brand-icon,
 .pv-home-brandname {
-  display: none !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: clamp(6px, .7vw, 9px) !important;
+  min-width: 0;
+  line-height: 1 !important;
+  color: inherit;
+}
+
+/* O JSX contém “PontoView” em um strong. Recompomos sem coordenadas absolutas
+   para preservar o contraste Ponto 800 / View 400 em qualquer largura. */
+.pv-home-brandname strong,
+.auth-main-brand > span:last-child > strong {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  font-size: 0 !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.035em;
+}
+
+.pv-home-brandname strong::before,
+.auth-main-brand > span:last-child > strong::before {
+  content: "Ponto";
+  font-size: clamp(17px, 1.7vw, 20px);
+  font-weight: 800;
+}
+
+.pv-home-brandname strong::after,
+.auth-main-brand > span:last-child > strong::after {
+  content: "View";
+  font-size: clamp(17px, 1.7vw, 20px);
+  font-weight: 400;
+}
+
+.pv-home-brandname small,
+.auth-main-brand > span:last-child > small {
+  font-size: clamp(10px, 1vw, 13px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em;
+  opacity: .72;
 }
 
 .pv-home-footer-brand .pv-home-brandmark {
-  width: auto !important;
+  width: 36px !important;
   height: 36px !important;
 }
 
-.pv-home-footer-brand .pv-home-brand-logo {
-  height: 36px !important;
-}
-
-/* Sidebar: logo.png contém a assinatura completa do PontoView Telas. */
-.sidebar-product-badge {
-  display: none !important;
+/* Sidebar: nada de margens negativas. Cada parte ocupa seu próprio espaço. */
+.pv-full-brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-width: 0;
+  min-height: 36px;
+  overflow: visible !important;
 }
 
 .pv-full-brand img {
-  display: block;
-  width: auto;
-  height: 34px;
-  max-width: 100%;
-  object-fit: contain;
+  content: url("/assets/TelasIconBranco.png?v=20261006-2");
+  display: block !important;
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 34px !important;
+  object-fit: contain !important;
 }
 
-/* Login, cadastro e fluxos de autenticação: assinatura branca completa sobre o painel azul. */
-.auth-main-brand {
-  gap: 0;
-}
-
-.auth-main-brand::before {
-  content: "";
-  display: block;
-  width: 136px;
-  height: 40px;
+.pv-full-brand::before,
+.pv-full-brand::after {
+  display: inline;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: inherit;
   flex: 0 0 auto;
-  background: url("/assets/TelasBranco.png?v=20261004-2") left center / contain no-repeat;
 }
 
-.auth-main-brandmark,
+.pv-full-brand::before {
+  content: "Ponto";
+  margin-right: -9px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.pv-full-brand::after {
+  content: "View";
+  margin-right: -4px;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.sidebar-product-badge {
+  display: inline-flex !important;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-size: 11px !important;
+  line-height: 1;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  opacity: .62;
+  flex: 0 0 auto;
+}
+
+/* Login/cadastro */
+.auth-main-brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0;
+}
+.auth-main-brand::before { content: none !important; }
+.auth-main-brandmark {
+  display: flex !important;
+  width: clamp(34px, 3vw, 40px) !important;
+  height: clamp(34px, 3vw, 40px) !important;
+  flex: 0 0 auto !important;
+}
+.auth-main-brandmark img {
+  content: url("/assets/TelasIconBranco.png?v=20261006-2");
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
 .auth-main-brand > span:last-child {
-  display: none !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 7px;
+  min-width: 0;
+  line-height: 1;
 }
 
-@media (max-width: 1120px) {
-  .auth-main-brand::before {
-    width: 122px;
-    height: 36px;
-  }
-}
-
-@media (max-width: 760px) {
-  .pv-home-brandmark {
-    width: auto !important;
-    height: 32px !important;
-  }
-
-  .pv-home-brand-logo {
-    display: block !important;
-    width: auto !important;
-    height: 32px !important;
-    max-width: 116px !important;
-  }
-
-  .pv-home-brand-icon,
-  .pv-home-brandname {
-    display: none !important;
-  }
-
-  .pv-home-footer-brand .pv-home-brandmark,
-  .pv-home-footer-brand .pv-home-brand-logo {
-    height: 32px !important;
-  }
+/* Em espaços realmente estreitos, a assinatura some por inteiro e fica só o ícone.
+   Nunca mostramos “ícone + Telas” sem PontoView. */
+@media (max-width: 420px) {
+  .pv-home-brandname small { display: none !important; }
 }
