@@ -191,4 +191,29 @@ export interface PlayerManifest {
       metadata: Record<string, unknown>;
     };
   }>;
+  messages: Array<{
+    id: string;
+    title: string | null;
+    body: string;
+    displayLocation?: MessageDisplayLocation;
+    priority?: MessagePriority;
+    durationMode?: MessageDurationMode;
+    durationSeconds?: number | null;
+    styleVariant?: MessageStyleVariant;
+    isExclusive?: boolean;
+    contentType?: InformationType;
+    eventAt?: string | null;
+  }>;
+  news: Array<{
+    id: string;
+    source?: string;
+    title: string;
+    summary: string | null;
+    category: string;
+    url: string;
+    public_url?: string;
+    image_url?: string | null;
+    published_at: string;
+  }>;
+  syncedAt: string;
 }
