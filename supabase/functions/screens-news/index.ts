@@ -47,7 +47,6 @@ async function requirePlayer(req: Request) {
 
 function categoryAlias(value: string) {
   const normalized = String(value || "general").toLowerCase();
-  if (normalized === "local") return "national";
   if (normalized === "entertainment") return "celebrities";
   if (normalized === "tech") return "technology";
   return normalized;
