@@ -1,5 +1,298 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PontoView Telas • Saudações</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24..48,300..700,0,0" rel="stylesheet"><link rel="stylesheet" href="../shared/pontoview.css?v=8"><style>
-:root{--g1:#0b55ad;--g2:#08458f;--warm:#ffd88a}body{background:linear-gradient(145deg,var(--g1),var(--g2));transition:background 1.2s ease}.greeting{min-height:0;display:grid;grid-template-columns:minmax(0,58%) minmax(0,42%);gap:clamp(28px,3vw,50px)}.copy{min-height:0;display:flex;flex-direction:column;justify-content:center}.title{font-size:clamp(64px,8vw,138px);font-weight:650;line-height:.92;letter-spacing:-.065em;text-wrap:balance}.subtitle{margin-top:clamp(24px,3vh,36px);font-size:clamp(18px,1.55vw,25px);line-height:1.5;color:var(--pv-soft);max-width:46ch}.scene{min-height:0;position:relative;display:grid;place-items:center;overflow:hidden;border-radius:clamp(28px,3vw,44px);background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.12),rgba(105,207,242,.06) 45%,rgba(255,255,255,.025) 72%);border:1px solid rgba(255,255,255,.12)}.celestial{width:min(25vw,340px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;position:relative;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08)}.celestial::before,.celestial::after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.07)}.celestial::before{inset:11%;animation:pvRing 28s linear infinite}.celestial::after{inset:25%;animation:pvRing 19s linear infinite reverse}.celestial span{font-size:clamp(110px,12vw,190px);color:var(--warm);z-index:2;animation:float 5s ease-in-out infinite}.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;opacity:.34;animation:twinkle 3s ease-in-out infinite}.spark.a{left:18%;top:20%}.spark.b{right:16%;top:28%;animation-delay:-1s}.spark.c{left:26%;bottom:18%;animation-delay:-2s}.spark.d{right:26%;bottom:22%;animation-delay:-.5s}.wave{position:absolute;left:-10%;right:-10%;bottom:-17%;height:42%;border-radius:50% 50% 0 0;background:rgba(105,207,242,.07);transform:rotate(-3deg)}.greeting{animation:greetingIn .7s var(--pv-ease) both}@keyframes greetingIn{from{opacity:0;transform:translateY(12px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}@keyframes float{50%{transform:translateY(-8px) rotate(-2deg)}}@keyframes twinkle{50%{opacity:.9;transform:scale(1.7)}}@media(orientation:portrait),(max-aspect-ratio:4/5){.greeting{grid-template-columns:1fr;grid-template-rows:minmax(0,58%) minmax(0,42%);gap:22px}.title{font-size:clamp(68px,13vw,116px)}.celestial{width:min(48vw,350px)}}@media(prefers-reduced-motion:reduce){.greeting,.celestial::before,.celestial::after,.celestial span,.spark{animation:none!important}}
-</style><link rel="stylesheet" href="../shared/responsive.css?v=10"></head><body class="pv-panel panel-saudacoes"><div class="pv-ambient"></div><div class="pv-shell"><main class="greeting pv-stage-centered pv-balanced-stage"><section class="copy"><div class="title" id="title">Bem-vindo</div><div class="subtitle" id="subtitle">Que o seu tempo aqui seja leve, agradável e bem informado.</div></section><section class="scene"><span class="spark a"></span><span class="spark b"></span><span class="spark c"></span><span class="spark d"></span><div class="celestial"><span class="material-symbols-outlined" id="sceneIcon">wb_sunny</span></div><div class="wave"></div></section></main><footer class="pv-footer"><div class="pv-footer-brand">PontoView</div></footer></div><script src="../shared/pv.js?v=8"></script><script>
-const title=document.getElementById('title'),subtitle=document.getElementById('subtitle'),icon=document.getElementById('sceneIcon'),name=PV.qs('nome','');function state(){const h=new Date().getHours();if(h>=5&&h<12)return{g:'Bom dia',icon:'wb_sunny',key:'morning',g1:'#0b5db5',g2:'#08458f',warm:'#ffd88a',text:'Que o seu dia comece leve, acolhedor e cheio de boas possibilidades.'};if(h>=12&&h<18)return{g:'Boa tarde',icon:'sunny',key:'afternoon',g1:'#0a4e9f',g2:'#063b80',warm:'#ffd18a',text:'Que a sua tarde siga tranquila, produtiva e com bons encontros pelo caminho.'};return{g:'Boa noite',icon:'nightlight',key:'evening',g1:'#063a7c',g2:'#03275b',warm:'#cfe3ff',text:'Que a sua noite seja tranquila, acolhedora e agradável.'}}function render(){const s=state();document.documentElement.style.setProperty('--g1',s.g1);document.documentElement.style.setProperty('--g2',s.g2);document.documentElement.style.setProperty('--warm',s.warm);icon.textContent=s.icon;const options=[{t:s.g,sub:s.text},{t:name?`Bem-vindo, ${name}`:'Bem-vindo',sub:'Que o seu tempo aqui seja confortável, agradável e bem informado.'}];const x=PV.pickForRefresh(options,'saudacoes',i=>i.t);title.textContent=x.t;subtitle.textContent=x.sub}render();
-</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PontoView Telas • Saudações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24..48,300..700,0,0" rel="stylesheet">
+<link rel="stylesheet" href="../shared/pontoview.css?v=8">
+<style>
+:root{
+  --bg:#f4f1e9;--bg2:#ece5da;--ink:#334d6d;--soft:#6f7a88;
+  --accent:#d1a057;--accent2:#9dc7da;--ring:rgba(84,115,143,.16);
+  --glow:rgba(209,160,87,.14);--brand:rgba(28,42,60,.14);
+  --cloud:rgba(255,255,255,.52);--star:rgba(255,255,255,.92);
+  --wind:rgba(123,175,203,.62);--ease:cubic-bezier(.22,.78,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(circle at 78% 44%,var(--glow),transparent 28%),
+    linear-gradient(145deg,var(--bg),var(--bg2));
+  transition:background 1.1s var(--ease);
+}
+body::before{
+  content:"";position:absolute;width:clamp(150px,17vw,300px);aspect-ratio:1;
+  right:clamp(-110px,-5vw,-50px);top:clamp(-120px,-6vw,-56px);
+  border-radius:32%;background:linear-gradient(135deg,var(--accent2),var(--accent));
+  transform:rotate(20deg);opacity:.10;pointer-events:none
+}
+body::after{
+  content:"";position:absolute;width:clamp(100px,11vw,190px);aspect-ratio:1;
+  left:clamp(-82px,-4vw,-35px);bottom:clamp(-80px,-4vw,-30px);
+  border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));
+  opacity:.08;pointer-events:none
+}
+.pv-shell{width:100%;height:100%;padding:0!important;position:relative}
+.greeting{
+  position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,52%) minmax(0,48%);
+  gap:clamp(20px,3vw,54px);padding:clamp(44px,4.8vw,96px);z-index:2
+}
+.copy{align-self:center;max-width:880px}
+.title{
+  margin:0;color:var(--ink);font-size:clamp(78px,8.8vw,158px);
+  line-height:.88;letter-spacing:-.068em;font-weight:760;text-wrap:balance;
+  transition:color 1s var(--ease)
+}
+.subtitle{
+  margin:30px 0 0;max-width:34ch;color:var(--soft);
+  font-size:clamp(19px,1.58vw,29px);line-height:1.48;font-weight:450;
+  transition:color 1s var(--ease)
+}
+.art{position:relative;display:grid;place-items:center;min-width:0;min-height:0}
+.canvas{position:relative;width:min(88%,620px);aspect-ratio:1;display:grid;place-items:center}
+.glow{
+  position:absolute;inset:24%;border-radius:50%;
+  background:radial-gradient(circle,var(--glow),transparent 72%);filter:blur(10px)
+}
+.rings{position:absolute;inset:0}
+.ring{position:absolute;border-radius:50%;border:2px solid var(--ring)}
+.r1{inset:0;animation:ringBreath 7s ease-in-out infinite}
+.r2{inset:16%;animation:ringBreath 8.2s ease-in-out infinite -.9s}
+.r3{inset:32%;animation:ringBreath 6.2s ease-in-out infinite -.4s}
+.pv-arc{
+  position:absolute;border-radius:50%;border:3px solid transparent;
+  border-top-color:color-mix(in srgb,var(--accent2) 58%,transparent);
+  border-right-color:color-mix(in srgb,var(--accent2) 34%,transparent);opacity:.55
+}
+.pv-arc.a{inset:8%;transform:rotate(22deg);animation:arcFloat 11s ease-in-out infinite}
+.pv-arc.b{inset:24%;transform:rotate(-26deg);animation:arcFloat2 13s ease-in-out infinite}
+.scene-block{position:absolute;inset:0;display:grid;place-items:center}
+.scene-center{position:relative;width:34%;aspect-ratio:1;display:grid;place-items:center;z-index:4}
+.scene-center.large{width:38%}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 48}
+.atmo{position:absolute;color:var(--cloud);opacity:.55;line-height:1;pointer-events:none;user-select:none}
+.cloud-icon{font-size:54px}
+.star-icon{
+  color:var(--star);font-size:18px;opacity:.76;
+  text-shadow:0 0 12px rgba(255,255,255,.18);animation:twinkle 3.6s ease-in-out infinite
+}
+.star-icon.big{font-size:24px}
+.sparkle-star{color:var(--star);font-size:24px;opacity:.52;animation:twinkle 4.2s ease-in-out infinite}
+.wind-field{position:absolute;inset:0;pointer-events:none}
+.wind-field svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.wind-stroke{
+  fill:none;stroke:var(--wind);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;
+  opacity:.55;stroke-dasharray:160;stroke-dashoffset:160;animation:wipeWind 4.8s ease-in-out infinite
+}
+.wind-stroke.w2{opacity:.42;animation-duration:5.6s;animation-delay:.8s}
+.wind-stroke.w3{opacity:.30;animation-duration:4.9s;animation-delay:1.2s}
+.morning .sun{
+  position:relative;width:72%;aspect-ratio:1;color:var(--accent);
+  animation:floatCentered 6.5s ease-in-out infinite;
+  filter:drop-shadow(0 12px 28px color-mix(in srgb,var(--accent) 22%,transparent))
+}
+.sun .core{position:absolute;inset:27%;border:8px solid currentColor;border-radius:50%}
+.sun .ray{
+  position:absolute;width:6%;height:24%;left:47%;top:0;background:currentColor;
+  border-radius:999px;transform-origin:50% 208%
+}
+.sun .ray:nth-child(2){transform:rotate(45deg)}.sun .ray:nth-child(3){transform:rotate(90deg)}
+.sun .ray:nth-child(4){transform:rotate(135deg)}.sun .ray:nth-child(5){transform:rotate(180deg)}
+.sun .ray:nth-child(6){transform:rotate(225deg)}.sun .ray:nth-child(7){transform:rotate(270deg)}
+.sun .ray:nth-child(8){transform:rotate(315deg)}
+.morning .c1{left:5%;top:25%;animation:cloudDrift1 17s ease-in-out infinite}
+.morning .c2{right:5%;bottom:20%;transform:scale(.9);opacity:.42;animation:cloudDrift2 20s ease-in-out infinite}
+.afternoon .sun-disc{
+  position:relative;width:58%;aspect-ratio:1;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 14px color-mix(in srgb,var(--accent) 11%,transparent);
+  animation:floatCentered 7s ease-in-out infinite
+}
+.afternoon .c1{left:5%;top:18%;font-size:50px;opacity:.36;animation:cloudDrift1 18s ease-in-out infinite}
+.afternoon .c2{left:14%;bottom:13%;font-size:44px;opacity:.26;animation:cloudDrift2 22s ease-in-out infinite}
+.sunset .haze{
+  position:absolute;inset:14% 9% 10%;
+  background:radial-gradient(circle at 50% 58%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 56%)
+}
+.sunset .sun-low{
+  position:relative;width:74%;aspect-ratio:1;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 44px color-mix(in srgb,var(--accent) 22%,transparent);
+  animation:sunsetGlow 6s ease-in-out infinite
+}
+.sunset .horizon-line{
+  position:absolute;left:12%;right:12%;top:50%;height:2px;
+  background:color-mix(in srgb,var(--accent) 42%,transparent);z-index:5
+}
+.sunset .ground{
+  position:absolute;left:10%;right:10%;top:50%;bottom:9%;
+  background:linear-gradient(to top,color-mix(in srgb,var(--bg2) 94%,transparent),transparent 86%);z-index:3
+}
+.sunset .c1{left:8%;top:24%;font-size:46px;opacity:.28;animation:cloudDrift1 18s ease-in-out infinite}
+.sunset .c2{right:8%;top:15%;font-size:58px;opacity:.22;animation:cloudDrift2 22s ease-in-out infinite}
+.night .moon{position:relative;width:66%;aspect-ratio:1;animation:floatCentered 7.5s ease-in-out infinite}
+.night .moon::before{
+  content:"";position:absolute;inset:0;border-radius:50%;background:#dfe8fb;
+  box-shadow:0 0 34px rgba(223,232,251,.16)
+}
+.night .moon::after{
+  content:"";position:absolute;width:76%;height:76%;border-radius:50%;
+  left:36%;top:8%;background:var(--bg)
+}
+.night .c1{left:7%;bottom:16%;opacity:.14;animation:cloudDrift1 24s ease-in-out infinite}
+.night .s1{left:10%;top:20%}.night .s2{left:25%;top:35%;animation-delay:-1s}
+.night .s3{right:9%;top:28%;animation-delay:-2s}.night .s4{left:17%;bottom:24%;animation-delay:-.6s}
+.night .s5{right:20%;bottom:18%;animation-delay:-1.5s}.night .k1{right:29%;top:17%;animation-delay:-.9s}
+.night .k2{right:10%;top:43%;animation-delay:-1.1s}
+.hidden{display:none!important}
+.greeting{animation:enter .65s var(--ease) both}
+@keyframes enter{from{opacity:0;transform:translateY(12px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
+@keyframes ringBreath{50%{transform:scale(1.025);opacity:.8}}
+@keyframes arcFloat{50%{transform:rotate(28deg) scale(1.015)}}
+@keyframes arcFloat2{50%{transform:rotate(-20deg) scale(.99)}}
+@keyframes floatCentered{50%{transform:translateY(-8px)}}
+@keyframes cloudDrift1{50%{translate:14px -4px}}
+@keyframes cloudDrift2{50%{translate:-11px 5px}}
+@keyframes twinkle{50%{opacity:1;transform:scale(1.45)}}
+@keyframes sunsetGlow{50%{box-shadow:0 0 60px color-mix(in srgb,var(--accent) 28%,transparent)}}
+@keyframes wipeWind{
+  0%{stroke-dashoffset:160;opacity:0}18%{opacity:.45}
+  45%{stroke-dashoffset:0;opacity:.62}70%{stroke-dashoffset:-18;opacity:.42}
+  100%{stroke-dashoffset:-170;opacity:0}
+}
+@media(orientation:portrait),(max-aspect-ratio:4/5){
+  .greeting{grid-template-columns:1fr;grid-template-rows:minmax(0,52%) minmax(0,48%);gap:0;padding:48px 34px 34px}
+  .copy{align-self:end}.title{font-size:clamp(68px,16vw,118px)}
+  .subtitle{font-size:clamp(18px,4.2vw,26px);margin-top:22px;max-width:29ch}
+  .canvas{width:min(80vw,430px)}.scene-center{width:36%}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<link rel="stylesheet" href="../shared/responsive.css?v=10">
+</head>
+<body class="pv-panel panel-saudacoes">
+<div class="pv-shell">
+  <main class="greeting">
+    <section class="copy">
+      <div class="title" id="title">Boa tarde</div>
+      <div class="subtitle" id="subtitle">Que a sua tarde siga tranquila, produtiva e com bons encontros pelo caminho.</div>
+    </section>
+
+    <section class="art">
+      <div class="canvas">
+        <div class="glow"></div>
+        <div class="rings">
+          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+          <div class="pv-arc a"></div><div class="pv-arc b"></div>
+        </div>
+
+        <div id="morningBlock" class="scene-block morning hidden">
+          <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
+          <span class="atmo cloud-icon c2 material-symbols-outlined">cloud</span>
+          <div class="scene-center">
+            <div class="sun">
+              <div class="core"></div>
+              <div class="ray"></div><div class="ray"></div><div class="ray"></div><div class="ray"></div>
+              <div class="ray"></div><div class="ray"></div><div class="ray"></div><div class="ray"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="afternoonBlock" class="scene-block afternoon hidden">
+          <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
+          <span class="atmo cloud-icon c2 material-symbols-outlined">cloud</span>
+          <div class="wind-field" aria-hidden="true">
+            <svg viewBox="0 0 620 620" preserveAspectRatio="none">
+              <path class="wind-stroke w1" d="M405 255 C458 224 516 236 556 212"/>
+              <path class="wind-stroke w2" d="M364 315 C426 284 484 295 545 272"/>
+              <path class="wind-stroke w3" d="M432 372 C472 352 524 354 576 334"/>
+            </svg>
+          </div>
+          <div class="scene-center"><div class="sun-disc"></div></div>
+        </div>
+
+        <div id="sunsetBlock" class="scene-block sunset hidden">
+          <div class="haze"></div>
+          <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
+          <span class="atmo cloud-icon c2 material-symbols-outlined">cloud</span>
+          <div class="horizon-line"></div><div class="ground"></div>
+          <div class="scene-center large"><div class="sun-low"></div></div>
+        </div>
+
+        <div id="nightBlock" class="scene-block night hidden">
+          <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
+          <span class="atmo star-icon s1 material-symbols-outlined">star</span>
+          <span class="atmo star-icon big s2 material-symbols-outlined">star</span>
+          <span class="atmo star-icon s3 material-symbols-outlined">star</span>
+          <span class="atmo star-icon s4 material-symbols-outlined">star</span>
+          <span class="atmo star-icon s5 material-symbols-outlined">star</span>
+          <span class="atmo sparkle-star k1 material-symbols-outlined">star</span>
+          <span class="atmo sparkle-star k2 material-symbols-outlined">star</span>
+          <div class="scene-center"><div class="moon"></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../shared/pv.js?v=8"></script>
+<script>
+const title=document.getElementById('title');
+const subtitle=document.getElementById('subtitle');
+const name=PV.qs('nome','');
+
+const lightProfiles={
+  morning:{g:'Bom dia',text:'Que o seu dia comece leve, acolhedor e cheio de boas possibilidades.',bg:'#f6f1df',bg2:'#eee3c9',ink:'#2d4359',soft:'#6f7984',accent:'#d8a74e',accent2:'#8fbfd7',ring:'rgba(88,120,145,.16)',glow:'rgba(216,167,78,.18)',cloud:'rgba(255,255,255,.56)',star:'rgba(255,255,255,.90)',wind:'rgba(143,191,215,.68)',block:'morningBlock'},
+  afternoon:{g:'Boa tarde',text:'Que a sua tarde siga tranquila, produtiva e com bons encontros pelo caminho.',bg:'#f4f1e9',bg2:'#ece5da',ink:'#334d6d',soft:'#6f7a88',accent:'#d1a057',accent2:'#9dc7da',ring:'rgba(84,115,143,.16)',glow:'rgba(209,160,87,.14)',cloud:'rgba(255,255,255,.52)',star:'rgba(255,255,255,.90)',wind:'rgba(123,175,203,.62)',block:'afternoonBlock'},
+  sunset:{g:'Boa tarde',text:'Que a sua tarde siga tranquila, produtiva e com bons encontros pelo caminho.',bg:'#f3e6d8',bg2:'#ead8c7',ink:'#69473f',soft:'#8b7069',accent:'#e48857',accent2:'#c7989d',ring:'rgba(177,111,89,.17)',glow:'rgba(228,136,87,.19)',cloud:'rgba(255,255,255,.42)',star:'rgba(255,255,255,.90)',wind:'rgba(201,152,157,.56)',block:'sunsetBlock'},
+  night:{g:'Boa noite',text:'Que a sua noite seja tranquila, acolhedora e agradável.',bg:'#18263d',bg2:'#111c2f',ink:'#f3f6fb',soft:'#b9c2d0',accent:'#dfe8fb',accent2:'#5f7ca8',ring:'rgba(214,228,250,.16)',glow:'rgba(201,219,248,.10)',cloud:'rgba(255,255,255,.18)',star:'rgba(255,255,255,.95)',wind:'rgba(143,191,215,.50)',block:'nightBlock'}
+};
+const darkProfiles={
+  morning:{...lightProfiles.morning,bg:'#232a2f',bg2:'#161d22',ink:'#f4f1e8',soft:'#c0c6ca',accent:'#e0b35e',accent2:'#63839a',ring:'rgba(198,213,225,.13)',glow:'rgba(224,179,94,.11)',cloud:'rgba(255,255,255,.18)',wind:'rgba(126,161,181,.50)'},
+  afternoon:{...lightProfiles.afternoon,bg:'#202832',bg2:'#151b24',ink:'#f4f6f8',soft:'#c0c7cf',accent:'#c9a161',accent2:'#64879d',ring:'rgba(198,213,225,.13)',glow:'rgba(201,161,97,.10)',cloud:'rgba(255,255,255,.15)',wind:'rgba(115,151,172,.46)'},
+  sunset:{...lightProfiles.sunset,bg:'#30272a',bg2:'#1c181b',ink:'#fff3ed',soft:'#d1bcb3',accent:'#e58a59',accent2:'#8b6673',ring:'rgba(231,177,155,.13)',glow:'rgba(229,138,89,.12)',cloud:'rgba(255,255,255,.13)',wind:'rgba(163,118,133,.44)'},
+  night:{...lightProfiles.night,bg:'#0f1828',bg2:'#090f19',ink:'#f4f7fd',soft:'#aeb8c8',accent:'#dce7fa',accent2:'#496487',ring:'rgba(214,228,250,.13)',glow:'rgba(201,219,248,.07)',cloud:'rgba(255,255,255,.10)',wind:'rgba(100,132,161,.36)'}
+};
+
+function period(){
+  const h=new Date().getHours();
+  if(h>=5&&h<12)return'morning';
+  if(h>=12&&h<16)return'afternoon';
+  if(h>=16&&h<18)return'sunset';
+  return'night';
+}
+function darkMode(){
+  const q=new URLSearchParams(location.search);
+  const raw=(q.get('tema')||q.get('theme')||q.get('modo')||q.get('mode')||q.get('dark')||'').toLowerCase();
+  if(['dark','escuro','1','true'].includes(raw))return true;
+  if(['light','claro','0','false'].includes(raw))return false;
+  return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function applyProfile(p){
+  const r=document.documentElement.style;
+  r.setProperty('--bg',p.bg);r.setProperty('--bg2',p.bg2);r.setProperty('--ink',p.ink);
+  r.setProperty('--soft',p.soft);r.setProperty('--accent',p.accent);r.setProperty('--accent2',p.accent2);
+  r.setProperty('--ring',p.ring);r.setProperty('--glow',p.glow);r.setProperty('--cloud',p.cloud);
+  r.setProperty('--star',p.star);r.setProperty('--wind',p.wind);
+}
+function render(){
+  const key=period();
+  const p=(darkMode()?darkProfiles:lightProfiles)[key];
+  applyProfile(p);
+  document.querySelectorAll('.scene-block').forEach(el=>el.classList.add('hidden'));
+  document.getElementById(p.block).classList.remove('hidden');
+
+  const options=[
+    {t:p.g,sub:p.text},
+    {t:name?`Bem-vindo, ${name}`:'Bem-vindo',sub:'Que o seu tempo aqui seja confortável, agradável e bem informado.'}
+  ];
+  const x=PV.pickForRefresh(options,'saudacoes',i=>i.t);
+  title.textContent=x.t;subtitle.textContent=x.sub;
+}
+render();
+</script>
+</body>
+</html>
