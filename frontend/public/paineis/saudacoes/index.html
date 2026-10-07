@@ -180,7 +180,6 @@ body::after{
       <div class="title" id="title">Boa tarde</div>
       <div class="subtitle" id="subtitle">Que a sua tarde siga tranquila, produtiva e com bons encontros pelo caminho.</div>
     </section>
-
     <section class="art">
       <div class="canvas">
         <div class="glow"></div>
@@ -188,7 +187,6 @@ body::after{
           <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
           <div class="pv-arc a"></div><div class="pv-arc b"></div>
         </div>
-
         <div id="morningBlock" class="scene-block morning hidden">
           <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
           <span class="atmo cloud-icon c2 material-symbols-outlined">cloud</span>
@@ -200,7 +198,6 @@ body::after{
             </div>
           </div>
         </div>
-
         <div id="afternoonBlock" class="scene-block afternoon hidden">
           <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
           <span class="atmo cloud-icon c2 material-symbols-outlined">cloud</span>
@@ -213,7 +210,6 @@ body::after{
           </div>
           <div class="scene-center"><div class="sun-disc"></div></div>
         </div>
-
         <div id="sunsetBlock" class="scene-block sunset hidden">
           <div class="haze"></div>
           <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
@@ -221,7 +217,6 @@ body::after{
           <div class="horizon-line"></div><div class="ground"></div>
           <div class="scene-center large"><div class="sun-low"></div></div>
         </div>
-
         <div id="nightBlock" class="scene-block night hidden">
           <span class="atmo cloud-icon c1 material-symbols-outlined">cloud</span>
           <span class="atmo star-icon s1 material-symbols-outlined">star</span>
@@ -237,13 +232,11 @@ body::after{
     </section>
   </main>
 </div>
-
 <script src="../shared/pv.js?v=8"></script>
 <script>
 const title=document.getElementById('title');
 const subtitle=document.getElementById('subtitle');
 const name=PV.qs('nome','');
-
 const lightProfiles={
   morning:{g:'Bom dia',text:'Que o seu dia comece leve, acolhedor e cheio de boas possibilidades.',bg:'#f6f1df',bg2:'#eee3c9',ink:'#2d4359',soft:'#6f7984',accent:'#d8a74e',accent2:'#8fbfd7',ring:'rgba(88,120,145,.16)',glow:'rgba(216,167,78,.18)',cloud:'rgba(255,255,255,.56)',star:'rgba(255,255,255,.90)',wind:'rgba(143,191,215,.68)',block:'morningBlock'},
   afternoon:{g:'Boa tarde',text:'Que a sua tarde siga tranquila, produtiva e com bons encontros pelo caminho.',bg:'#f4f1e9',bg2:'#ece5da',ink:'#334d6d',soft:'#6f7a88',accent:'#d1a057',accent2:'#9dc7da',ring:'rgba(84,115,143,.16)',glow:'rgba(209,160,87,.14)',cloud:'rgba(255,255,255,.52)',star:'rgba(255,255,255,.90)',wind:'rgba(123,175,203,.62)',block:'afternoonBlock'},
@@ -256,7 +249,6 @@ const darkProfiles={
   sunset:{...lightProfiles.sunset,bg:'#30272a',bg2:'#1c181b',ink:'#fff3ed',soft:'#d1bcb3',accent:'#e58a59',accent2:'#8b6673',ring:'rgba(231,177,155,.13)',glow:'rgba(229,138,89,.12)',cloud:'rgba(255,255,255,.13)',wind:'rgba(163,118,133,.44)'},
   night:{...lightProfiles.night,bg:'#0f1828',bg2:'#090f19',ink:'#f4f7fd',soft:'#aeb8c8',accent:'#dce7fa',accent2:'#496487',ring:'rgba(214,228,250,.13)',glow:'rgba(201,219,248,.07)',cloud:'rgba(255,255,255,.10)',wind:'rgba(100,132,161,.36)'}
 };
-
 function period(){
   const h=new Date().getHours();
   if(h>=5&&h<12)return'morning';
@@ -269,7 +261,21 @@ function darkMode(){
   const raw=(q.get('tema')||q.get('theme')||q.get('modo')||q.get('mode')||q.get('dark')||'').toLowerCase();
   if(['dark','escuro','1','true'].includes(raw))return true;
   if(['light','claro','0','false'].includes(raw))return false;
-  return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  try{
+    if(window.parent&&window.parent!==window){
+      if(window.parent.document.querySelector('.player-lframe.theme-dark'))return true;
+      if(window.parent.document.querySelector('.player-lframe.theme-light'))return false;
+    }
+  }catch{}
+  try{
+    const device=JSON.parse(localStorage.getItem('pontoview_player_device_v1')||'null');
+    if(device?.screenId){
+      const manifest=JSON.parse(localStorage.getItem(`pv_manifest_${device.screenId}`)||'null');
+      if(manifest?.settings?.theme==='dark')return true;
+      if(manifest?.settings?.theme==='light')return false;
+    }
+  }catch{}
+  return false;
 }
 function applyProfile(p){
   const r=document.documentElement.style;
@@ -284,7 +290,6 @@ function render(){
   applyProfile(p);
   document.querySelectorAll('.scene-block').forEach(el=>el.classList.add('hidden'));
   document.getElementById(p.block).classList.remove('hidden');
-
   const options=[
     {t:p.g,sub:p.text},
     {t:name?`Bem-vindo, ${name}`:'Bem-vindo',sub:'Que o seu tempo aqui seja confortável, agradável e bem informado.'}
