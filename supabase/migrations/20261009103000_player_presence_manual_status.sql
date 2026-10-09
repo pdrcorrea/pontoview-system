@@ -78,7 +78,7 @@ begin
     s.organization_id,
     p.last_seen,
     p.player_version,
-    case when p.last_seen >= v_now - interval '90 seconds' then 'online' else 'offline' end,
+    case when p.last_seen >= v_now - interval '120 seconds' then 'online' else 'offline' end,
     v_now
   from public.screens s
   join public.organizations o on o.id = s.organization_id
