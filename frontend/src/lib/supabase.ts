@@ -19,7 +19,7 @@ export const supabasePublishableKey = (
 
 export const isSupabaseConfigured = Boolean(url && supabasePublishableKey);
 
-export const supabase = createClient(
+const supabaseClient = createClient(
   url || "https://configuration-required.invalid",
   supabasePublishableKey || "configuration-required",
   {
@@ -31,6 +31,35 @@ export const supabase = createClient(
     },
   },
 );
+
+const originalRpc = supabaseClient.rpc.bind(supabaseClient);
+
+// The player already checks its lightweight state periodically to detect real
+// administrative changes. Reuse that single request as the presence signal and
+// suppress the legacy dedicated heartbeat request, which only duplicated traffic.
+(supabaseClient as typeof supabaseClient & { rpc: typeof supabaseClient.rpc }).rpc = ((
+  fn: string,
+  args?: Record<string, unknown>,
+  options?: Record<string, unknown>,
+) => {
+  if (fn === "player_heartbeat") {
+    return Promise.resolve({
+      data: new Date().toISOString(),
+      error: null,
+      count: null,
+      status: 200,
+      statusText: "OK",
+    }) as unknown as ReturnType<typeof supabaseClient.rpc>;
+  }
+
+  if (fn === "get_player_state") {
+    return originalRpc("get_player_state_v2", args, options as never) as ReturnType<typeof supabaseClient.rpc>;
+  }
+
+  return originalRpc(fn as never, args as never, options as never) as ReturnType<typeof supabaseClient.rpc>;
+}) as typeof supabaseClient.rpc;
+
+export const supabase = supabaseClient;
 
 export const functionsUrl = url ? `${url}/functions/v1` : "";
 
