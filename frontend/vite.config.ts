@@ -1,10 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 
-const buildId =
-  process.env.CF_PAGES_COMMIT_SHA ||
-  process.env.GITHUB_SHA ||
-  new Date().toISOString();
+// The web player must remain stable for 24/7 signage. A normal deploy should
+// not force an already-running browser session to navigate/reload, because
+// browsers can leave fullscreen after a page navigation. Administrative
+// changes are synchronized by the player state/manifest flow instead.
+const buildId = "stable-web-player";
 
 export default defineConfig({
   plugins: [
