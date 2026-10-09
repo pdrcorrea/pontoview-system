@@ -18,7 +18,7 @@ import { PanelsCatalogPage } from "./pages/PanelsCatalog";
 import { PlaylistsPage } from "./pages/PlaylistsV2";
 import { SchedulesPage } from "./pages/Schedules";
 import { MessagesSimplePage } from "./pages/MessagesSimple";
-import { ScreensSimplePage } from "./pages/ScreensSimple";
+import { ScreensStatusPage } from "./pages/ScreensStatusPage";
 import { AccountPage, OnboardingPage, SettingsPage } from "./pages/Account";
 import { UserAccountPage } from "./pages/UserAccount";
 import { BillingPage } from "./pages/Billing";
@@ -142,7 +142,7 @@ export default function App() {
           <Route path="/playlists" element={<PlaylistsPage />} />
           <Route path="/programacoes" element={<SchedulesPage />} />
           <Route path="/mensagens" element={<MessagesSimplePage />} />
-          <Route path="/telas" element={<ScreensSimplePage />} />
+          <Route path="/telas" element={<ScreensStatusPage />} />
           <Route path="/apps" element={<PanelsCatalogPage />} />
           <Route path="/conta" element={<UserAccountPage />} />
           <Route path="/empresa" element={<AccountPage />} />
