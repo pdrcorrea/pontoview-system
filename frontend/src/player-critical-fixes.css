@@ -414,3 +414,24 @@
     font-size: clamp(10px, 1.8vh, 15px) !important;
   }
 }
+
+/*
+ * Responsive internal PontoView panels already adapt to the exact player slot.
+ * Keep the canonical frame for video, images, YouTube and external webpages,
+ * but let /paineis/... iframes consume the complete media cell. :has() is used
+ * as progressive enhancement: older engines keep the stable letterboxed path.
+ */
+@supports selector(.player-media-frame:has(iframe)) {
+  .pv-player-runtime .player-media-host:has(.player-media-frame iframe[src*="/paineis/"]) {
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  .pv-player-runtime .player-media-frame:has(iframe[src*="/paineis/"]) {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+}
