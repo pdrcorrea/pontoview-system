@@ -93,13 +93,16 @@
   max-height: 100% !important;
 }
 
-/* Media geometry is deterministic: the React layout calculates the exact
-   16:9/9:16 frame from the saved L-frame dimensions, with no ResizeObserver,
-   polling or extra network activity. */
+/*
+ * The host always fills its grid cell. The media frame now follows the host
+ * instead of shrinking to a canonical 16:9/9:16 rectangle. Responsive HTML
+ * panels and webpages can therefore use the whole available slot. Images and
+ * videos still preserve their own aspect ratio through object-fit: contain.
+ */
 .pv-player-runtime .player-media-host {
   display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
   overflow: hidden !important;
   min-width: 0 !important;
   min-height: 0 !important;
@@ -107,7 +110,9 @@
 }
 
 .pv-player-runtime .player-media-frame {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  width: 100% !important;
+  height: 100% !important;
   overflow: hidden !important;
   min-width: 0 !important;
   min-height: 0 !important;
