@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./player/rotationController";
 import "./player/orientationController";
+import "./player/internalPanelSizing";
 import "./player-readability.css";
 import "./message-experience.css";
 import "./player-critical-fixes.css";
