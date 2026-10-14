@@ -12,21 +12,45 @@ function isInternalPanel(iframe: HTMLIFrameElement) {
   }
 }
 
-function markInternalPanels(root: ParentNode = document) {
-  document.querySelectorAll<HTMLElement>(`.${INTERNAL_PANEL_FRAME_CLASS}`).forEach((element) => element.classList.remove(INTERNAL_PANEL_FRAME_CLASS));
-  document.querySelectorAll<HTMLElement>(`.${INTERNAL_PANEL_HOST_CLASS}`).forEach((element) => element.classList.remove(INTERNAL_PANEL_HOST_CLASS));
-
-  const canvas = document.querySelector<HTMLElement>('.pv-orientation-canvas');
+function markInternalPanels() {
+  const activeFrames = new Set<HTMLElement>();
+  const activeHosts = new Set<HTMLElement>();
   let hasInternalPanel = false;
 
-  root.querySelectorAll<HTMLIFrameElement>(INTERNAL_PANEL_SELECTOR).forEach((iframe) => {
+  document.querySelectorAll<HTMLIFrameElement>(INTERNAL_PANEL_SELECTOR).forEach((iframe) => {
     if (!isInternalPanel(iframe)) return;
+
     hasInternalPanel = true;
-    iframe.closest<HTMLElement>('.player-media-frame')?.classList.add(INTERNAL_PANEL_FRAME_CLASS);
-    iframe.closest<HTMLElement>('.player-media-host')?.classList.add(INTERNAL_PANEL_HOST_CLASS);
+    const frame = iframe.closest<HTMLElement>('.player-media-frame');
+    const host = iframe.closest<HTMLElement>('.player-media-host');
+
+    if (frame) {
+      activeFrames.add(frame);
+      if (!frame.classList.contains(INTERNAL_PANEL_FRAME_CLASS)) {
+        frame.classList.add(INTERNAL_PANEL_FRAME_CLASS);
+      }
+    }
+
+    if (host) {
+      activeHosts.add(host);
+      if (!host.classList.contains(INTERNAL_PANEL_HOST_CLASS)) {
+        host.classList.add(INTERNAL_PANEL_HOST_CLASS);
+      }
+    }
   });
 
-  canvas?.classList.toggle(INTERNAL_PANEL_CANVAS_CLASS, hasInternalPanel);
+  document.querySelectorAll<HTMLElement>(`.${INTERNAL_PANEL_FRAME_CLASS}`).forEach((element) => {
+    if (!activeFrames.has(element)) element.classList.remove(INTERNAL_PANEL_FRAME_CLASS);
+  });
+
+  document.querySelectorAll<HTMLElement>(`.${INTERNAL_PANEL_HOST_CLASS}`).forEach((element) => {
+    if (!activeHosts.has(element)) element.classList.remove(INTERNAL_PANEL_HOST_CLASS);
+  });
+
+  const canvas = document.querySelector<HTMLElement>('.pv-orientation-canvas');
+  if (canvas && canvas.classList.contains(INTERNAL_PANEL_CANVAS_CLASS) !== hasInternalPanel) {
+    canvas.classList.toggle(INTERNAL_PANEL_CANVAS_CLASS, hasInternalPanel);
+  }
 }
 
 const style = document.createElement('style');
@@ -53,8 +77,24 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-const observer = new MutationObserver(() => markInternalPanels());
-observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','class','style']});
-window.addEventListener('resize', () => markInternalPanels());
-window.addEventListener('orientationchange', () => markInternalPanels());
+let scheduled = false;
+function scheduleMarkInternalPanels() {
+  if (scheduled) return;
+  scheduled = true;
+  window.requestAnimationFrame(() => {
+    scheduled = false;
+    markInternalPanels();
+  });
+}
+
+const observer = new MutationObserver(() => scheduleMarkInternalPanels());
+observer.observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+  attributes: true,
+  attributeFilter: ['src'],
+});
+
+window.addEventListener('resize', scheduleMarkInternalPanels, { passive: true });
+window.addEventListener('orientationchange', scheduleMarkInternalPanels, { passive: true });
 markInternalPanels();
