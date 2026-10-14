@@ -1,36 +1,27 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
+import PlayerRoot from "./player/PlayerRoot";
 import "./player-readability.css";
 import "./message-experience.css";
 import "./player-critical-fixes.css";
 import "./brand-logo-overrides.css";
 import "./home-mobile-value-fix.css";
 
-const queryClient = new QueryClient();
 const rootElement = document.getElementById("root");
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 const isDedicatedPlayer = PLAYER_HOSTS.has(window.location.hostname.toLowerCase());
 
-function renderApp(node: React.ReactNode) {
+function render(node: React.ReactNode) {
   if (!rootElement) return;
-  ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>{node}</BrowserRouter>
-      </QueryClientProvider>
-    </React.StrictMode>,
-  );
+  ReactDOM.createRoot(rootElement).render(node);
 }
 
 function recoverPlayerBoot() {
-  // A deploy can leave an Android browser holding an old HTML/module graph.
-  // Retry once with a cache-busting URL while preserving localStorage, which
-  // contains the screen pairing token.
-  const recoveryKey = "pv_player_boot_recovery_v1";
+  const recoveryKey = "pv_player_boot_recovery_v2";
   const now = Date.now();
   let previous = 0;
+
   try {
     previous = Number(sessionStorage.getItem(recoveryKey) || 0);
   } catch {
@@ -46,17 +37,37 @@ function recoverPlayerBoot() {
   }
 
   if (rootElement) {
-    rootElement.innerHTML = '<div style="position:fixed;inset:0;background:#000;display:grid;place-items:center"><img src="/assets/icon.png" alt="" style="width:min(16vw,110px);height:min(16vw,110px);object-fit:contain;opacity:.9"></div>';
+    rootElement.innerHTML = '<div style="position:fixed;inset:0;background:#071a2d;color:#fff;display:grid;place-items:center;font-family:Arial,sans-serif"><div style="display:grid;gap:18px;place-items:center"><img src="/assets/icon.png" alt="" style="width:min(18vw,110px);height:min(18vw,110px);object-fit:contain"><div style="font-size:clamp(16px,2vw,28px);font-weight:700">Reiniciando PontoView…</div></div></div>';
   }
 }
 
 if (isDedicatedPlayer) {
-  import("./player/PlayerRoot")
-    .then(({ default: PlayerRoot }) => renderApp(<PlayerRoot />))
-    .catch(() => recoverPlayerBoot());
+  try {
+    render(
+      <React.StrictMode>
+        <BrowserRouter>
+          <PlayerRoot />
+        </BrowserRouter>
+      </React.StrictMode>,
+    );
+
+    window.setTimeout(() => {
+      if (!document.querySelector(".pv-player-runtime, .activation-screen, .player-boot, .player-standby")) {
+        recoverPlayerBoot();
+      }
+    }, 8_000);
+
+    window.setTimeout(() => {
+      void import("./player/rotationController");
+      void import("./player/orientationController");
+      void import("./player/internalPanelSizing");
+    }, 1_500);
+  } catch {
+    recoverPlayerBoot();
+  }
 } else {
-  import("./App")
-    .then(({ default: App }) => renderApp(<App />))
+  import("./AdminRoot")
+    .then(({ default: AdminRoot }) => render(<AdminRoot />))
     .catch(() => {
       if (rootElement) rootElement.textContent = "Não foi possível iniciar a PontoView.";
     });
