@@ -56,7 +56,6 @@
   overflow: hidden;
 }
 
-
 .player-lframe > footer > * {
   min-width: 0;
 }
@@ -208,7 +207,4 @@
   .live-weather .weather-detail { font-size: clamp(10px, .78vw, 14px) !important; }
   .weather-day > small { font-size: clamp(10px, .76vw, 14px) !important; }
   .weather-day > span { font-size: clamp(11px, .84vw, 15px) !important; }
-}
-
-
 }
