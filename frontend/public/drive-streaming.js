@@ -8,6 +8,76 @@
   const ticketUrls = new Map();
   const activeStreamUrls = new Set();
   const autoplayTimers = new WeakMap();
+  const nativeVideoStreams = new Map();
+  let nativeBridgePatched = false;
+
+  // Android local-first playback used to wait for the complete MP4 download before
+  // exposing a playable URL. Keep the local cache behavior, but expose the signed
+  // stream URL immediately while the native bridge warms that cache in background.
+  function patchNativeBridge() {
+    if (nativeBridgePatched || !window.PontoViewNative) return nativeBridgePatched;
+    const bridge = window.PontoViewNative;
+
+    try {
+      const hasCachedVideo = bridge.hasCachedVideo.bind(bridge);
+      const getLocalVideoUrl = bridge.getLocalVideoUrl.bind(bridge);
+      const preloadVideo = bridge.preloadVideo.bind(bridge);
+      const stopVideo = bridge.stopVideo?.bind(bridge);
+
+      const proxy = new Proxy(bridge, {
+        get(target, prop) {
+          if (prop === "hasCachedVideo") {
+            return (session, cacheKey) => {
+              try {
+                if (hasCachedVideo(session, cacheKey)) return true;
+              } catch {}
+              return nativeVideoStreams.has(cacheKey);
+            };
+          }
+
+          if (prop === "getLocalVideoUrl") {
+            return (session, cacheKey) => {
+              try {
+                const localUrl = getLocalVideoUrl(session, cacheKey);
+                if (localUrl) return localUrl;
+              } catch {}
+              return nativeVideoStreams.get(cacheKey) || "";
+            };
+          }
+
+          if (prop === "preloadVideo") {
+            return (session, streamUrl, cacheKey) => {
+              if (streamUrl && cacheKey) nativeVideoStreams.set(cacheKey, String(streamUrl));
+              try {
+                preloadVideo(session, streamUrl, cacheKey);
+              } catch {}
+            };
+          }
+
+          if (prop === "stopVideo" && stopVideo) {
+            return (...args) => stopVideo(...args);
+          }
+
+          const value = target[prop];
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+
+      window.PontoViewNative = proxy;
+      nativeBridgePatched = true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  patchNativeBridge();
+  window.addEventListener("pontoview-native-ready", patchNativeBridge);
+  let nativePatchAttempts = 0;
+  const nativePatchTimer = window.setInterval(() => {
+    nativePatchAttempts += 1;
+    if (patchNativeBridge() || nativePatchAttempts >= 40) window.clearInterval(nativePatchTimer);
+  }, 250);
 
   // Keep successfully downloaded Drive assets in Cache Storage.
   // Streaming ticket placeholders are never persisted (see patched cache.put below).
