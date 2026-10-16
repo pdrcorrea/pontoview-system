@@ -450,12 +450,11 @@ async function fetchNews(){
   const response=await fetch(CONTENT_FEED,{headers:{Accept:'application/json'},cache:'no-store'});
   if(!response.ok)throw new Error('Central indisponível');
   const data=await response.json();
-  const items=Array.isArray(data?.items)?data.items:[];
+  const items=data&&Array.isArray(data.items)?data.items:[];
   return {
     source:'PontoView Content Hub',
     fromPlayer:false,
-    items:PV.filterSafeNews(items.map(item=>({
-      ...item,
+    items:PV.filterSafeNews(items.map(item=>Object.assign({},item,{
       source:item.source_name||item.source,
       url:item.source_url||item.url,
       link:item.public_url||item.publicUrl||item.content_url||item.contentUrl||item.source_url||item.link||item.url
