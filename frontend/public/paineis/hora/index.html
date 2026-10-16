@@ -126,7 +126,7 @@ body{
   font-weight:850;
   font-variant-numeric:tabular-nums;
   color:var(--ink);
-  text-wrap:nowrap;
+  white-space:nowrap;
 }
 
 #seconds{
@@ -152,7 +152,7 @@ body{
 
 .date .dot{
   width:.34em;
-  aspect-ratio:1;
+  height:.34em;
   border-radius:50%;
   background:var(--pv-cyan);
   box-shadow:0 0 0 .28em rgba(105,207,242,.13);
@@ -161,8 +161,8 @@ body{
 
 .visual{
   position:relative;
-  aspect-ratio:1;
   width:min(42vw,620px);
+  height:min(42vw,620px);
   justify-self:end;
   display:grid;
   place-items:center;
@@ -189,7 +189,7 @@ body{
   content:"";
   position:absolute;
   width:clamp(14px,1.5vw,26px);
-  aspect-ratio:1;
+  height:clamp(14px,1.5vw,26px);
   border-radius:50%;
   background:var(--pv-cyan);
   top:8%;
@@ -200,11 +200,12 @@ body{
 .clock-face{
   position:relative;
   width:56%;
-  aspect-ratio:1;
+  height:56%;
   border-radius:50%;
   background:rgba(255,255,255,.54);
   border:1px solid rgba(255,255,255,.78);
   box-shadow:0 24px 70px rgba(3,42,97,.07);
+  -webkit-backdrop-filter:blur(16px);
   backdrop-filter:blur(16px);
 }
 
@@ -242,7 +243,7 @@ body{
   bottom:50%;
   transform-origin:50% 100%;
   border-radius:99px;
-  translate:-50% 0;
+  transform:translateX(-50%);
 }
 .hour{width:clamp(5px,.55vw,9px);height:24%;background:var(--ink)}
 .minute{width:clamp(3px,.34vw,6px);height:34%;background:var(--pv)}
@@ -251,7 +252,7 @@ body{
   position:absolute;
   left:50%;top:50%;
   width:clamp(12px,1.2vw,20px);
-  aspect-ratio:1;
+  height:clamp(12px,1.2vw,20px);
   border-radius:50%;
   background:var(--pv);
   transform:translate(-50%,-50%);
@@ -275,14 +276,14 @@ body{
   #time{font-size:clamp(88px,24vw,210px)}
   #seconds{font-size:clamp(22px,5vw,42px)}
   .date{justify-content:center;font-size:clamp(17px,3.5vw,28px)}
-  .visual{justify-self:center;width:min(78vw,56vh);align-self:start}
+  .visual{justify-self:center;width:min(78vw,56vh);height:min(78vw,56vh);align-self:start}
   .brand{right:6px}
 }
 
 @media (max-height:520px){
   .content{padding:24px 46px;gap:26px}
   .date{margin-top:15px}
-  .visual{width:min(35vw,350px)}
+  .visual{width:min(35vw,350px);height:min(35vw,350px)}
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -347,9 +348,9 @@ function updateClock(){
     weekday:'long', day:'2-digit', month:'long'
   }).format(now).replace(/^./,c=>c.toUpperCase());
 
-  hourHand.style.transform=`rotate(${(h%12)*30 + m*.5}deg)`;
-  minuteHand.style.transform=`rotate(${m*6 + s*.1}deg)`;
-  secondHand.style.transform=`rotate(${s*6}deg)`;
+  hourHand.style.transform=`translateX(-50%) rotate(${(h%12)*30 + m*.5}deg)`;
+  minuteHand.style.transform=`translateX(-50%) rotate(${m*6 + s*.1}deg)`;
+  secondHand.style.transform=`translateX(-50%) rotate(${s*6}deg)`;
 }
 
 updateClock();
