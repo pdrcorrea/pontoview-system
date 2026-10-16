@@ -2,11 +2,12 @@
   const cleanPanelChrome = () => {
     document.querySelectorAll(".pv-footer-brand").forEach((brand) => brand.remove());
     document.querySelectorAll(".pv-footer").forEach((footer) => {
-      const hasUsefulContent = Boolean(footer.textContent?.trim() || footer.querySelector("img,svg,a,.credit"));
+      const footerText = footer.textContent ? footer.textContent.trim() : "";
+      const hasUsefulContent = Boolean(footerText || footer.querySelector("img,svg,a,.credit"));
       if (!hasUsefulContent && footer instanceof HTMLElement) footer.style.display = "none";
     });
     const clock = document.getElementById("clock");
-    const source = clock?.closest(".pv-source");
+    const source = clock ? clock.closest(".pv-source") : null;
     if (source instanceof HTMLElement) source.style.display = "none";
   };
   cleanPanelChrome();
@@ -16,7 +17,7 @@
 window.PV = (() => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const qs = (name, fallback = "") => new URLSearchParams(location.search).get(name) || fallback;
-  const clean = value => String(value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const clean = value => String(value == null ? "" : value).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
   const formatNumber = (value, digits = 1) => Number(value).toLocaleString("pt-BR", { maximumFractionDigits: digits, minimumFractionDigits: digits });
   const formatMoney = (value, currency = "BRL", digits = 2) => Number(value).toLocaleString("pt-BR", { style:"currency", currency, maximumFractionDigits: digits, minimumFractionDigits: digits });
@@ -24,13 +25,18 @@ window.PV = (() => {
   const titleCase = text => clean(text).replace(/(^|\s)([a-záàâãéèêíìîóòôõúùûç])/g, (_, a, b) => a + b.toUpperCase());
 
   async function fetchJSON(url, options = {}, timeout = 9000){
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeout);
+    const canAbort = typeof AbortController !== "undefined";
+    const ctrl = canAbort ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), timeout) : 0;
+    const requestOptions = Object.assign({ cache:"no-store" }, options || {});
+    if (ctrl) requestOptions.signal = ctrl.signal;
     try{
-      const res = await fetch(url, { cache:"no-store", ...options, signal:ctrl.signal });
+      const res = await fetch(url, requestOptions);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
-    } finally { clearTimeout(timer); }
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   function hash(text){
