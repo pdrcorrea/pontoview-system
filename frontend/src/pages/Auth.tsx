@@ -30,7 +30,7 @@ function AuthLayout({
         <div className="auth-main-brand">
           <span className="auth-main-brandmark">
             <img
-              src="/assets/icon.png"
+              src="/assets/PontoViewMark.svg"
               alt=""
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
