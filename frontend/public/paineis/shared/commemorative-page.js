@@ -2,7 +2,7 @@
   const config = window.PV_COMM_CONFIG;
   if (!config) return;
 
-  const safe = (value) => String(value ?? "");
+  const safe = (value) => String(value == null ? "" : value);
   const root = document.body;
 
   const icons = {
