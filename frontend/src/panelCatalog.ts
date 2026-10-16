@@ -10,6 +10,7 @@ export type PanelCatalogItem = {
 
 export const PANEL_CATALOG: PanelCatalogItem[] = [
   { key: "today", title: "Hoje", description: "Data, feriados, estação do ano e calendário em uma tela elegante.", slug: "hoje", duration: 25, category: "Utilidades", emoji: "📅" },
+  { key: "exact_time", title: "Hora Exata", description: "Hora, segundos e data atual em um painel elegante e responsivo.", slug: "hora", duration: 30, category: "Utilidades", emoji: "🕒" },
   { key: "greetings", title: "Saudações", description: "Bom dia, boa tarde, boa noite e boas-vindas com visual dinâmico.", slug: "saudacoes", duration: 18, category: "Ambiente", emoji: "👋" },
   { key: "weather", title: "Previsão do Tempo", description: "Condição atual, sensação térmica e previsão para os próximos dias.", slug: "tempo", duration: 28, category: "Informação", emoji: "🌤️" },
   { key: "news", title: "Notícias", description: "Notícias com imagem, fonte e QR Code em layout próprio para TV.", slug: "noticias", duration: 32, category: "Informação", emoji: "📰" },
