@@ -10,22 +10,16 @@
   "theme_color": "#032a61",
   "icons": [
     {
-      "src": "/assets/pontoview-app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/pontoview-app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/assets/icon.png",
+      "src": "/assets/TelasIconAzul.png?v=20261016-2",
       "sizes": "304x288",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/assets/TelasIconAzul.png?v=20261016-2",
+      "sizes": "304x288",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
