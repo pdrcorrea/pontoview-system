@@ -24,20 +24,25 @@ Deno.serve(async (req) => {
 
   try {
     const user = await requireUser(req);
-    const { data: membership } = await admin
-      .from("organization_users")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .order("created_at")
-      .limit(1)
-      .single();
+    const body = await req.json().catch(() => ({}));
+    let orgId = String(body.organizationId || "").trim();
 
-    const orgId = membership?.organization_id || "";
+    if (!orgId) {
+      const { data: membership } = await admin
+        .from("organization_users")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .order("created_at")
+        .limit(1)
+        .maybeSingle();
+      orgId = String(membership?.organization_id || "");
+    }
+
     await requireOrgRole(user.id, orgId, ["owner", "admin", "editor"]);
 
     const { data: connection } = await admin
       .from("drive_connections")
-      .select("id,scopes")
+      .select("id,organization_id,scopes")
       .eq("organization_id", orgId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -62,9 +67,14 @@ Deno.serve(async (req) => {
     await admin
       .from("drive_connections")
       .update({ last_sync_at: new Date().toISOString() })
-      .eq("id", connection.id);
+      .eq("id", connection.id)
+      .eq("organization_id", orgId);
 
-    return reply({ accessToken, connectionId: connection.id });
+    return reply({
+      accessToken,
+      connectionId: connection.id,
+      organizationId: orgId,
+    });
   } catch (error) {
     return handleError(error);
   }
