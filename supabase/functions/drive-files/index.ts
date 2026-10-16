@@ -11,49 +11,93 @@ import {
 
 const FILE_FIELDS =
   "id,name,mimeType,thumbnailLink,modifiedTime,md5Checksum,size,videoMediaMetadata,parents";
+const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const IMPORT_CONCURRENCY = 5;
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+) {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  async function run() {
+    while (true) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      results[index] = await worker(items[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => run()),
+  );
+  return results;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST")
-    return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
+  if (req.method !== "POST") return reply({ error: "METHOD_NOT_ALLOWED" }, 405);
 
   try {
     const user = await requireUser(req);
-    const body = await req.json();
-
-    const { data: membership } = await admin
-      .from("organization_users")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .order("created_at")
-      .limit(1)
-      .single();
-
-    const orgId = membership?.organization_id || "";
-    await requireOrgRole(user.id, orgId, ["owner", "admin", "editor"]);
-
+    const body = await req.json().catch(() => ({}));
     const requestedConnectionId = String(body.connectionId || "").trim();
-    let connectionQuery = admin
-      .from("drive_connections")
-      .select("id,scopes")
-      .eq("organization_id", orgId)
-      .eq("status", "active");
+    const requestedOrganizationId = String(body.organizationId || "").trim();
+
+    let connection: any = null;
 
     if (requestedConnectionId) {
-      connectionQuery = connectionQuery.eq("id", requestedConnectionId);
+      let query = admin
+        .from("drive_connections")
+        .select("id,organization_id,scopes")
+        .eq("id", requestedConnectionId)
+        .eq("status", "active");
+
+      if (requestedOrganizationId) {
+        query = query.eq("organization_id", requestedOrganizationId);
+      }
+
+      const result = await query.maybeSingle();
+      connection = result.data;
+    } else {
+      let orgId = requestedOrganizationId;
+      if (!orgId) {
+        const { data: membership } = await admin
+          .from("organization_users")
+          .select("organization_id")
+          .eq("user_id", user.id)
+          .order("created_at")
+          .limit(1)
+          .maybeSingle();
+        orgId = String(membership?.organization_id || "");
+      }
+
+      await requireOrgRole(user.id, orgId, ["owner", "admin", "editor"]);
+      const result = await admin
+        .from("drive_connections")
+        .select("id,organization_id,scopes")
+        .eq("organization_id", orgId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      connection = result.data;
     }
 
-    const { data: connection } = await connectionQuery
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
     if (!connection) return reply({ error: "DRIVE_NOT_CONNECTED" }, 409);
+
+    await requireOrgRole(user.id, String(connection.organization_id), [
+      "owner",
+      "admin",
+      "editor",
+    ]);
 
     const scopes = Array.isArray(connection.scopes)
       ? connection.scopes.map(String)
       : [];
-    if (!scopes.includes("https://www.googleapis.com/auth/drive.file")) {
+    if (!scopes.includes(DRIVE_FILE_SCOPE)) {
       return reply({ error: "DRIVE_RECONNECT_REQUIRED" }, 409);
     }
 
@@ -72,9 +116,10 @@ Deno.serve(async (req) => {
     }
 
     const token = await getDriveAccessToken(connection.id);
-
-    const results = await Promise.all(
-      requestedIds.map(async (fileId) => {
+    const results = await mapWithConcurrency(
+      requestedIds,
+      IMPORT_CONCURRENCY,
+      async (fileId) => {
         const url = new URL(
           `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`,
         );
@@ -102,7 +147,7 @@ Deno.serve(async (req) => {
         }
 
         return await response.json();
-      }),
+      },
     );
 
     const files = results
@@ -115,6 +160,7 @@ Deno.serve(async (req) => {
       .map((file: any) => ({
         ...file,
         connectionId: connection.id,
+        organizationId: connection.organization_id,
         isFolder: false,
       }));
 
@@ -125,7 +171,8 @@ Deno.serve(async (req) => {
     await admin
       .from("drive_connections")
       .update({ last_sync_at: new Date().toISOString() })
-      .eq("id", connection.id);
+      .eq("id", connection.id)
+      .eq("organization_id", connection.organization_id);
 
     return reply({ files });
   } catch (error) {
