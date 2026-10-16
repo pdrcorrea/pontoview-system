@@ -1,0 +1,31 @@
+{
+  "name": "PontoView Telas",
+  "short_name": "PontoView Telas",
+  "description": "PontoView Telas - player de comunicação visual",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#032a61",
+  "icons": [
+    {
+      "src": "/assets/pontoview-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pontoview-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icon.png",
+      "sizes": "304x288",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
