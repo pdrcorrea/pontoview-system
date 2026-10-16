@@ -28,7 +28,7 @@
 .pv-home-brand-logo { display: none !important; }
 
 .pv-home-brand-icon {
-  content: url("/assets/TelasIconAzul.png?v=20261006-2");
+  content: url("/assets/TelasIconAzul.png?v=20261016-6");
   display: block !important;
   width: 100% !important;
   height: 100% !important;
@@ -80,28 +80,37 @@
   height: 36px !important;
 }
 
-/* Sidebar: estrutura real no JSX. Nenhum pseudo-elemento participa da marca. */
+/* Sidebar principal: estrutura real do JSX, sem pseudo-elementos gerando texto duplicado. */
 .pv-full-brand {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 9px !important;
+  gap: 10px !important;
   min-width: 0;
-  min-height: 36px;
+  min-height: 38px;
   overflow: visible !important;
   line-height: 1;
 }
 
 .pv-full-brand::before,
-.pv-full-brand::after {
+.pv-full-brand::after,
+.pv-full-brand-wordmark::before,
+.pv-full-brand-wordmark::after,
+.pv-full-brand-wordmark strong::before,
+.pv-full-brand-wordmark strong::after,
+.pv-full-brand-wordmark > span::before,
+.pv-full-brand-wordmark > span::after,
+.sidebar-product-badge::before,
+.sidebar-product-badge::after {
   content: none !important;
   display: none !important;
 }
 
 .pv-full-brand-icon {
+  content: url("/assets/TelasIconAzul.png?v=20261016-6") !important;
   display: block !important;
-  width: 34px !important;
-  height: 34px !important;
-  flex: 0 0 34px !important;
+  width: 36px !important;
+  height: 36px !important;
+  flex: 0 0 36px !important;
   object-fit: contain !important;
 }
 
@@ -110,32 +119,37 @@
   align-items: baseline !important;
   gap: 0 !important;
   min-width: 0;
-  color: inherit;
+  color: #173552 !important;
   letter-spacing: -0.035em;
   line-height: 1;
 }
 
 .pv-full-brand-wordmark strong {
-  font-size: 17px;
-  font-weight: 800;
+  display: inline !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: inherit !important;
 }
 
 .pv-full-brand-wordmark > span {
-  font-size: 17px;
-  font-weight: 400;
+  display: inline !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  color: inherit !important;
 }
 
 .sidebar-product-badge {
   display: inline-flex !important;
-  align-items: center;
-  margin: 0 0 0 1px !important;
+  align-items: center !important;
+  margin: 0 0 0 2px !important;
   padding: 0 !important;
   border: 0 !important;
-  font-size: 11px !important;
-  line-height: 1;
-  font-weight: 700 !important;
-  letter-spacing: -0.01em;
-  opacity: .62;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em !important;
+  color: #6a7e92 !important;
+  opacity: 1 !important;
   flex: 0 0 auto;
 }
 
