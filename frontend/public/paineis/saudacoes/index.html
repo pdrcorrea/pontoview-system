@@ -66,6 +66,8 @@ body::after{
 .r3{inset:32%;animation:ringBreath 6.2s ease-in-out infinite -.4s}
 .pv-arc{
   position:absolute;border-radius:50%;border:3px solid transparent;
+  border-top-color:rgba(143,191,215,.58);
+  border-right-color:rgba(143,191,215,.34);
   border-top-color:color-mix(in srgb,var(--accent2) 58%,transparent);
   border-right-color:color-mix(in srgb,var(--accent2) 34%,transparent);opacity:.55
 }
@@ -94,6 +96,7 @@ body::after{
 .morning .sun{
   position:relative;width:72%;aspect-ratio:1;color:var(--accent);
   animation:floatCentered 6.5s ease-in-out infinite;
+  filter:drop-shadow(0 12px 28px rgba(216,167,78,.22));
   filter:drop-shadow(0 12px 28px color-mix(in srgb,var(--accent) 22%,transparent))
 }
 .sun .core{position:absolute;inset:27%;border:8px solid currentColor;border-radius:50%}
@@ -109,6 +112,7 @@ body::after{
 .morning .c2{right:5%;bottom:20%;transform:scale(.9);opacity:.42;animation:cloudDrift2 20s ease-in-out infinite}
 .afternoon .sun-disc{
   position:relative;width:58%;aspect-ratio:1;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 14px rgba(209,160,87,.11);
   box-shadow:0 0 0 14px color-mix(in srgb,var(--accent) 11%,transparent);
   animation:floatCentered 7s ease-in-out infinite
 }
@@ -116,19 +120,23 @@ body::after{
 .afternoon .c2{left:14%;bottom:13%;font-size:44px;opacity:.26;animation:cloudDrift2 22s ease-in-out infinite}
 .sunset .haze{
   position:absolute;inset:14% 9% 10%;
+  background:radial-gradient(circle at 50% 58%,rgba(228,136,87,.18),transparent 56%);
   background:radial-gradient(circle at 50% 58%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 56%)
 }
 .sunset .sun-low{
   position:relative;width:74%;aspect-ratio:1;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 44px rgba(228,136,87,.22);
   box-shadow:0 0 44px color-mix(in srgb,var(--accent) 22%,transparent);
   animation:sunsetGlow 6s ease-in-out infinite
 }
 .sunset .horizon-line{
   position:absolute;left:12%;right:12%;top:50%;height:2px;
+  background:rgba(228,136,87,.42);
   background:color-mix(in srgb,var(--accent) 42%,transparent);z-index:5
 }
 .sunset .ground{
   position:absolute;left:10%;right:10%;top:50%;bottom:9%;
+  background:linear-gradient(to top,rgba(234,216,199,.94),transparent 86%);
   background:linear-gradient(to top,color-mix(in srgb,var(--bg2) 94%,transparent),transparent 86%);z-index:3
 }
 .sunset .c1{left:8%;top:24%;font-size:46px;opacity:.28;animation:cloudDrift1 18s ease-in-out infinite}
@@ -154,10 +162,10 @@ body::after{
 @keyframes arcFloat{50%{transform:rotate(28deg) scale(1.015)}}
 @keyframes arcFloat2{50%{transform:rotate(-20deg) scale(.99)}}
 @keyframes floatCentered{50%{transform:translateY(-8px)}}
-@keyframes cloudDrift1{50%{translate:14px -4px}}
-@keyframes cloudDrift2{50%{translate:-11px 5px}}
+@keyframes cloudDrift1{50%{transform:translate(14px,-4px)}}
+@keyframes cloudDrift2{50%{transform:translate(-11px,5px)}}
 @keyframes twinkle{50%{opacity:1;transform:scale(1.45)}}
-@keyframes sunsetGlow{50%{box-shadow:0 0 60px color-mix(in srgb,var(--accent) 28%,transparent)}}
+@keyframes sunsetGlow{50%{box-shadow:0 0 60px rgba(228,136,87,.28);box-shadow:0 0 60px color-mix(in srgb,var(--accent) 28%,transparent)}}
 @keyframes wipeWind{
   0%{stroke-dashoffset:160;opacity:0}18%{opacity:.45}
   45%{stroke-dashoffset:0;opacity:.62}70%{stroke-dashoffset:-18;opacity:.42}
@@ -244,10 +252,10 @@ const lightProfiles={
   night:{g:'Boa noite',text:'Que a sua noite seja tranquila, acolhedora e agradável.',bg:'#18263d',bg2:'#111c2f',ink:'#f3f6fb',soft:'#b9c2d0',accent:'#dfe8fb',accent2:'#5f7ca8',ring:'rgba(214,228,250,.16)',glow:'rgba(201,219,248,.10)',cloud:'rgba(255,255,255,.18)',star:'rgba(255,255,255,.95)',wind:'rgba(143,191,215,.50)',block:'nightBlock'}
 };
 const darkProfiles={
-  morning:{...lightProfiles.morning,bg:'#232a2f',bg2:'#161d22',ink:'#f4f1e8',soft:'#c0c6ca',accent:'#e0b35e',accent2:'#63839a',ring:'rgba(198,213,225,.13)',glow:'rgba(224,179,94,.11)',cloud:'rgba(255,255,255,.18)',wind:'rgba(126,161,181,.50)'},
-  afternoon:{...lightProfiles.afternoon,bg:'#202832',bg2:'#151b24',ink:'#f4f6f8',soft:'#c0c7cf',accent:'#c9a161',accent2:'#64879d',ring:'rgba(198,213,225,.13)',glow:'rgba(201,161,97,.10)',cloud:'rgba(255,255,255,.15)',wind:'rgba(115,151,172,.46)'},
-  sunset:{...lightProfiles.sunset,bg:'#30272a',bg2:'#1c181b',ink:'#fff3ed',soft:'#d1bcb3',accent:'#e58a59',accent2:'#8b6673',ring:'rgba(231,177,155,.13)',glow:'rgba(229,138,89,.12)',cloud:'rgba(255,255,255,.13)',wind:'rgba(163,118,133,.44)'},
-  night:{...lightProfiles.night,bg:'#0f1828',bg2:'#090f19',ink:'#f4f7fd',soft:'#aeb8c8',accent:'#dce7fa',accent2:'#496487',ring:'rgba(214,228,250,.13)',glow:'rgba(201,219,248,.07)',cloud:'rgba(255,255,255,.10)',wind:'rgba(100,132,161,.36)'}
+  morning:Object.assign({},lightProfiles.morning,{bg:'#232a2f',bg2:'#161d22',ink:'#f4f1e8',soft:'#c0c6ca',accent:'#e0b35e',accent2:'#63839a',ring:'rgba(198,213,225,.13)',glow:'rgba(224,179,94,.11)',cloud:'rgba(255,255,255,.18)',wind:'rgba(126,161,181,.50)'}),
+  afternoon:Object.assign({},lightProfiles.afternoon,{bg:'#202832',bg2:'#151b24',ink:'#f4f6f8',soft:'#c0c7cf',accent:'#c9a161',accent2:'#64879d',ring:'rgba(198,213,225,.13)',glow:'rgba(201,161,97,.10)',cloud:'rgba(255,255,255,.15)',wind:'rgba(115,151,172,.46)'}),
+  sunset:Object.assign({},lightProfiles.sunset,{bg:'#30272a',bg2:'#1c181b',ink:'#fff3ed',soft:'#d1bcb3',accent:'#e58a59',accent2:'#8b6673',ring:'rgba(231,177,155,.13)',glow:'rgba(229,138,89,.12)',cloud:'rgba(255,255,255,.13)',wind:'rgba(163,118,133,.44)'}),
+  night:Object.assign({},lightProfiles.night,{bg:'#0f1828',bg2:'#090f19',ink:'#f4f7fd',soft:'#aeb8c8',accent:'#dce7fa',accent2:'#496487',ring:'rgba(214,228,250,.13)',glow:'rgba(201,219,248,.07)',cloud:'rgba(255,255,255,.10)',wind:'rgba(100,132,161,.36)'})
 };
 function period(){
   const h=new Date().getHours();
@@ -269,10 +277,10 @@ function darkMode(){
   }catch{}
   try{
     const device=JSON.parse(localStorage.getItem('pontoview_player_device_v1')||'null');
-    if(device?.screenId){
+    if(device&&device.screenId){
       const manifest=JSON.parse(localStorage.getItem(`pv_manifest_${device.screenId}`)||'null');
-      if(manifest?.settings?.theme==='dark')return true;
-      if(manifest?.settings?.theme==='light')return false;
+      if(manifest&&manifest.settings&&manifest.settings.theme==='dark')return true;
+      if(manifest&&manifest.settings&&manifest.settings.theme==='light')return false;
     }
   }catch{}
   return false;
