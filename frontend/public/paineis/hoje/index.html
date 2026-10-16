@@ -81,7 +81,9 @@ function render(data){
   const today=localYMD(now);
   const todayHoliday=holidays.find(h=>h.date===today);
   const next=holidays.find(h=>h.date>today);
-  const observances=window.PV_TODAY_OBSERVANCES?.forDate?.(now)||[];
+  const observances=(window.PV_TODAY_OBSERVANCES&&typeof window.PV_TODAY_OBSERVANCES.forDate==='function')
+    ? window.PV_TODAY_OBSERVANCES.forDate(now)
+    : [];
   const featured=observances[0]||null;
   const long=new Intl.DateTimeFormat('pt-BR',{
     day:'2-digit',
@@ -108,7 +110,7 @@ function render(data){
     const names=observances.slice(0,2).map(item=>item.name);
     els.holiday.textContent='Data especial';
     els.holidayNote.textContent=names.join(' • ')+(observances.length>2?` + ${observances.length-2}`:'');
-    els.holidaySource.textContent=`Fonte: ${[...new Set(observances.map(item=>item.source))].join(' • ')}`;
+    els.holidaySource.textContent=`Fonte: ${Array.from(new Set(observances.map(item=>item.source))).join(' • ')}`;
     els.todayNote.textContent=featured.description;
   }else{
     els.holiday.textContent='Dia comum';
