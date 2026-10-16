@@ -1,5 +1,40 @@
 (() => {
   const PATCH_FLAG = "__pvAutoplayPatched";
+  const DEVICE_KEY = "pontoview_player_device_v1";
+
+  function playlistEndForVideo(videoId, startAt) {
+    try {
+      const device = JSON.parse(localStorage.getItem(DEVICE_KEY) || "null");
+      if (!device?.screenId) return null;
+
+      const manifest = JSON.parse(
+        localStorage.getItem(`pv_manifest_${device.screenId}`) || "null",
+      );
+      if (!Array.isArray(manifest?.items)) return null;
+
+      const durations = manifest.items
+        .filter(
+          (item) =>
+            item?.media?.type === "youtube" &&
+            item?.media?.youtubeVideoId === videoId,
+        )
+        .map((item) => Number(item?.durationSeconds || item?.media?.durationSeconds || 0))
+        .filter((duration) => Number.isFinite(duration) && duration > 0);
+
+      if (!durations.length) return null;
+
+      // The YouTube constructor only receives the video ID, not the playlist-item ID.
+      // If the same video is intentionally used with different durations, do not guess
+      // which occurrence is active. Preserve the original behavior in that rare case.
+      const uniqueDurations = [...new Set(durations)];
+      if (uniqueDurations.length !== 1) return null;
+
+      const start = Number.isFinite(startAt) && startAt > 0 ? startAt : 0;
+      return start + uniqueDurations[0];
+    } catch {
+      return null;
+    }
+  }
 
   function patchYouTubePlayer() {
     const yt = window.YT;
@@ -20,12 +55,25 @@
         }
       };
 
+      const originalPlayerVars = config.playerVars || {};
+      const start = Number(originalPlayerVars.start || 0);
+      const configuredEnd = Number(originalPlayerVars.end || 0);
+      const playlistEnd = playlistEndForVideo(config.videoId, start);
+      const effectiveEnd = playlistEnd != null
+        ? configuredEnd > 0
+          ? Math.min(configuredEnd, playlistEnd)
+          : playlistEnd
+        : configuredEnd > 0
+          ? configuredEnd
+          : undefined;
+
       const player = new NativePlayer(element, {
         ...config,
         playerVars: {
-          ...(config.playerVars || {}),
+          ...originalPlayerVars,
           autoplay: 1,
           playsinline: 1,
+          ...(effectiveEnd != null ? { end: effectiveEnd } : {}),
         },
         events: {
           ...originalEvents,
