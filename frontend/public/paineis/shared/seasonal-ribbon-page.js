@@ -3,7 +3,7 @@
   if (!config) return;
 
   const body = document.body;
-  const safe = (value) => String(value ?? "");
+  const safe = (value) => String(value == null ? "" : value);
 
   const tags = Array.isArray(config.tags)
     ? config.tags.map((tag) => `<span class="seasonal-tag">${safe(tag)}</span>`).join("")
@@ -62,6 +62,6 @@
   `;
 
   const ribbonScript = document.createElement("script");
-  ribbonScript.src = "../shared/campaign-ribbon.js?v=3";
+  ribbonScript.src = "../shared/campaign-ribbon.js?v=4";
   document.body.appendChild(ribbonScript);
 })();
