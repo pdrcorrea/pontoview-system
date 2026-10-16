@@ -138,7 +138,7 @@ export function AppShell() {
     <div className="shell">
       <aside id="main-sidebar" className="sidebar">
         <div className="brand pv-full-brand" aria-label="PontoView Telas">
-          <img className="pv-full-brand-icon" src="/assets/PontoViewMark.svg" alt="" />
+          <img className="pv-full-brand-icon" src="/assets/TelasIconBranco.png" alt="" />
           <span className="pv-full-brand-wordmark">
             <strong>Ponto</strong><span>View</span>
           </span>
