@@ -94,8 +94,8 @@ export function HomePage() {
       <header className="pv-home-header">
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas">
           <span className="pv-home-brandmark">
-            <img className="pv-home-brand-logo" src="/assets/logo.png" alt="PontoView" />
-            <img className="pv-home-brand-icon" src="/assets/icon.png" alt="" />
+            <img className="pv-home-brand-logo" src="/assets/TelasAzul.png?v=20261016-3" alt="PontoView" />
+            <img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-3" alt="" />
           </span>
           <span className="pv-home-brandname">
             <strong>PontoView</strong>
@@ -214,7 +214,7 @@ export function HomePage() {
               <div className="pv-home-app-preview">
                 <aside>
                   <div className="pv-home-mini-brand">
-                    <img src="/assets/icon.png" alt="" />
+                    <img src="/assets/TelasIconAzul.png?v=20261016-3" alt="" />
                     <span>PontoView</span>
                   </div>
                   <i className="active" />
@@ -395,8 +395,8 @@ export function HomePage() {
       <footer className="pv-home-footer">
         <Link className="pv-home-brand pv-home-footer-brand" to="/">
           <span className="pv-home-brandmark">
-            <img className="pv-home-brand-logo" src="/assets/logo.png" alt="PontoView" />
-            <img className="pv-home-brand-icon" src="/assets/icon.png" alt="" />
+            <img className="pv-home-brand-logo" src="/assets/TelasAzul.png?v=20261016-3" alt="PontoView" />
+            <img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-3" alt="" />
           </span>
           <span className="pv-home-brandname"><strong>PontoView</strong><small>Telas</small></span>
         </Link>
