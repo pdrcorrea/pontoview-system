@@ -26,4 +26,6 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /paineis/*
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors 'self' https://*.pontoview.com.br
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
