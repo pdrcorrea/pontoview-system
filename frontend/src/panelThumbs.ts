@@ -4,6 +4,7 @@ const PANEL_EMOJIS: Array<[RegExp, string]> = [
   [/\b(hoje|data|calendario)\b/i, "📅"],
   [/\b(noticias|noticias do dia)\b/i, "📰"],
   [/\b(economia|mercado)\b/i, "📈"],
+  [/\b(conhecendo o brasil)\b/i, "🇧🇷"],
   [/\b(cultura)\b/i, "🎭"],
   [/\b(curiosidades)\b/i, "💡"],
   [/\b(saude)\b/i, "❤️‍🩹"],
