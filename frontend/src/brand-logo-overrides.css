@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap");
 
-/* Identidade PontoView Telas: texto real do JSX, sem pseudo-elementos. */
+/* Assinatura PontoView Telas com os novos ícones glossy 3D. */
 .pv-home-brand,
 .pv-full-brand,
 .auth-main-brand {
@@ -8,7 +8,7 @@
   white-space: nowrap;
 }
 
-/* Home e rodapé */
+/* Home e rodapé: ícone azul em superfícies claras. */
 .pv-home .pv-home-brand {
   display: inline-flex !important;
   align-items: center !important;
@@ -27,19 +27,18 @@
   border-radius: 11px !important;
   background: transparent !important;
   box-shadow: none !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
-.pv-home .pv-home-brand-logo {
-  display: none !important;
-}
+.pv-home .pv-home-brand-logo { display: none !important; }
 
 .pv-home .pv-home-brand-icon {
-  content: url("/assets/TelasIconAzul.png?v=20261016-7") !important;
+  content: url("/assets/IconeAzul.png?v=20261017-1") !important;
   display: block !important;
   width: 38px !important;
   height: 38px !important;
   object-fit: contain !important;
+  filter: none !important;
 }
 
 .pv-home .pv-home-brandname {
@@ -50,20 +49,25 @@
   line-height: 1 !important;
 }
 
+/* O JSX legado traz “PontoView” em um único strong. Separação visual por peso. */
 .pv-home .pv-home-brandname strong {
-  display: inline !important;
-  font-size: 18px !important;
-  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  font-size: 0 !important;
   letter-spacing: -0.035em !important;
   color: #173552 !important;
 }
-
-.pv-home .pv-home-brandname strong::before,
-.pv-home .pv-home-brandname strong::after,
-.pv-home .pv-home-brandname small::before,
-.pv-home .pv-home-brandname small::after {
-  content: none !important;
-  display: none !important;
+.pv-home .pv-home-brandname strong::before {
+  content: "Ponto" !important;
+  display: inline !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+.pv-home .pv-home-brandname strong::after {
+  content: "View" !important;
+  display: inline !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
 }
 
 .pv-home .pv-home-brandname small {
@@ -77,26 +81,17 @@
   opacity: 1 !important;
 }
 
-.pv-home-footer-brand .pv-home-brandmark {
+.pv-home-footer-brand .pv-home-brandmark,
+.pv-home-footer-brand .pv-home-brand-icon {
   width: 34px !important;
   height: 34px !important;
   flex-basis: 34px !important;
 }
+.pv-home-footer-brand .pv-home-brandname strong::before,
+.pv-home-footer-brand .pv-home-brandname strong::after { font-size: 16px !important; }
+.pv-home-footer-brand .pv-home-brandname small { font-size: 13px !important; }
 
-.pv-home-footer-brand .pv-home-brand-icon {
-  width: 34px !important;
-  height: 34px !important;
-}
-
-.pv-home-footer-brand .pv-home-brandname strong {
-  font-size: 16px !important;
-}
-
-.pv-home-footer-brand .pv-home-brandname small {
-  font-size: 13px !important;
-}
-
-/* Painel interno: marca clara, discreta e legível sobre o menu navy. */
+/* Painel interno: variante branca para o menu navy. */
 .sidebar .brand.pv-full-brand {
   display: flex !important;
   align-items: center !important;
@@ -108,27 +103,14 @@
   line-height: 1 !important;
 }
 
-.sidebar .pv-full-brand::before,
-.sidebar .pv-full-brand::after,
-.sidebar .pv-full-brand-wordmark::before,
-.sidebar .pv-full-brand-wordmark::after,
-.sidebar .pv-full-brand-wordmark strong::before,
-.sidebar .pv-full-brand-wordmark strong::after,
-.sidebar .pv-full-brand-wordmark > span::before,
-.sidebar .pv-full-brand-wordmark > span::after,
-.sidebar .sidebar-product-badge::before,
-.sidebar .sidebar-product-badge::after {
-  content: none !important;
-  display: none !important;
-}
-
 .sidebar .pv-full-brand-icon {
-  content: url("/assets/TelasIconBranco.png?v=20261016-7") !important;
+  content: url("/assets/IconeBranco.png?v=20261017-1") !important;
   display: block !important;
   width: 38px !important;
   height: 38px !important;
   flex: 0 0 38px !important;
   object-fit: contain !important;
+  filter: none !important;
 }
 
 .sidebar .pv-full-brand-wordmark {
@@ -140,28 +122,24 @@
   letter-spacing: -0.035em !important;
   line-height: 1 !important;
 }
-
 .sidebar .pv-full-brand-wordmark strong {
   display: inline !important;
   font-size: 18px !important;
   font-weight: 800 !important;
-  color: #ffffff !important;
+  color: #fff !important;
 }
-
 .sidebar .pv-full-brand-wordmark > span {
   display: inline !important;
   font-size: 18px !important;
   font-weight: 400 !important;
   color: #dbe9f5 !important;
 }
-
 .sidebar .sidebar-product-badge {
   display: inline !important;
   align-self: baseline !important;
   margin: 0 0 0 5px !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   font-size: 12px !important;
@@ -173,38 +151,26 @@
   flex: 0 0 auto;
 }
 
-/* Login/cadastro: mesma assinatura, sem texto gerado por CSS. */
+/* Login/cadastro: assinatura branca sobre o bloco escuro. */
 .auth-main-brand {
   display: inline-flex !important;
   align-items: center !important;
   gap: 10px !important;
   min-width: 0;
 }
-
-.auth-main-brand::before,
-.auth-main-brand::after,
-.auth-main-brand > span:last-child > strong::before,
-.auth-main-brand > span:last-child > strong::after,
-.auth-main-brand > span:last-child > small::before,
-.auth-main-brand > span:last-child > small::after {
-  content: none !important;
-  display: none !important;
-}
-
 .auth-main-brandmark {
   display: flex !important;
   width: 40px !important;
   height: 40px !important;
   flex: 0 0 40px !important;
 }
-
 .auth-main-brandmark img {
-  content: url("/assets/TelasIconBranco.png?v=20261016-7") !important;
+  content: url("/assets/IconeBranco.png?v=20261017-1") !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
+  filter: none !important;
 }
-
 .auth-main-brand > span:last-child {
   display: inline-flex !important;
   align-items: baseline !important;
@@ -212,14 +178,22 @@
   min-width: 0;
   line-height: 1 !important;
 }
-
 .auth-main-brand > span:last-child > strong {
-  display: inline !important;
-  font-size: 18px !important;
-  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  font-size: 0 !important;
   letter-spacing: -0.035em !important;
 }
-
+.auth-main-brand > span:last-child > strong::before {
+  content: "Ponto" !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+.auth-main-brand > span:last-child > strong::after {
+  content: "View" !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
 .auth-main-brand > span:last-child > small {
   display: inline !important;
   margin: 0 !important;
@@ -230,27 +204,14 @@
 }
 
 @media (max-width: 420px) {
-  .pv-home .pv-home-brandmark {
+  .pv-home .pv-home-brandmark,
+  .pv-home .pv-home-brand-icon {
     width: 32px !important;
     height: 32px !important;
     flex-basis: 32px !important;
   }
-
-  .pv-home .pv-home-brand-icon {
-    width: 32px !important;
-    height: 32px !important;
-  }
-
-  .pv-home .pv-home-brandname {
-    gap: 5px !important;
-  }
-
-  .pv-home .pv-home-brandname strong {
-    font-size: 16px !important;
-  }
-
-  .pv-home .pv-home-brandname small {
-    display: inline !important;
-    font-size: 13px !important;
-  }
+  .pv-home .pv-home-brandname { gap: 5px !important; }
+  .pv-home .pv-home-brandname strong::before,
+  .pv-home .pv-home-brandname strong::after { font-size: 16px !important; }
+  .pv-home .pv-home-brandname small { font-size: 13px !important; }
 }

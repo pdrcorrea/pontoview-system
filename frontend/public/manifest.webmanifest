@@ -1,25 +1,21 @@
 {
+  "id": "/",
   "name": "PontoView Telas",
-  "short_name": "PontoView Telas",
-  "description": "PontoView Telas - player de comunicação visual",
+  "short_name": "Telas",
+  "description": "PontoView Telas - comunicação visual em nuvem para TVs e displays.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#032a61",
   "icons": [
     {
-      "src": "/assets/TelasIconAzul.png?v=20261016-2",
-      "sizes": "304x288",
+      "src": "/assets/IconeAzul.png?v=20261017-1",
+      "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/assets/TelasIconAzul.png?v=20261016-2",
-      "sizes": "304x288",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }

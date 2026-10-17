@@ -1,88 +1,48 @@
-/* PontoView Telas brand lock: icon azul + nome completo */
+/* Compatibilidade para a home antes do bundle principal carregar. */
 .pv-home .pv-home-header .pv-home-brand,
-.pv-home .pv-home-footer .pv-home-brand{
-  display:flex!important;
-  align-items:center!important;
-  gap:10px!important;
+.pv-home .pv-home-footer .pv-home-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }
 
 .pv-home .pv-home-header .pv-home-brandmark,
-.pv-home .pv-home-footer .pv-home-brandmark{
-  width:38px!important;
-  height:38px!important;
-  min-width:38px!important;
-  padding:0!important;
-  border:0!important;
-  border-radius:11px!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  overflow:hidden!important;
-  display:grid!important;
-  place-items:center!important;
+.pv-home .pv-home-footer .pv-home-brandmark {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  display: grid !important;
+  place-items: center !important;
 }
 
 .pv-home .pv-home-header .pv-home-brand-logo,
-.pv-home .pv-home-footer .pv-home-brand-logo{
-  display:none!important;
-}
+.pv-home .pv-home-footer .pv-home-brand-logo { display: none !important; }
 
 .pv-home .pv-home-header .pv-home-brand-icon,
-.pv-home .pv-home-footer .pv-home-brand-icon{
-  display:block!important;
-  width:38px!important;
-  height:38px!important;
-  object-fit:contain!important;
-  opacity:1!important;
-  visibility:visible!important;
-  filter:brightness(0) saturate(100%) invert(20%) sepia(88%) saturate(1885%) hue-rotate(194deg) brightness(86%) contrast(96%)!important;
+.pv-home .pv-home-footer .pv-home-brand-icon {
+  content: url("/assets/IconeAzul.png?v=20261017-1") !important;
+  display: block !important;
+  width: 38px !important;
+  height: 38px !important;
+  object-fit: contain !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
 }
 
-.pv-home .pv-home-header .pv-home-brandname,
-.pv-home .pv-home-footer .pv-home-brandname{
-  display:flex!important;
-  align-items:baseline!important;
-  gap:5px!important;
-  white-space:nowrap!important;
-  line-height:1!important;
-}
-
-.pv-home .pv-home-header .pv-home-brandname strong,
-.pv-home .pv-home-footer .pv-home-brandname strong{
-  display:inline!important;
-  visibility:visible!important;
-  opacity:1!important;
-  margin:0!important;
-  font-size:17px!important;
-  font-weight:850!important;
-  letter-spacing:-.035em!important;
-  color:#173552!important;
-}
-
-.pv-home .pv-home-header .pv-home-brandname small,
-.pv-home .pv-home-footer .pv-home-brandname small{
-  display:inline!important;
-  visibility:visible!important;
-  opacity:1!important;
-  margin:0!important;
-  font-size:15px!important;
-  font-weight:650!important;
-  letter-spacing:-.02em!important;
-  text-transform:none!important;
-  color:#6a7e92!important;
-}
-
-@media(max-width:760px){
+@media (max-width: 760px) {
   .pv-home .pv-home-header .pv-home-brandmark,
-  .pv-home .pv-home-footer .pv-home-brandmark{
-    width:32px!important;
-    height:32px!important;
-    min-width:32px!important;
-  }
+  .pv-home .pv-home-footer .pv-home-brandmark,
   .pv-home .pv-home-header .pv-home-brand-icon,
-  .pv-home .pv-home-footer .pv-home-brand-icon{
-    width:32px!important;
-    height:32px!important;
+  .pv-home .pv-home-footer .pv-home-brand-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
   }
-  .pv-home .pv-home-header .pv-home-brandname strong{font-size:15px!important}
-  .pv-home .pv-home-header .pv-home-brandname small{font-size:14px!important}
 }
