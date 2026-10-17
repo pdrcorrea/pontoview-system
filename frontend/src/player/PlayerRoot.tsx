@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { PlayerPage } from "./Player";
+import "./youtubeAutoplayGuard";
 
 // Keep the player visually identical without loading the administrative React
 // pages. CSS is cheap to parse compared with the full application JS graph and
