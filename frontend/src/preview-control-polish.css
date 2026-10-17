@@ -74,20 +74,43 @@
   outline-offset: 2px;
 }
 
-/* Garante que o ícone da ação principal continue visível quando o texto é ocultado no mobile. */
+/* A ação do PageHead possui texto e ícone separados. No mobile escondemos apenas o texto. */
+.head-action-button {
+  position: relative;
+}
+
+.head-action-button svg {
+  flex: 0 0 auto;
+}
+
 @media (max-width: 760px) {
-  .head > .btn.primary {
-    color: transparent !important;
+  .head > .head-action-button {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    overflow: visible !important;
+    color: #fff !important;
   }
 
-  .head > .btn.primary svg {
+  .head-action-label {
+    display: none !important;
+  }
+
+  .head > .head-action-button svg {
     display: block !important;
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px;
-    min-height: 20px;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    margin: 0 !important;
     color: #fff !important;
     stroke: #fff !important;
+    stroke-width: 2.35 !important;
     opacity: 1 !important;
     visibility: visible !important;
   }
