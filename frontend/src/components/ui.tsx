@@ -22,9 +22,9 @@ export function PageHead({
         <p>{text}</p>
       </div>
       {action && (
-        <button className="btn primary" onClick={onAction}>
-          <Plus size={16} />
-          {action}
+        <button className="btn primary head-action-button" onClick={onAction} aria-label={action} title={action}>
+          <Plus size={16} aria-hidden="true" />
+          <span className="head-action-label">{action}</span>
         </button>
       )}
     </div>

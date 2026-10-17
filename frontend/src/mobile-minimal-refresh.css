@@ -1,0 +1,747 @@
+/* PontoView Telas • refinamento visual e mobile
+   Camada final de UX: preserva a lógica atual e melhora leitura, toque e responsividade. */
+
+:root {
+  --pv-touch: 44px;
+  --pv-radius-sm: 10px;
+  --pv-radius-md: 14px;
+  --pv-radius-lg: 18px;
+  --pv-page-x: clamp(16px, 3vw, 32px);
+}
+
+/* Hierarquia mais limpa */
+.page {
+  padding: 28px var(--pv-page-x) 110px;
+}
+
+.head {
+  margin-bottom: 22px;
+}
+
+.head > div {
+  min-width: 0;
+}
+
+.head h1,
+.help-hero h1 {
+  font-size: clamp(25px, 3vw, 32px);
+  line-height: 1.08;
+  margin: 4px 0 7px;
+}
+
+.head p,
+.help-hero p {
+  max-width: 720px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Alvos de toque confortáveis */
+.btn,
+.icon-button,
+.help-button,
+.tabs button,
+.segmented button,
+.source-card,
+.layout-option,
+.widget-toggle,
+.rotation-option,
+.panel-catalog-tabs button,
+.mobile-account-subnav a {
+  touch-action: manipulation;
+}
+
+.btn {
+  min-height: var(--pv-touch);
+  padding: 10px 14px;
+  border-radius: 11px;
+}
+
+.icon-button,
+.help-button {
+  min-width: var(--pv-touch);
+  min-height: var(--pv-touch);
+  border-radius: 11px;
+}
+
+input,
+select,
+textarea {
+  min-height: var(--pv-touch);
+}
+
+textarea {
+  min-height: 110px;
+}
+
+/* Cards menos ruidosos e mais consistentes */
+.stats article,
+.panel,
+.list-panel,
+.media-card,
+.device-card,
+.app-card,
+.help-card,
+.pv-catalog-card,
+.content-picker-card,
+.message-picker-card {
+  border-radius: var(--pv-radius-md);
+  box-shadow: none;
+}
+
+.panel,
+.device-card,
+.app-card,
+.help-card {
+  padding: clamp(15px, 2vw, 20px);
+}
+
+/* Navegação superior mais compacta */
+.topbar {
+  min-height: 64px;
+  height: auto;
+  padding: 10px var(--pv-page-x);
+}
+
+.topbar > div:first-child strong {
+  font-size: 14px;
+}
+
+.system-ok {
+  white-space: nowrap;
+}
+
+/* Ferramentas e filtros: rolagem natural em telas estreitas */
+.toolbar,
+.panel-catalog-toolbar,
+.content-toolbar,
+.content-library-toolbar {
+  min-width: 0;
+}
+
+.tabs,
+.panel-catalog-tabs {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.tabs::-webkit-scrollbar,
+.panel-catalog-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs button,
+.panel-catalog-tabs button {
+  min-height: 40px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+/* Linhas operacionais com mais espaço para ação */
+.playlist-row,
+.user-row,
+.integration,
+.payment-line,
+.setting-row,
+.screen-row {
+  min-height: 58px;
+}
+
+.playlist-row .btn,
+.playlist-row .icon-button,
+.user-row .btn,
+.setting-row .btn {
+  flex: 0 0 auto;
+}
+
+/* Formulários legíveis no celular */
+.form-card label,
+.support-form label,
+.youtube-form label {
+  font-size: 11px;
+}
+
+.form-card input,
+.form-card select,
+.support-form select,
+.support-form textarea,
+.youtube-form input[type="text"],
+.youtube-form label > input:not([type="checkbox"]) {
+  font-size: 16px;
+  padding: 11px 12px;
+}
+
+/* Modais: largura confortável e leitura sem efeito de coluna estreita */
+.modal-backdrop {
+  padding: clamp(12px, 2vw, 24px);
+}
+
+.pv-modal {
+  width: min(720px, calc(100vw - 32px));
+  max-width: 720px;
+  border-radius: var(--pv-radius-lg);
+}
+
+.pv-modal:has(.playlist-builder) {
+  width: min(1120px, calc(100vw - 32px));
+  max-width: 1120px;
+}
+
+.modal-actions {
+  gap: 9px;
+}
+
+/* Dock mobile: mantém todas as funções sem encolher demais os controles */
+.mobile-glass-nav {
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
+  padding-bottom: max(9px, env(safe-area-inset-bottom));
+}
+
+.mobile-glass-track {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  justify-content: flex-start;
+}
+
+.mobile-glass-track::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-glass-track > a {
+  flex: 0 0 68px;
+  min-width: 68px;
+  min-height: 58px;
+  scroll-snap-align: center;
+}
+
+.mobile-glass-icon {
+  min-width: 28px;
+  min-height: 28px;
+}
+
+/* Subnavegação de conta também é tocável e rolável */
+.mobile-account-subnav-track {
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.mobile-account-subnav-track::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-account-subnav a {
+  flex: 0 0 auto;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .dashboard-grid,
+  .settings-grid,
+  .billing-grid,
+  .support-grid,
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-grid,
+  .schedule-grid,
+  .apps-grid,
+  .device-grid,
+  .pv-catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-hero {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .billing-status {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 18px 0 0;
+  }
+}
+
+/* Entre tablet pequeno e celular o modal já ganha quase toda a tela.
+   Isso evita o aspecto estreito mesmo quando o navegador reporta viewport acima de 760px. */
+@media (max-width: 900px) {
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .pv-modal,
+  .pv-modal:has(.playlist-builder) {
+    width: calc(100vw - 20px) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 20px);
+  }
+
+  .message-composer {
+    gap: 18px;
+  }
+
+  .message-main-field,
+  .message-simple-section {
+    gap: 8px;
+  }
+
+  .message-type-grid button,
+  .message-choice-grid button {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    background: #f6f8fb;
+  }
+
+  .page {
+    padding-top: 20px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .topbar .system-ok {
+    font-size: 0;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .topbar .system-ok::first-letter {
+    font-size: 14px;
+  }
+
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .head > div > small,
+  .head > div > p {
+    display: none;
+  }
+
+  .head h1 {
+    margin: 0;
+    font-size: 25px;
+  }
+
+  .head > .btn {
+    min-width: var(--pv-touch);
+    max-width: 48px;
+    overflow: hidden;
+    white-space: nowrap;
+    gap: 0;
+    padding-left: 13px;
+    padding-right: 13px;
+    color: transparent;
+  }
+
+  .head > .btn svg {
+    flex: 0 0 auto;
+    color: #fff;
+  }
+
+  .head > .btn.secondary svg {
+    color: currentColor;
+  }
+
+  .toolbar,
+  .panel-catalog-toolbar,
+  .content-toolbar,
+  .content-library-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toolbar > .btn,
+  .panel-catalog-search,
+  .content-toolbar > .btn,
+  .content-library-toolbar > .btn {
+    width: 100%;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stats article {
+    padding: 14px;
+  }
+
+  .stats article > svg {
+    margin-bottom: 10px;
+  }
+
+  .stats article strong {
+    font-size: 24px;
+  }
+
+  .timeline,
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .media-grid,
+  .schedule-grid,
+  .apps-grid,
+  .device-grid,
+  .pv-catalog-grid,
+  .content-picker-grid,
+  .content-picker-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .pv-catalog-card {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px;
+  }
+
+  .pv-catalog-art {
+    width: 58px;
+    height: 58px;
+    border-radius: 15px;
+    font-size: 27px;
+  }
+
+  .pv-catalog-card > .btn,
+  .pv-catalog-card > .icon-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .playlist-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    padding: 13px;
+  }
+
+  .playlist-row .grow {
+    align-self: center;
+  }
+
+  .playlist-row .pill {
+    align-self: center;
+  }
+
+  .playlist-row .btn {
+    grid-column: 2 / 3;
+    width: 100%;
+  }
+
+  .playlist-row > .icon-button {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .device-head {
+    gap: 10px;
+  }
+
+  .config-top {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  .config-top > div {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .config-top > .btn:first-child {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .config-top > .btn:last-child {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .source-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .source-card,
+  .layout-option,
+  .widget-toggle,
+  .rotation-option {
+    min-height: 52px;
+  }
+
+  /* No celular continua sendo um pop-up elegante, mas usando de fato a tela disponível. */
+  .modal-backdrop {
+    align-items: center;
+    padding: 6px;
+  }
+
+  .pv-modal,
+  .pv-modal:has(.playlist-builder) {
+    width: calc(100vw - 12px) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 12px);
+    border-radius: 20px;
+    border: 1px solid #dfe5eb;
+    padding: 20px 18px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .modal-head {
+    position: sticky;
+    top: -20px;
+    z-index: 8;
+    margin: -20px -18px 10px;
+    padding: 20px 18px 12px;
+    background: rgba(255,255,255,.97);
+    backdrop-filter: blur(12px);
+  }
+
+  .modal-head h2 {
+    font-size: 24px;
+    line-height: 1.08;
+  }
+
+  .modal-actions {
+    position: sticky;
+    bottom: calc(-18px - env(safe-area-inset-bottom));
+    margin-left: -18px;
+    margin-right: -18px;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, .97);
+    border-top: 1px solid #e7ebf0;
+    backdrop-filter: blur(14px);
+  }
+
+  .modal-actions .btn {
+    flex: 1;
+  }
+
+  /* Editor de playlist: um único scroll vertical. A lista deixa de criar
+     uma janela e uma barra horizontal dentro do próprio modal. */
+  .playlist-mobile-items .playlist-editor-items,
+  .playlist-builder .playlist-editor-items {
+    max-height: none !important;
+    overflow: visible !important;
+    scrollbar-gutter: auto;
+  }
+
+  .playlist-mobile-items {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .playlist-builder .playlist-editor-items article {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: 20px 58px minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "grip thumb info remove"
+      ". thumb duration order";
+    gap: 8px 10px;
+    min-height: 96px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .playlist-media-thumb.compact {
+    width: 58px;
+  }
+
+  .playlist-selected-info b {
+    font-size: 13px;
+  }
+
+  .playlist-selected-info small {
+    margin-top: 4px;
+    font-size: 9px;
+  }
+
+  .playlist-duration-control {
+    min-width: 0;
+    align-self: center;
+  }
+
+  .playlist-duration-control > span {
+    margin-left: 0;
+    flex-wrap: nowrap;
+  }
+
+  .playlist-duration-control input {
+    width: 72px !important;
+    min-height: 42px !important;
+    padding: 9px !important;
+    font-size: 16px !important;
+  }
+
+  .playlist-remove-button,
+  .playlist-order-buttons .icon-button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .playlist-order-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .playlist-builder-summary {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  /* Central de informações: campos e opções respiram com a nova largura. */
+  .message-type-grid,
+  .message-choice-grid,
+  .message-screen-picker,
+  .message-more-body {
+    gap: 10px;
+  }
+
+  .message-type-grid button,
+  .message-choice-grid button {
+    min-height: 78px;
+    border-radius: 14px;
+  }
+
+  .message-type-grid strong,
+  .message-choice-grid strong {
+    font-size: 11px;
+  }
+
+  .message-type-grid small,
+  .message-choice-grid small,
+  .message-helper {
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  .message-main-field {
+    font-size: 10px;
+  }
+
+  .message-main-field > input,
+  .message-main-field textarea {
+    min-height: 52px;
+    padding: 13px 14px;
+    border-radius: 13px;
+    font-size: 16px;
+  }
+
+  .message-main-field textarea {
+    min-height: 132px;
+  }
+
+  .message-segmented button {
+    min-height: 46px;
+  }
+
+  .message-picker-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .message-picker-card > .btn,
+  .message-picker-card > .icon-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .tr {
+    grid-template-columns: 1fr auto;
+    row-gap: 5px;
+  }
+
+  .tr > span:nth-child(2),
+  .tr > span:nth-child(3) {
+    grid-column: 1;
+  }
+
+  .tr > span:last-child {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    justify-self: end;
+  }
+}
+
+/* Em aparelhos muito estreitos, aí sim simplificamos o conteúdo interno. */
+@media (max-width: 430px) {
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .source-grid,
+  .layout-choice,
+  .rotation-choice {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel,
+  .device-card,
+  .app-card,
+  .help-card {
+    border-radius: 13px;
+  }
+
+  .media-info b,
+  .playlist-row b,
+  .screen-row b,
+  .device-card h2,
+  .panel h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .playlist-builder .playlist-editor-items article {
+    grid-template-columns: 18px 52px minmax(0, 1fr) 40px;
+    gap: 7px 8px;
+    padding: 10px;
+  }
+
+  .playlist-media-thumb.compact {
+    width: 52px;
+  }
+
+  .message-type-grid,
+  .message-choice-grid,
+  .message-screen-picker,
+  .message-more-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
