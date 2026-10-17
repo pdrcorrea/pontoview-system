@@ -90,37 +90,100 @@
   overflow-x: hidden;
 }
 
-.playlist-static-card {
+/* A especificidade precisa superar as regras legadas de .playlist-editor-items article. */
+.playlist-builder .playlist-editor-items .playlist-static-card {
   min-width: 0;
+  width: 100%;
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 90px 34px 36px;
+  grid-template-columns: 58px minmax(150px, 1fr) 104px 38px 42px;
+  grid-template-areas: "thumb info duration order remove";
   align-items: center;
-  gap: 9px;
-  min-height: 72px;
-  padding: 9px;
+  gap: 10px;
+  min-height: 78px;
+  padding: 10px 12px;
   border: 1px solid #dfe6ec;
   border-radius: 12px;
   background: #fff;
   cursor: pointer;
+  overflow: hidden;
   transition: border-color .16s ease, background .16s ease;
 }
 
-.playlist-static-card:hover {
+.playlist-builder .playlist-editor-items .playlist-static-card:hover {
   border-color: #c5d2de;
 }
 
-.playlist-static-card.selected {
+.playlist-builder .playlist-editor-items .playlist-static-card.selected {
   border-color: #4d7fa9;
   background: #f0f6fb;
 }
 
 .playlist-static-card .playlist-media-thumb.compact {
-  width: 54px;
+  grid-area: thumb;
+  width: 58px;
+  align-self: center;
+}
+
+.playlist-static-card .playlist-selected-info {
+  grid-area: info;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+}
+
+.playlist-static-card .playlist-selected-info b,
+.playlist-static-card .playlist-selected-info small {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-static-card .playlist-selected-info b {
+  color: #26394d;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.playlist-static-card .playlist-selected-info small {
+  margin: 0;
+  color: #7a8998;
+  font-size: 9px;
+  line-height: 1.3;
+  text-transform: none;
+}
+
+.playlist-static-card .playlist-duration-control {
+  grid-area: duration;
+  min-width: 0;
+  width: 100%;
+  display: grid !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  align-content: center;
+}
+
+.playlist-static-card .playlist-duration-control > span {
+  display: grid;
+  grid-template-columns: minmax(0, 72px) auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.playlist-static-card .playlist-duration-control input {
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 11px !important;
 }
 
 .playlist-static-card .playlist-order-buttons {
+  grid-area: order;
   display: grid;
   gap: 3px;
+  justify-items: center;
 }
 
 .playlist-static-card .playlist-order-buttons .icon-button {
@@ -131,16 +194,16 @@
   border-radius: 8px;
 }
 
-.playlist-static-card .playlist-duration-control input {
-  width: 58px !important;
-  font-size: 11px !important;
+.playlist-static-card .playlist-remove-button {
+  grid-area: remove;
+  justify-self: center;
 }
 
 .playlist-empty-static {
   min-height: 220px;
 }
 
-@media (max-width: 980px) and (min-width: 721px) {
+@media (max-width: 1100px) and (min-width: 721px) {
   .playlist-button-grid {
     grid-template-columns: minmax(250px, .8fr) 48px minmax(350px, 1.2fr) !important;
     gap: 8px !important;
@@ -151,13 +214,18 @@
     height: 40px;
   }
 
-  .playlist-static-card {
-    grid-template-columns: 46px minmax(0,1fr) 78px 32px 34px;
-    gap: 6px;
+  .playlist-builder .playlist-editor-items .playlist-static-card {
+    grid-template-columns: 48px minmax(120px, 1fr) 90px 34px 38px;
+    gap: 7px;
+    padding: 9px;
   }
 
   .playlist-static-card .playlist-media-thumb.compact {
-    width: 46px;
+    width: 48px;
+  }
+
+  .playlist-static-card .playlist-duration-control > span {
+    grid-template-columns: minmax(0, 60px) auto;
   }
 }
 
@@ -167,7 +235,7 @@
     overflow: visible;
   }
 
-  .playlist-static-card {
+  .playlist-builder .playlist-editor-items .playlist-static-card {
     grid-template-columns: 52px minmax(0, 1fr) 40px;
     grid-template-areas:
       "thumb info remove"
@@ -180,6 +248,7 @@
   .playlist-static-card .playlist-media-thumb.compact { grid-area: thumb; width: 52px; }
   .playlist-static-card .playlist-selected-info { grid-area: info; }
   .playlist-static-card .playlist-duration-control { grid-area: duration; }
+  .playlist-static-card .playlist-duration-control > span { grid-template-columns: minmax(0, 76px) auto; }
   .playlist-static-card .playlist-order-buttons { grid-area: order; display: flex; justify-content: flex-end; }
   .playlist-static-card .playlist-remove-button { grid-area: remove; }
 }
