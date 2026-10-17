@@ -211,6 +211,7 @@ async function ingest(source: SourceRow, categorySources: Map<string, Set<string
       );
 
       const sourcesForCategory = categorySources.get(category) || new Set<string>();
+      if (sourcesForCategory.size >= TARGET_ITEMS_PER_CATEGORY) continue;
       if (sourcesForCategory.has(source.id)) continue;
 
       rows.push({
