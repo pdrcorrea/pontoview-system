@@ -1,6 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap");
 
-/* Assinatura PontoView Telas com os novos ícones glossy 3D. */
+/*
+ * Assinatura visual única do PontoView Telas.
+ * Regra: ícone 40px, Ponto 800, View 400, produto 13px sem badge.
+ * Em superfícies claras usa o ícone azul; em superfícies escuras usa o branco.
+ */
+:root {
+  --pv-brand-icon-size: 40px;
+  --pv-brand-word-size: 20px;
+  --pv-brand-product-size: 13px;
+  --pv-brand-icon-gap: 10px;
+  --pv-brand-product-gap: 8px;
+  --pv-brand-ink: #173552;
+  --pv-brand-muted: #6a7e92;
+}
+
 .pv-home-brand,
 .pv-full-brand,
 .auth-main-brand {
@@ -8,23 +22,26 @@
   white-space: nowrap;
 }
 
-/* Home e rodapé: ícone azul em superfícies claras. */
+/* -------------------------------------------------------------------------- */
+/* HOME — superfície clara                                                     */
+/* -------------------------------------------------------------------------- */
 .pv-home .pv-home-brand {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: var(--pv-brand-icon-gap) !important;
   min-width: 0;
+  line-height: 1 !important;
 }
 
 .pv-home .pv-home-brandmark {
-  width: 38px !important;
-  height: 38px !important;
-  flex: 0 0 38px !important;
+  width: var(--pv-brand-icon-size) !important;
+  height: var(--pv-brand-icon-size) !important;
+  flex: 0 0 var(--pv-brand-icon-size) !important;
   display: grid !important;
   place-items: center !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: 11px !important;
+  border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   overflow: visible !important;
@@ -33,10 +50,10 @@
 .pv-home .pv-home-brand-logo { display: none !important; }
 
 .pv-home .pv-home-brand-icon {
-  content: url("/assets/IconeAzul.png?v=20261017-1") !important;
+  content: url("/assets/IconeAzul.png?v=20261017-3") !important;
   display: block !important;
-  width: 38px !important;
-  height: 38px !important;
+  width: var(--pv-brand-icon-size) !important;
+  height: var(--pv-brand-icon-size) !important;
   object-fit: contain !important;
   filter: none !important;
 }
@@ -44,43 +61,48 @@
 .pv-home .pv-home-brandname {
   display: inline-flex !important;
   align-items: baseline !important;
-  gap: 7px !important;
+  gap: var(--pv-brand-product-gap) !important;
   min-width: 0;
   line-height: 1 !important;
 }
 
-/* O JSX legado traz “PontoView” em um único strong. Separação visual por peso. */
+/* O JSX da Home traz “PontoView” em um único strong. */
 .pv-home .pv-home-brandname strong {
   display: inline-flex !important;
   align-items: baseline !important;
   font-size: 0 !important;
   letter-spacing: -0.035em !important;
-  color: #173552 !important;
+  color: var(--pv-brand-ink) !important;
 }
 .pv-home .pv-home-brandname strong::before {
   content: "Ponto" !important;
-  display: inline !important;
-  font-size: 18px !important;
+  font-size: var(--pv-brand-word-size) !important;
   font-weight: 800 !important;
 }
 .pv-home .pv-home-brandname strong::after {
   content: "View" !important;
-  display: inline !important;
-  font-size: 18px !important;
+  font-size: var(--pv-brand-word-size) !important;
   font-weight: 400 !important;
 }
 
 .pv-home .pv-home-brandname small {
   display: inline !important;
   margin: 0 !important;
-  font-size: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: var(--pv-brand-product-size) !important;
   font-weight: 600 !important;
+  line-height: 1 !important;
   letter-spacing: -0.015em !important;
   text-transform: none !important;
-  color: #6a7e92 !important;
+  color: var(--pv-brand-muted) !important;
   opacity: 1 !important;
 }
 
+/* Rodapé pode ser discretamente menor, sem mudar a proporção tipográfica. */
 .pv-home-footer-brand .pv-home-brandmark,
 .pv-home-footer-brand .pv-home-brand-icon {
   width: 34px !important;
@@ -88,27 +110,106 @@
   flex-basis: 34px !important;
 }
 .pv-home-footer-brand .pv-home-brandname strong::before,
-.pv-home-footer-brand .pv-home-brandname strong::after { font-size: 16px !important; }
-.pv-home-footer-brand .pv-home-brandname small { font-size: 13px !important; }
+.pv-home-footer-brand .pv-home-brandname strong::after { font-size: 17px !important; }
+.pv-home-footer-brand .pv-home-brandname small { font-size: 11px !important; }
 
-/* Painel interno: variante branca para o menu navy. */
-.sidebar .brand.pv-full-brand {
-  display: flex !important;
+/* -------------------------------------------------------------------------- */
+/* LOGIN/CADASTRO — superfície azul                                           */
+/* -------------------------------------------------------------------------- */
+.auth-main-brand {
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: var(--pv-brand-icon-gap) !important;
+  min-width: 0;
+  line-height: 1 !important;
+}
+
+.auth-main-brandmark {
+  display: grid !important;
+  place-items: center !important;
+  width: var(--pv-brand-icon-size) !important;
+  height: var(--pv-brand-icon-size) !important;
+  flex: 0 0 var(--pv-brand-icon-size) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.auth-main-brandmark img {
+  content: url("/assets/IconeBranco.png?v=20261017-3") !important;
+  display: block !important;
+  width: var(--pv-brand-icon-size) !important;
+  height: var(--pv-brand-icon-size) !important;
+  object-fit: contain !important;
+  filter: none !important;
+}
+
+.auth-main-brand > span:last-child {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: var(--pv-brand-product-gap) !important;
+  min-width: 0;
+  line-height: 1 !important;
+}
+
+.auth-main-brand > span:last-child > strong {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  font-size: 0 !important;
+  letter-spacing: -0.035em !important;
+  color: #fff !important;
+}
+.auth-main-brand > span:last-child > strong::before {
+  content: "Ponto" !important;
+  font-size: var(--pv-brand-word-size) !important;
+  font-weight: 800 !important;
+}
+.auth-main-brand > span:last-child > strong::after {
+  content: "View" !important;
+  font-size: var(--pv-brand-word-size) !important;
+  font-weight: 400 !important;
+}
+
+/* Produto é texto de apoio, nunca badge/pill. */
+.auth-main-brand > span:last-child > small {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: var(--pv-brand-product-size) !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.015em !important;
+  text-transform: none !important;
+  color: rgba(255,255,255,.68) !important;
+  opacity: 1 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* PAINEL — superfície navy                                                   */
+/* -------------------------------------------------------------------------- */
+.sidebar .brand.pv-full-brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: var(--pv-brand-icon-gap) !important;
   padding: 0 8px 22px !important;
   min-width: 0;
-  min-height: 44px !important;
+  min-height: var(--pv-brand-icon-size) !important;
   overflow: visible !important;
   line-height: 1 !important;
 }
 
 .sidebar .pv-full-brand-icon {
-  content: url("/assets/IconeBranco.png?v=20261017-1") !important;
+  content: url("/assets/IconeBranco.png?v=20261017-3") !important;
   display: block !important;
-  width: 38px !important;
-  height: 38px !important;
-  flex: 0 0 38px !important;
+  width: var(--pv-brand-icon-size) !important;
+  height: var(--pv-brand-icon-size) !important;
+  flex: 0 0 var(--pv-brand-icon-size) !important;
   object-fit: contain !important;
   filter: none !important;
 }
@@ -118,100 +219,87 @@
   align-items: baseline !important;
   gap: 0 !important;
   min-width: 0;
-  color: #f7fbff !important;
+  color: #fff !important;
   letter-spacing: -0.035em !important;
   line-height: 1 !important;
 }
-.sidebar .pv-full-brand-wordmark strong {
+.sidebar .pv-full-brand-wordmark strong,
+.sidebar .pv-full-brand-wordmark > span {
   display: inline !important;
-  font-size: 18px !important;
+  font-size: var(--pv-brand-word-size) !important;
+  line-height: 1 !important;
+}
+.sidebar .pv-full-brand-wordmark strong {
   font-weight: 800 !important;
   color: #fff !important;
 }
 .sidebar .pv-full-brand-wordmark > span {
-  display: inline !important;
-  font-size: 18px !important;
   font-weight: 400 !important;
-  color: #dbe9f5 !important;
+  color: #fff !important;
 }
+
 .sidebar .sidebar-product-badge {
   display: inline !important;
   align-self: baseline !important;
-  margin: 0 0 0 5px !important;
+  margin: 0 0 0 var(--pv-brand-product-gap) !important;
   padding: 0 !important;
   border: 0 !important;
+  border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  font-size: 12px !important;
+  font-size: var(--pv-brand-product-size) !important;
   line-height: 1 !important;
   font-weight: 600 !important;
-  letter-spacing: -0.01em !important;
-  color: #91a7c2 !important;
+  letter-spacing: -0.015em !important;
+  text-transform: none !important;
+  color: rgba(255,255,255,.62) !important;
   opacity: 1 !important;
   flex: 0 0 auto;
 }
 
-/* Login/cadastro: assinatura branca sobre o bloco escuro. */
-.auth-main-brand {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  min-width: 0;
+/* -------------------------------------------------------------------------- */
+/* CARREGAMENTO — somente o símbolo                                           */
+/* -------------------------------------------------------------------------- */
+.loading-screen {
+  gap: 0 !important;
 }
-.auth-main-brandmark {
-  display: flex !important;
-  width: 40px !important;
-  height: 40px !important;
-  flex: 0 0 40px !important;
+.loading-screen .player-mark.loading-brand-mark {
+  width: 56px !important;
+  height: 56px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: transparent !important;
 }
-.auth-main-brandmark img {
-  content: url("/assets/IconeBranco.png?v=20261017-1") !important;
-  width: 100% !important;
-  height: 100% !important;
+.loading-screen .player-mark.loading-brand-mark img {
+  content: url("/assets/IconeAzul.png?v=20261017-3") !important;
+  display: block !important;
+  width: 56px !important;
+  height: 56px !important;
   object-fit: contain !important;
   filter: none !important;
 }
-.auth-main-brand > span:last-child {
-  display: inline-flex !important;
-  align-items: baseline !important;
-  gap: 7px !important;
-  min-width: 0;
-  line-height: 1 !important;
-}
-.auth-main-brand > span:last-child > strong {
-  display: inline-flex !important;
-  align-items: baseline !important;
-  font-size: 0 !important;
-  letter-spacing: -0.035em !important;
-}
-.auth-main-brand > span:last-child > strong::before {
-  content: "Ponto" !important;
-  font-size: 18px !important;
-  font-weight: 800 !important;
-}
-.auth-main-brand > span:last-child > strong::after {
-  content: "View" !important;
-  font-size: 18px !important;
-  font-weight: 400 !important;
-}
-.auth-main-brand > span:last-child > small {
-  display: inline !important;
-  margin: 0 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  letter-spacing: -0.015em !important;
-  opacity: .78 !important;
+.loading-screen > svg,
+.loading-screen > p {
+  display: none !important;
 }
 
 @media (max-width: 420px) {
-  .pv-home .pv-home-brandmark,
-  .pv-home .pv-home-brand-icon {
-    width: 32px !important;
-    height: 32px !important;
-    flex-basis: 32px !important;
+  :root {
+    --pv-brand-icon-size: 32px;
+    --pv-brand-word-size: 17px;
+    --pv-brand-product-size: 11px;
+    --pv-brand-icon-gap: 8px;
+    --pv-brand-product-gap: 6px;
   }
-  .pv-home .pv-home-brandname { gap: 5px !important; }
-  .pv-home .pv-home-brandname strong::before,
-  .pv-home .pv-home-brandname strong::after { font-size: 16px !important; }
-  .pv-home .pv-home-brandname small { font-size: 13px !important; }
+
+  .loading-screen .player-mark.loading-brand-mark,
+  .loading-screen .player-mark.loading-brand-mark img {
+    width: 52px !important;
+    height: 52px !important;
+  }
 }
