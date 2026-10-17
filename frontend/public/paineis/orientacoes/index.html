@@ -1,52 +1,12 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PontoView Telas • Orientações</title>
-<style>
-:root{--bg:#071724;--bg2:#0c2435;--sky:#69cff2;--text:#f5fbff;--line:rgba(255,255,255,.10)}
-*{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#071724;color:#f5fbff;font-family:Arial,"Segoe UI",sans-serif}
-body{background:radial-gradient(circle at 18% 18%,rgba(105,207,242,.10),transparent 34%),linear-gradient(135deg,#071724,#0c2435)}
-.shell{width:100%;height:100%;padding:4vh 4vw 3vh;display:flex;flex-direction:column}
-.orientation{min-height:0;flex:1;display:flex;align-items:stretch;gap:3.2vw}
-.visual{width:30%;min-width:220px;display:flex;align-items:center;justify-content:center}
-.orb{width:27vw;height:27vw;max-width:390px;max-height:390px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(circle at 38% 32%,rgba(255,255,255,.15),rgba(105,207,242,.08) 46%,rgba(255,255,255,.025) 70%);border:1px solid var(--line)}
-.orb:before,.orb:after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.07)}
-.orb:before{top:12%;right:12%;bottom:12%;left:12%}.orb:after{top:25%;right:25%;bottom:25%;left:25%}
-.info-svg{width:43%;height:43%;display:block;color:var(--sky)}
-.message{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;padding:3.6vw;border-radius:30px;background:rgba(255,255,255,.075);border:1px solid var(--line);position:relative;overflow:hidden}
-.message:after{content:"";position:absolute;right:-80px;bottom:-110px;width:280px;height:280px;border-radius:50%;border:24px solid rgba(105,207,242,.055)}
-.primary{font-size:6vw;font-weight:700;line-height:1.02;letter-spacing:-.045em;position:relative;z-index:1}
-.footer{height:5vh;min-height:34px;display:flex;align-items:flex-end;font-size:13px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.58)}
-@media (min-width:1500px){.primary{font-size:96px}}
-@media (orientation:portrait){.shell{padding:5vw}.orientation{flex-direction:column;gap:3vh}.visual{width:100%;height:34%;min-width:0}.orb{width:40vw;height:40vw;max-width:340px;max-height:340px}.message{width:100%;padding:5vw}.primary{font-size:8.8vw}}
-@media (max-height:600px) and (orientation:landscape){.shell{padding:3vh 3vw 2vh}.orb{width:34vh;height:34vh}.message{padding:3vw}.primary{font-size:5.4vw}.footer{height:4vh}}
-</style>
-</head>
-<body>
-<div class="shell">
-  <main class="orientation">
-    <section class="visual">
-      <div class="orb">
-        <svg class="info-svg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="48" fill="none" stroke="currentColor" stroke-width="12"/><circle cx="60" cy="37" r="7" fill="currentColor"/><rect x="53" y="51" width="14" height="36" rx="7" fill="currentColor"/></svg>
-      </div>
-    </section>
-    <section class="message"><div class="primary" id="message">Aguarde ser chamado</div></section>
-  </main>
-  <footer class="footer">PontoView</footer>
-</div>
-<script>
-(function(){
-  var items=['Respeite a ordem de atendimento','Aguarde ser chamado','Em caso de dúvidas, procure um atendente','Mantenha seus dados atualizados','Atenção aos avisos disponíveis neste ambiente','Mantenha o ambiente organizado','Respeite o espaço das outras pessoas','Evite falar ao celular em voz alta','Mantenha o volume do celular no modo silencioso','Colabore para um ambiente mais agradável','Seja gentil e paciente','Cuide de seus pertences pessoais','Atenção à sinalização do local','Em caso de emergência, siga as orientações da equipe','Mantenha as áreas de circulação livres','Higienize as mãos sempre que possível','Caso não se sinta bem, informe um responsável','Respeito é fundamental para uma boa convivência','Pequenas atitudes tornam o ambiente melhor','Sua compreensão é importante'];
-  var message=document.getElementById('message');
-  var d=new Date();
-  var key=d.getFullYear()*400+(d.getMonth()+1)*31+d.getDate()+d.getHours();
-  var value=items[key%items.length]||items[0];
-  message.innerHTML='';
-  message.appendChild(document.createTextNode(value));
-}());
-</script>
-</body>
-</html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orientações • PontoView</title><link rel="stylesheet" href="../shared/panel-v2.css"><style>
+:root{--theme-ink:#30261f;--theme-muted:#7a6c60;--theme-accent:#c28c5a;--theme-accent-2:#d5a97e;--theme-soft:#e4c7aa;--bg1:#fcfbf8;--bg2:#f7f1ea;--bg3:#efe4d8;--accent:#c28c5a}.stage{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:4vw;align-items:center}
+.visual{display:grid;place-items:center}.icon-orbit{width:min(34vw,500px);aspect-ratio:1}.hero-icon{font-size:min(13vw,190px);color:var(--accent)}
+.copy{padding-right:2vw}.copy h1{margin-top:24px;font-size:clamp(54px,6.5vw,110px);max-width:11ch}
+.detail{margin:24px 0 0;max-width:42ch;font-size:clamp(18px,1.45vw,26px);font-weight:700;color:var(--muted);line-height:1.48}
+.pill{display:inline-flex;align-items:center;gap:8px;margin-top:30px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.56);border:1px solid white;color:color-mix(in srgb,var(--accent) 72%,#1c3555);font-weight:900;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+@media(orientation:portrait){.stage{grid-template-columns:1fr;grid-template-rows:40% 60%;gap:0;padding-bottom:72px}.icon-orbit{width:min(62vw,390px)}.copy h1{font-size:clamp(48px,10.5vw,82px)}.detail{font-size:clamp(17px,3.9vw,25px)}}
+</style></head><body><div class="app"><main class="stage"><section class="visual"><div class="icon-orbit"><span class="material-symbols-rounded hero-icon" id="icon"></span></div></section><section class="copy"><h1 id="title"></h1><p class="detail" id="detail"></p><div class="pill"><span class="material-symbols-rounded" style="font-size:18px" id="pillIcon"></span><span id="category"></span></div></section></main><div class="pv-orb a"></div><div class="pv-orb b"></div><div class="pv-wave"></div></div>
+<script src="../shared/panel-v2.js"></script><script>
+const items=[{"icon":"volume_off","category":"Convivência","title":"Um ambiente mais silencioso acolhe melhor.","detail":"Mantenha o celular no silencioso e evite chamadas em voz alta."},{"icon":"hourglass_top","category":"Atendimento","title":"Cada pessoa tem seu momento de ser chamada.","detail":"Aguarde a chamada e mantenha atenção aos avisos da equipe."},{"icon":"accessible_forward","category":"Circulação","title":"Caminhos livres ajudam todo mundo.","detail":"Evite deixar bolsas, carrinhos ou objetos nas áreas de passagem."},{"icon":"sentiment_satisfied","category":"Gentileza","title":"Pequenas atitudes deixam a espera mais leve.","detail":"Respeite o espaço das outras pessoas e trate a equipe com cordialidade."},{"icon":"medical_information","category":"Informação","title":"Se precisar, pergunte.","detail":"Em caso de dúvida sobre o atendimento, procure um profissional do local."},{"icon":"back_hand","category":"Cuidado","title":"Cuide dos seus pertences.","detail":"Mantenha itens pessoais por perto durante todo o período de espera."}];
+rotateItems(items,(x)=>{icon.textContent=x.icon;pillIcon.textContent=x.icon;category.textContent=x.category;title.textContent=x.title;detail.textContent=x.detail},10500);
+</script></body></html>
