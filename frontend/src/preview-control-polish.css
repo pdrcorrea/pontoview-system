@@ -1,0 +1,104 @@
+/* Preview: polimento de controles mobile e ações de cabeçalho. */
+
+/* Opções booleanas: substitui o checkbox visual por um switch compacto. */
+.yt-options {
+  display: grid;
+  gap: 10px;
+}
+
+.yt-options label {
+  min-height: 48px;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 !important;
+  padding: 10px 12px;
+  border: 1px solid #e1e7ed;
+  border-radius: 12px;
+  background: #fff;
+  color: #334a60;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.yt-options label:hover {
+  background: #fbfcfd;
+}
+
+.yt-options input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative;
+  flex: 0 0 auto;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #d7e0e8 !important;
+  box-shadow: inset 0 0 0 1px rgba(31, 55, 78, .08);
+  cursor: pointer;
+  transition: background .18s ease, box-shadow .18s ease;
+}
+
+.yt-options input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(17, 39, 61, .24);
+  transition: transform .18s ease;
+}
+
+.yt-options input[type="checkbox"]:checked {
+  background: #1768ff !important;
+  box-shadow: inset 0 0 0 1px rgba(10, 82, 205, .12);
+}
+
+.yt-options input[type="checkbox"]:checked::before {
+  transform: translateX(18px);
+}
+
+.yt-options input[type="checkbox"]:focus-visible {
+  outline: 3px solid rgba(23, 104, 255, .18);
+  outline-offset: 2px;
+}
+
+/* Garante que o ícone da ação principal continue visível quando o texto é ocultado no mobile. */
+@media (max-width: 760px) {
+  .head > .btn.primary {
+    color: transparent !important;
+  }
+
+  .head > .btn.primary svg {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px;
+    min-height: 20px;
+    color: #fff !important;
+    stroke: #fff !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .yt-options {
+    margin: 4px 0 2px;
+  }
+
+  .yt-options label {
+    min-height: 52px;
+    padding: 11px 13px;
+    font-size: 12px !important;
+  }
+}
