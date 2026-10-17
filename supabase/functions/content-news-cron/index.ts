@@ -6,6 +6,7 @@ import { editorialCheck, normalizeNewsItem, stableNewsSlug } from "../_shared/ne
 const CRON_TOKEN_SHA256 = "749f67d3a07654877570e9e1de5cf99a6edc44ea9feb936059457433e6df89bc";
 const MAX_ITEMS_PER_SOURCE = 20;
 const MAX_FEED_BYTES = 5_000_000;
+const TARGET_ITEMS_PER_CATEGORY = 5;
 
 type SourceRow = {
   id: string;
@@ -154,7 +155,34 @@ async function providerItems(source: SourceRow) {
   return Array.isArray(json) ? json : Array.isArray(json?.items) ? json.items : [];
 }
 
-async function ingest(source: SourceRow) {
+function normalizeTopicKey(value: unknown) {
+  return String(value || "general").trim().toLowerCase() || "general";
+}
+
+async function getPublishedCategoryCounts() {
+  const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await admin
+    .from("content_items")
+    .select("category,source_id,source_published_at,imported_at")
+    .eq("content_type", "news")
+    .in("status", ["published", "review"])
+    .gte("source_published_at", since)
+    .order("source_published_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+
+  const byCategory = new Map<string, Set<string>>();
+  for (const row of data || []) {
+    const category = normalizeTopicKey(row.category);
+    const sourceId = String(row.source_id || "");
+    if (!sourceId) continue;
+    if (!byCategory.has(category)) byCategory.set(category, new Set());
+    byCategory.get(category)!.add(sourceId);
+  }
+  return byCategory;
+}
+
+async function ingest(source: SourceRow, categorySources: Map<string, Set<string>>) {
   const importedAt = new Date().toISOString();
   try {
     const incoming = (await providerItems(source)).slice(0, MAX_ITEMS_PER_SOURCE);
@@ -163,6 +191,7 @@ async function ingest(source: SourceRow) {
     const rows: Record<string, unknown>[] = [];
     let rejected = 0;
     let invalid = 0;
+    let selected = 0;
 
     for (const raw of incoming) {
       const normalized = normalizeNewsItem(raw);
@@ -173,10 +202,16 @@ async function ingest(source: SourceRow) {
         source: normalized.source_name,
         url: normalized.source_url,
       });
-      if (!editorial.allowed) rejected += 1;
-      const category = source.default_category && source.default_category !== "general"
-        ? source.default_category
-        : normalized.category;
+      if (!editorial.allowed) { rejected += 1; continue; }
+
+      const category = normalizeTopicKey(
+        source.default_category && source.default_category !== "general"
+          ? source.default_category
+          : normalized.category,
+      );
+
+      const sourcesForCategory = categorySources.get(category) || new Set<string>();
+      if (sourcesForCategory.has(source.id)) continue;
 
       rows.push({
         source_id: source.id,
@@ -190,10 +225,18 @@ async function ingest(source: SourceRow) {
         source_url: normalized.source_url,
         source_author: normalized.source_author,
         source_published_at: normalized.source_published_at,
-        status: editorial.allowed ? "review" : "rejected",
-        editorial_flags: editorial.allowed ? [] : [{ code: editorial.reason, stage: "ingestion" }],
+        status: "review",
+        editorial_flags: [],
         imported_at: importedAt,
       });
+
+      sourcesForCategory.add(source.id);
+      categorySources.set(category, sourcesForCategory);
+      selected += 1;
+
+      // Uma fonte contribui com no máximo uma notícia por tópico em cada ciclo.
+      // Isso força diversidade entre fontes e evita que um único RSS domine o feed.
+      if (selected >= 1) break;
     }
 
     let inserted = 0;
@@ -240,15 +283,26 @@ Deno.serve(async (req) => {
       .order("name");
     if (error) throw error;
 
+    const categorySources = await getPublishedCategoryCounts();
     const results = [];
-    for (const source of (data || []) as SourceRow[]) results.push(await ingest(source));
+    for (const source of (data || []) as SourceRow[]) results.push(await ingest(source, categorySources));
+
+    const categoryCoverage = Object.fromEntries(
+      Array.from(categorySources.entries()).map(([category, sources]) => [category, {
+        unique_sources: sources.size,
+        target: TARGET_ITEMS_PER_CATEGORY,
+        target_met: sources.size >= TARGET_ITEMS_PER_CATEGORY,
+      }]),
+    );
 
     return reply({
       ok: true,
+      target_items_per_category: TARGET_ITEMS_PER_CATEGORY,
       sources: results.length,
       succeeded: results.filter((row) => row.ok).length,
       failed: results.filter((row) => !row.ok).length,
       inserted: results.reduce((total, row) => total + Number(row.inserted || 0), 0),
+      category_coverage: categoryCoverage,
       results,
     });
   } catch (error) {
