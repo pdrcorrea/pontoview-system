@@ -888,7 +888,7 @@ function messageDisplayMs(message: PlayerMessage) {
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: { item: ManifestItem | null; device: Device; organization: PlayerManifest["organization"]; cacheRevision: number; onEnd: () => void; onError: (detail: string) => void; }) {
   if (!item) return <div className="player-standby"><span className="player-mark"><BrandMark /></span><h1>{organization.displayName}</h1><p>Aguardando conteúdo na playlist.</p></div>;
   const media = item.media; const duration = item.durationSeconds || media.durationSeconds || 15;
-  if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} onEnd={onEnd} onError={onError} />;
+  if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} duration={duration} onEnd={onEnd} onError={onError} />;
   if (media.type === "drive_image" || media.type === "drive_video") return <DriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
   if (media.type === "webpage" && media.pageUrl) return <TimedStage seconds={duration} onEnd={onEnd}><iframe src={cacheBustedUrl(media.pageUrl, cacheRevision)} title={media.name} sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onError={() => onError("webpage_load_error")} /></TimedStage>;
   if (media.type === "message") return <TimedStage seconds={duration} onEnd={onEnd}><div className="message-stage"><small>COMUNICADO</small><h1>{String(media.messageContent?.title || media.name)}</h1><p>{String(media.messageContent?.body || "")}</p></div></TimedStage>;
@@ -1574,68 +1574,42 @@ async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
   return URL.createObjectURL(await response.blob());
 }
 
-function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; options: Record<string, unknown>; onEnd: () => void; onError: (detail: string) => void }) {
-  const host = useRef<HTMLDivElement>(null); const player = useRef<YTPlayer | null>(null); const onEndRef = useRef(onEnd); const onErrorRef = useRef(onError);
-  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]); useEffect(() => { onErrorRef.current = onError; }, [onError]);
-  const controls = Boolean(options?.controls); const mute = Boolean(options?.mute); const volume = Number(options?.volume ?? 100); const start = Number(options?.start || 0); const rawEnd = Number(options?.end || 0); const end = rawEnd > 0 ? rawEnd : undefined;
+function YouTubeStage({ videoId, options, duration, onEnd }: { videoId: string; options: Record<string, unknown>; duration: number; onEnd: () => void; onError: (detail: string) => void }) {
+  const onEndRef = useRef(onEnd);
+  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+  const mute = Boolean(options?.mute);
+  const controls = Boolean(options?.controls);
+  const start = Number(options?.start || 0);
+  const rawEnd = Number(options?.end || 0);
+  const seconds = Number.isFinite(duration) && duration > 0 ? duration : 15;
+  const src = useMemo(() => {
+    const params = new URLSearchParams({
+      autoplay: "1",
+      mute: mute ? "1" : "0",
+      playsinline: "1",
+      controls: controls ? "1" : "0",
+      rel: "0",
+    });
+    if (start > 0) params.set("start", String(start));
+    if (rawEnd > 0) params.set("end", String(rawEnd));
+    return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+  }, [videoId, mute, controls, start, rawEnd]);
   useEffect(() => {
-    let active = true;
-    let watchdog = 0;
-    let lastTime = -1;
-    let lastProgressAt = Date.now();
-    let lastRecoveryAt = 0;
-    let failed = false;
-    loadYouTubeApi().then(() => {
-      if (!active || !host.current) return;
-      player.current = new window.YT.Player(host.current, {
-        videoId,
-        playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: mute ? 1 : 0, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin },
-        events: {
-          onReady: (event: any) => {
-            event.target.setVolume(volume);
-            if (mute) event.target.mute();
-            event.target.playVideo();
-            lastProgressAt = Date.now();
-            watchdog = window.setInterval(() => {
-              const current = player.current;
-              if (!current || failed) return;
-              const state = Number(current.getPlayerState?.() ?? -1);
-              if (state === 0) return;
-              const currentTime = Number(current.getCurrentTime?.() ?? 0);
-              if (currentTime > lastTime + 0.25) {
-                lastTime = currentTime;
-                lastProgressAt = Date.now();
-                return;
-              }
-              const stalledFor = Date.now() - lastProgressAt;
-              if (stalledFor >= 20_000 && Date.now() - lastRecoveryAt >= 10_000) {
-                lastRecoveryAt = Date.now();
-                current.playVideo?.();
-              }
-              if (stalledFor >= 45_000) {
-                failed = true;
-                onErrorRef.current("youtube_stalled");
-              }
-            }, 5_000);
-          },
-          onStateChange: (event: any) => {
-            if (event.data === 0) onEndRef.current();
-            if (event.data === 1) lastProgressAt = Date.now();
-            if (event.data === 2) window.setTimeout(() => player.current?.playVideo?.(), 750);
-          },
-          onError: (event: any) => onErrorRef.current(`youtube_${event.data}`),
-        },
-      });
-    }).catch(() => onErrorRef.current("youtube_api_error"));
-    return () => {
-      active = false;
-      if (watchdog) window.clearInterval(watchdog);
-      const current = player.current;
-      player.current = null;
-      current?.destroy?.();
-    };
-  }, [videoId, controls, mute, volume, start, end]);
-  return <div className="youtube-stage" ref={host} />;
+    const timer = window.setTimeout(() => onEndRef.current(), seconds * 1000);
+    return () => window.clearTimeout(timer);
+  }, [src, seconds]);
+  return (
+    <div className="youtube-stage">
+      <iframe
+        src={src}
+        title="Vídeo do YouTube"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
+        style={{ display: "block", width: "100%", height: "100%", border: 0 }}
+      />
+    </div>
+  );
 }
 
 let youtubePromise: Promise<void> | null = null;
