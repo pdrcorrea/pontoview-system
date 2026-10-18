@@ -3,10 +3,12 @@
   "name": "PontoView Telas",
   "short_name": "Telas",
   "description": "PontoView Telas - comunicação visual em nuvem para TVs e displays.",
-  "start_url": "/",
+  "start_url": "/login",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
+  "display_override": [
+    "standalone"
+  ],
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#032a61",
