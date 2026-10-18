@@ -1585,6 +1585,17 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
     let lastProgressAt = Date.now();
     let lastRecoveryAt = 0;
     let failed = false;
+    let recoveryTimer = 0;
+    let started = false;
+    const resumeMuted = () => {
+      if (!active || failed || !player.current) return;
+      try {
+        const current = player.current as YTPlayer & { mute?: () => void };
+        current.mute?.();
+        current.playVideo?.();
+        lastRecoveryAt = Date.now();
+      } catch { /* A falha será tratada pelo watchdog. */ }
+    };
     loadYouTubeApi().then(() => {
       if (!active || !host.current) return;
       player.current = new window.YT.Player(host.current, {
@@ -1596,6 +1607,13 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
             if (mute) event.target.mute();
             event.target.playVideo();
             lastProgressAt = Date.now();
+            // Audible autoplay is often rejected by Android TV WebViews and browsers.
+            // Only fall back to muted playback when the first attempt did not start.
+            recoveryTimer = window.setTimeout(() => {
+              if (!active || failed || started) return;
+              const state = Number(player.current?.getPlayerState?.() ?? -1);
+              if (state !== 1 && state !== 3) resumeMuted();
+            }, 1800);
             watchdog = window.setInterval(() => {
               const current = player.current;
               if (!current || failed) return;
@@ -1608,11 +1626,10 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
                 return;
               }
               const stalledFor = Date.now() - lastProgressAt;
-              if (stalledFor >= 20_000 && Date.now() - lastRecoveryAt >= 10_000) {
-                lastRecoveryAt = Date.now();
-                current.playVideo?.();
+              if (stalledFor >= 8_000 && Date.now() - lastRecoveryAt >= 8_000) {
+                resumeMuted();
               }
-              if (stalledFor >= 45_000) {
+              if (stalledFor >= 35_000) {
                 failed = true;
                 onErrorRef.current("youtube_stalled");
               }
@@ -1620,8 +1637,16 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
           },
           onStateChange: (event: any) => {
             if (event.data === 0) onEndRef.current();
-            if (event.data === 1) lastProgressAt = Date.now();
-            if (event.data === 2) window.setTimeout(() => player.current?.playVideo?.(), 750);
+            if (event.data === 1) {
+              started = true;
+              lastProgressAt = Date.now();
+              if (recoveryTimer) window.clearTimeout(recoveryTimer);
+            }
+            if (event.data === 2 && !started) window.setTimeout(resumeMuted, 750);
+          },
+          onAutoplayBlocked: () => {
+            // Some browsers emit this event immediately instead of onStateChange.
+            window.setTimeout(resumeMuted, 150);
           },
           onError: (event: any) => onErrorRef.current(`youtube_${event.data}`),
         },
@@ -1630,6 +1655,7 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
     return () => {
       active = false;
       if (watchdog) window.clearInterval(watchdog);
+      if (recoveryTimer) window.clearTimeout(recoveryTimer);
       const current = player.current;
       player.current = null;
       current?.destroy?.();
@@ -1639,7 +1665,7 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
 }
 
 let youtubePromise: Promise<void> | null = null;
-function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if (youtubePromise) return youtubePromise; youtubePromise = new Promise((resolve, reject) => { const previous = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(); }; const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => reject(new Error("youtube")); document.head.appendChild(script); }); return youtubePromise; }
+function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if (youtubePromise) return youtubePromise; youtubePromise = new Promise((resolve, reject) => { const previous = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(); }; const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => { youtubePromise = null; reject(new Error("youtube")); }; document.head.appendChild(script); }); return youtubePromise; }
 
 function AppStage({ appKey, name, organization }: { appKey: string | null; name: string; organization: PlayerManifest["organization"] }) {
   const [now, setNow] = useState(new Date());
