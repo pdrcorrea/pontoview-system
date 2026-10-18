@@ -256,8 +256,8 @@ export function ScreensSimplePage() {
     <>
       <PageHead
         eyebrow="Suas telas"
-        title="Telas"
-        text="Cada TV tem sua própria configuração. Escolha uma tela para ajustar conteúdo, visual e horários."
+        title="Minhas TVs"
+        text="Conecte uma TV, escolha o que ela vai mostrar e acompanhe se está online."
         action="Conectar tela"
         onAction={() => setPairing(true)}
       />
