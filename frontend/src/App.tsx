@@ -10,6 +10,7 @@ import {
   SignupPage,
 } from "./pages/Auth";
 import { HomePage } from "./pages/Home";
+import { InstallPage } from "./pages/Install";
 import { DashboardPage } from "./pages/Dashboard";
 import { ContentReorganizedPage } from "./pages/ContentReorganized";
 import { CentralAdminGate, CentralAdminLoginPage } from "./pages/CentralAdmin";
@@ -129,6 +130,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/instalar" element={<InstallPage />} />
         <Route path="/player" element={<PlayerPage />} />
         <Route path="/player/:screenId" element={<PlayerPage />} />
         <Route path="/auth/confirmado" element={<AuthCallback />} />
