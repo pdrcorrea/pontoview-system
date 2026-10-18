@@ -1648,9 +1648,22 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
     }, 1000);
     loadYouTubeApi().then(() => {
       if (!active || !host.current) return;
-      player.current = new window.YT.Player(host.current, {
-        videoId,
-        playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: 1, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin },
+      // Create the iframe ourselves so autoplay permission is present before
+      // YouTube loads, including on the second and subsequent playlist cycles.
+      const params = new URLSearchParams({
+        enablejsapi: "1", autoplay: "1", mute: "1", playsinline: "1",
+        controls: controls ? "1" : "0", rel: "0", origin: window.location.origin,
+      });
+      if (start > 0) params.set("start", String(start));
+      if (end != null) params.set("end", String(end));
+      const iframe = document.createElement("iframe");
+      iframe.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+      iframe.title = "Vídeo do YouTube";
+      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+      iframe.setAttribute("allowfullscreen", "");
+      iframe.style.cssText = "width:100%;height:100%;border:0;display:block";
+      host.current.replaceChildren(iframe);
+      player.current = new window.YT.Player(iframe, {
         events: {
           onReady: (event: any) => {
             if (!active) return;
