@@ -184,7 +184,7 @@ export function MessagesSimplePage() {
       <PageHead
         eyebrow="Comunicação"
         title="Central de informações"
-        text="Organize avisos, informações do local e próximos eventos que aparecem nas suas telas."
+        text="Crie avisos e informações para exibir nas suas TVs."
         action="Nova informação"
         onAction={() => { setError(null); setEditing(null); }}
       />
