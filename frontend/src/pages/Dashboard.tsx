@@ -7,6 +7,8 @@ import {
   Monitor,
   Wifi,
   WifiOff,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -24,34 +26,9 @@ const empty: DashboardData = {
 };
 
 const quickActions = [
-  {
-    step: "1",
-    title: "Conectar Google Drive",
-    text: "Autorize seus arquivos para usar imagens e vídeos sem duplicar a biblioteca.",
-    to: "/empresa#google-drive",
-    icon: Cloud,
-  },
-  {
-    step: "2",
-    title: "Adicionar conteúdo",
-    text: "Escolha arquivos do Drive, YouTube, páginas ou painéis prontos.",
-    to: "/conteudo",
-    icon: Cloud,
-  },
-  {
-    step: "3",
-    title: "Criar uma playlist",
-    text: "Organize a ordem do que será exibido na TV.",
-    to: "/playlists",
-    icon: ListVideo,
-  },
-  {
-    step: "4",
-    title: "Conectar uma TV",
-    text: "Use o código mostrado no Player e coloque a primeira tela no ar.",
-    to: "/telas?parear=1",
-    icon: Monitor,
-  },
+  { title: "Adicionar conteúdo", text: "Fotos, vídeos, YouTube e painéis prontos.", to: "/conteudo", icon: Cloud },
+  { title: "Organizar programação", text: "Escolha o que será mostrado nas TVs.", to: "/playlists", icon: ListVideo },
+  { title: "Minhas TVs", text: "Acompanhe e ajuste suas telas.", to: "/telas", icon: Monitor },
 ] as const;
 
 export function DashboardPage() {
@@ -107,61 +84,71 @@ export function DashboardPage() {
 
   const firstName = (profile?.full_name || "").split(" ")[0];
   const firstSetup = data.screensTotal === 0 || data.media === 0 || data.playlists === 0;
+  const setupSteps = [
+    { title: "Adicione o que deseja exibir", detail: "Comece com um painel pronto ou envie uma imagem.", done: data.media > 0, to: "/conteudo" },
+    { title: "Monte sua programação", detail: "Organize o conteúdo em uma playlist.", done: data.playlists > 0, to: "/playlists" },
+    { title: "Conecte sua TV", detail: "Digite o código mostrado no player.", done: data.screensTotal > 0, to: "/telas?parear=1" },
+  ];
+  const nextStep = setupSteps.find(step => !step.done);
+  const completedSteps = setupSteps.filter(step => step.done).length;
 
   return (
     <>
       <PageHead
         eyebrow="Visão geral"
         title={firstName ? `Olá, ${firstName}.` : "Visão geral"}
-        text="O essencial para colocar suas telas no ar e acompanhar o que está funcionando."
+        text={firstSetup ? "Vamos colocar sua primeira TV no ar, sem complicação." : "Veja suas TVs e altere o que está passando."}
         action="Conectar tela"
         onAction={() => navigate("/telas?parear=1")}
       />
 
       {error && <div className="form-message error">{error}</div>}
 
-      <section className={firstSetup ? "dashboard-start dashboard-start-first" : "dashboard-start"}>
-        <div className="dashboard-start-head">
-          <div>
-            <small>{firstSetup ? "COMECE POR AQUI" : "ACESSO RÁPIDO"}</small>
-            <h2>{firstSetup ? "Sua primeira tela em poucos passos." : "O que você quer fazer agora?"}</h2>
-            <p>{firstSetup ? "Siga esta ordem na primeira configuração. Depois, estes atalhos continuam disponíveis para o dia a dia." : "Acesse as tarefas mais usadas sem procurar pelo menu."}</p>
+      {firstSetup ? (
+        <section className="pv-welcome panel" aria-label="Primeiros passos">
+          <div className="pv-welcome-intro">
+            <span className="pv-welcome-symbol"><Sparkles size={26} /></span>
+            <div><small>PRIMEIROS PASSOS · {completedSteps} DE 3 CONCLUÍDOS</small>
+              <h2>Sua primeira TV, passo a passo.</h2>
+              <p>Uma coisa de cada vez. Você pode voltar e mudar tudo depois.</p>
+            </div>
           </div>
-          <Link className="dashboard-help-link" to="/ajuda"><HelpCircle /> Ver passo a passo</Link>
-        </div>
+          <div className="pv-steps">
+            {setupSteps.map((step, index) => (
+              <Link key={step.title} className={`pv-step ${step.done ? "is-done" : ""} ${nextStep === step ? "is-next" : ""}`} to={step.to}>
+                <span className="pv-step-number">{step.done ? <CheckCircle2 size={20} /> : index + 1}</span>
+                <span className="pv-step-copy"><strong>{step.title}</strong><small>{step.done ? "Concluído" : step.detail}</small></span>
+                <ArrowRight size={18} />
+              </Link>
+            ))}
+          </div>
+          {nextStep && <Link className="btn primary pv-next" to={nextStep.to}>Continuar: {nextStep.title} <ArrowRight size={18} /></Link>}
+          <Link className="pv-help" to="/ajuda"><HelpCircle size={16} /> Precisa de ajuda?</Link>
+        </section>
+      ) : (
+        <section className="pv-welcome panel">
+          <div className="pv-welcome-intro">
+            <span className="pv-welcome-symbol"><Monitor size={26} /></span>
+            <div><small>SUAS TRANSMISSÕES</small><h2>{data.screensOnline} de {data.screensTotal} TVs online</h2>
+              <p>{data.screensOnline === data.screensTotal ? "Suas telas estão conectadas." : "Há uma TV que pode precisar de atenção."}</p>
+            </div>
+            <Link className="btn primary" to="/telas">Ver minhas TVs <ArrowRight size={18} /></Link>
+          </div>
+        </section>
+      )}
 
-        <div className="dashboard-quick-grid">
-          {quickActions.map(({ step, title, text, to, icon: Icon }) => (
-            <Link className="dashboard-quick-card" to={to} key={title}>
-              <span className="dashboard-quick-icon"><Icon /></span>
-              <span className="dashboard-quick-copy">
-                <small>{firstSetup ? `PASSO ${step}` : "ATALHO"}</small>
-                <b>{title}</b>
-                <em>{text}</em>
-              </span>
-              <ArrowRight />
+      <section className="pv-actions" aria-label="Ações rápidas">
+        <div className="pv-actions-title"><h2>O que você quer fazer?</h2><p>Acesse diretamente as tarefas mais importantes.</p></div>
+        <div className="pv-action-grid">
+          {quickActions.map(({ title, text, to, icon: Icon }) => (
+            <Link to={to} className="pv-action-card" key={title}>
+              <span className="pv-action-icon"><Icon size={25} /></span>
+              <span><strong>{title}</strong><small>{text}</small></span>
+              <ArrowRight size={18} />
             </Link>
           ))}
         </div>
       </section>
-
-      <div className="dashboard-compact-stats">
-        <article>
-          <span><Monitor /> Telas</span>
-          <strong>{data.screensOnline}<small>/{data.screensTotal}</small></strong>
-          <p>{data.screensTotal ? "online agora" : "nenhuma conectada"}</p>
-        </article>
-        <article>
-          <span><Cloud /> Conteúdos</span>
-          <strong>{data.media}</strong>
-          <p>na biblioteca</p>
-        </article>
-        <article>
-          <span><ListVideo /> Playlists</span>
-          <strong>{data.playlists}</strong>
-          <p>criadas</p>
-        </article>
-      </div>
 
       <section className="panel dashboard-screens-panel">
         <div className="panel-title">
