@@ -106,6 +106,7 @@ export function HomePage() {
           <a href="#como-funciona">Como funciona</a>
           <a href="#recursos">Recursos</a>
           <a href="#aplicacoes">Aplicações</a>
+          <Link to="/instalar">Instalar</Link>
         </nav>
 
         <div className="pv-home-header-actions">
@@ -153,6 +154,7 @@ export function HomePage() {
             </Link>
           </div>
           <div className="pv-home-menu-grid">
+            <Link to="/instalar" onClick={() => setMenuOpen(false)}><strong>Instalar PontoView</strong><span>Celular, computador ou Android TV</span></Link>
             <a href="https://pontoview.com.br" onClick={() => setMenuOpen(false)}>
               <strong>Ecossistema PontoView</strong>
               <span>Conhecer os demais produtos</span>
@@ -402,6 +404,7 @@ export function HomePage() {
         <nav aria-label="Links institucionais">
           <a href="https://pontoview.com.br">Ecossistema</a>
           <a href="https://pontoview.com.br/legal/privacidade/">Privacidade</a>
+          <Link to="/instalar">Instalar</Link>
           <Link to="/login">Entrar</Link>
         </nav>
       </footer>
