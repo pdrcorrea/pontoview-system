@@ -1,4 +1,4 @@
-# PontoView Telas Android TV 2.0.0 beta 9
+# PontoView Telas Android TV 2.0.0 beta 11
 
 Arquitetura de vídeo otimizada para sticks Android de baixo custo.
 
@@ -20,3 +20,10 @@ Arquitetura de vídeo otimizada para sticks Android de baixo custo.
 
 ## Compatibilidade
 Para maior previsibilidade em hardware heterogêneo, o perfil recomendado continua sendo MP4 H.264/AAC, 1920x1080, 30 fps.
+
+## Atualização visual beta 11
+- Tela nativa de abertura azul PontoView com logotipo e transição curta para o player carregado.
+- Banner do launcher Android TV e tema nativo alinhados à identidade azul atual.
+- Tela de vinculação e seus códigos continuam servidos pelo player web, evitando duplicação ou perda da lógica atual.
+- Mantidos ID do pacote, armazenamento, autoplay, watchdog e integração de vídeo.
+- Recompilar e validar em hardware Android TV real antes de publicar APK; este commit não inclui binário assinado.
