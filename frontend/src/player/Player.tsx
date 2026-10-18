@@ -1600,12 +1600,14 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
       if (!active || !host.current) return;
       player.current = new window.YT.Player(host.current, {
         videoId,
-        playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: mute ? 1 : 0, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin },
+        playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: 1, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin },
         events: {
           onReady: (event: any) => {
-            event.target.setVolume(volume);
-            if (mute) event.target.mute();
-            event.target.playVideo();
+            // The first playback must be muted before any play request. Otherwise
+            // Chromium may permanently gate the iframe behind user interaction.
+            event.target.mute?.();
+            event.target.setVolume?.(volume);
+            event.target.playVideo?.();
             lastProgressAt = Date.now();
             // Audible autoplay is often rejected by Android TV WebViews and browsers.
             // Only fall back to muted playback when the first attempt did not start.
