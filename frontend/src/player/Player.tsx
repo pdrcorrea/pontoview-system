@@ -1587,6 +1587,8 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
     let failed = false;
     let recoveryTimer = 0;
     let started = false;
+    let audioAttempted = false;
+    let audioFallbackTimer = 0;
     const resumeMuted = () => {
       if (!active || failed || !player.current) return;
       try {
@@ -1643,6 +1645,22 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
               started = true;
               lastProgressAt = Date.now();
               if (recoveryTimer) window.clearTimeout(recoveryTimer);
+              // Respect each item's audio setting. Browsers may reject unmuting
+              // without a gesture; in that case resume muted instead of freezing.
+              if (!mute && !audioAttempted) {
+                audioAttempted = true;
+                window.setTimeout(() => {
+                  if (!active || failed || !player.current) return;
+                  try {
+                    (player.current as YTPlayer & { unMute?: () => void }).unMute?.();
+                    audioFallbackTimer = window.setTimeout(() => {
+                      if (!active || failed || !player.current) return;
+                      const state = Number(player.current.getPlayerState?.() ?? -1);
+                      if (state !== 1 && state !== 3) resumeMuted();
+                    }, 1400);
+                  } catch { resumeMuted(); }
+                }, 400);
+              }
             }
             if (event.data === 2 && !started) window.setTimeout(resumeMuted, 750);
           },
@@ -1658,6 +1676,7 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
       active = false;
       if (watchdog) window.clearInterval(watchdog);
       if (recoveryTimer) window.clearTimeout(recoveryTimer);
+      if (audioFallbackTimer) window.clearTimeout(audioFallbackTimer);
       const current = player.current;
       player.current = null;
       current?.destroy?.();
