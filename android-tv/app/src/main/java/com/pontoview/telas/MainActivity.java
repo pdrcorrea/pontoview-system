@@ -3,6 +3,8 @@ package com.pontoview.telas;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,6 +19,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.view.Gravity;
 
 import org.json.JSONObject;
 
@@ -25,6 +31,8 @@ public class MainActivity extends Activity {
     private WebView webView;
     private FrameLayout root;
     private FrameLayout nativeLayer;
+    private View launchSplash;
+    private boolean launchSplashDismissed = false;
     private NativeMediaBridge nativeBridge;
     private final Handler playerWatchdogHandler = new Handler(Looper.getMainLooper());
     private long watchdogReloadStartedAt = 0L;
@@ -90,6 +98,7 @@ public class MainActivity extends Activity {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
+        installLaunchSplash();
         setContentView(root);
 
         WebSettings settings = webView.getSettings();
@@ -105,7 +114,7 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta10");
+        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta11");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
         webView.addJavascriptInterface(nativeBridge, "PontoViewNative");
@@ -139,6 +148,7 @@ public class MainActivity extends Activity {
                 if (isTrustedTopLevelUrl(Uri.parse(url))) {
                     injectNativeRuntime();
                     injectPlaybackCompatibility();
+                    dismissLaunchSplash();
                 }
             }
 
@@ -161,6 +171,52 @@ public class MainActivity extends Activity {
         webView.loadUrl(HOME_URL);
     }
 
+
+    // Native launch surface: visible immediately, removed when the trusted player is painted.
+    // Pairing, playback, tokens and media caching remain owned by the existing web/native layers.
+    private void installLaunchSplash() {
+        FrameLayout splash = new FrameLayout(this);
+        GradientDrawable backdrop = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.rgb(3, 23, 53), Color.rgb(3, 42, 97), Color.rgb(12, 67, 127)}
+        );
+        splash.setBackground(backdrop);
+
+        LinearLayout brand = new LinearLayout(this);
+        brand.setOrientation(LinearLayout.VERTICAL);
+        brand.setGravity(Gravity.CENTER);
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.pontoview_icon);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        int iconSize = (int) (getResources().getDisplayMetrics().density * 112);
+        brand.addView(icon, new LinearLayout.LayoutParams(iconSize, iconSize));
+        TextView name = new TextView(this);
+        name.setText("PontoView");
+        name.setTextColor(Color.WHITE);
+        name.setTextSize(28);
+        name.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        name.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        nameParams.topMargin = (int) (getResources().getDisplayMetrics().density * 18);
+        brand.addView(name, nameParams);
+        FrameLayout.LayoutParams centered = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        splash.addView(brand, centered);
+        root.addView(splash, new FrameLayout.LayoutParams(-1, -1));
+        launchSplash = splash;
+    }
+
+    private void dismissLaunchSplash() {
+        if (launchSplashDismissed || launchSplash == null) return;
+        launchSplashDismissed = true;
+        View current = launchSplash;
+        current.animate().alpha(0f).setDuration(320).withEndAction(() -> {
+            if (root != null) root.removeView(current);
+            if (launchSplash == current) launchSplash = null;
+        }).start();
+    }
+
     private boolean isTrustedTopLevelUrl(Uri uri) {
         if (uri == null || !"https".equalsIgnoreCase(uri.getScheme())) return false;
         String host = uri.getHost();
@@ -174,8 +230,8 @@ public class MainActivity extends Activity {
         String script =
                 "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
-                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta10';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta10'}}));" +
+                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta11';" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta11'}}));" +
                 "})();";
         webView.evaluateJavascript(script, null);
         injectPlaybackCompatibility();
