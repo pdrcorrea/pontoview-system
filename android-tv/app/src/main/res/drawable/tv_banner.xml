@@ -3,12 +3,12 @@
     <item>
         <shape android:shape="rectangle">
             <size android:width="320dp" android:height="180dp" />
-            <gradient android:angle="0" android:startColor="#17344F" android:endColor="#244F7E" />
+            <gradient android:angle="0" android:startColor="#031735" android:endColor="#0C437F" />
         </shape>
     </item>
     <item
-        android:width="104dp"
-        android:height="104dp"
+        android:width="112dp"
+        android:height="112dp"
         android:gravity="center">
         <bitmap
             android:src="@drawable/pontoview_icon"
