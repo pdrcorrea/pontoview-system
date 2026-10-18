@@ -888,7 +888,7 @@ function messageDisplayMs(message: PlayerMessage) {
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: { item: ManifestItem | null; device: Device; organization: PlayerManifest["organization"]; cacheRevision: number; onEnd: () => void; onError: (detail: string) => void; }) {
   if (!item) return <div className="player-standby"><span className="player-mark"><BrandMark /></span><h1>{organization.displayName}</h1><p>Aguardando conteúdo na playlist.</p></div>;
   const media = item.media; const duration = item.durationSeconds || media.durationSeconds || 15;
-  if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} onEnd={onEnd} onError={onError} />;
+  if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} duration={duration} onEnd={onEnd} onError={onError} />;
   if (media.type === "drive_image" || media.type === "drive_video") return <DriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
   if (media.type === "webpage" && media.pageUrl) return <TimedStage seconds={duration} onEnd={onEnd}><iframe src={cacheBustedUrl(media.pageUrl, cacheRevision)} title={media.name} sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onError={() => onError("webpage_load_error")} /></TimedStage>;
   if (media.type === "message") return <TimedStage seconds={duration} onEnd={onEnd}><div className="message-stage"><small>COMUNICADO</small><h1>{String(media.messageContent?.title || media.name)}</h1><p>{String(media.messageContent?.body || "")}</p></div></TimedStage>;
@@ -1574,30 +1574,74 @@ async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
   return URL.createObjectURL(await response.blob());
 }
 
-function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; options: Record<string, unknown>; onEnd: () => void; onError: (detail: string) => void }) {
-  const host = useRef<HTMLDivElement>(null); const player = useRef<YTPlayer | null>(null); const onEndRef = useRef(onEnd); const onErrorRef = useRef(onError);
-  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]); useEffect(() => { onErrorRef.current = onError; }, [onError]);
-  const controls = Boolean(options?.controls); const mute = Boolean(options?.mute); const volume = Number(options?.volume ?? 100); const start = Number(options?.start || 0); const rawEnd = Number(options?.end || 0); const end = rawEnd > 0 ? rawEnd : undefined;
+function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId: string; options: Record<string, unknown>; duration: number; onEnd: () => void; onError: (detail: string) => void }) {
+  const host = useRef<HTMLDivElement>(null);
+  const player = useRef<YTPlayer | null>(null);
+  const onEndRef = useRef(onEnd);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  const controls = Boolean(options?.controls);
+  const mute = Boolean(options?.mute);
+  const volume = Number(options?.volume ?? 100);
+  const start = Number(options?.start || 0);
+  const rawEnd = Number(options?.end || 0);
+  const end = rawEnd > 0 ? rawEnd : undefined;
   useEffect(() => {
     let active = true;
-    let watchdog = 0;
+    let ready = false;
+    let started = false;
+    let audioAttempted = false;
     let lastTime = -1;
     let lastProgressAt = Date.now();
     let lastRecoveryAt = 0;
-    let failed = false;
-    let recoveryTimer = 0;
-    let started = false;
-    let audioAttempted = false;
-    let audioFallbackTimer = 0;
+    let playbackStartAt = 0;
+    const timeouts = new Set<number>();
+    const schedule = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => { timeouts.delete(id); if (active) fn(); }, ms);
+      timeouts.add(id);
+    };
+    const finish = (reason?: string) => {
+      if (!active) return;
+      active = false;
+      if (reason) onErrorRef.current(reason);
+      else onEndRef.current();
+    };
     const resumeMuted = () => {
-      if (!active || failed || !player.current) return;
+      if (!active || !player.current) return;
       try {
         const current = player.current as YTPlayer & { mute?: () => void };
         current.mute?.();
         current.playVideo?.();
         lastRecoveryAt = Date.now();
-      } catch { /* A falha será tratada pelo watchdog. */ }
+      } catch { /* Allow the independent watchdog to recover. */ }
     };
+    // Run independently of YouTube's onReady; a hung iframe must not freeze rotation.
+    const watchdog = window.setInterval(() => {
+      if (!active) return;
+      const now = Date.now();
+      if (!ready && now - lastProgressAt > 15_000) {
+        finish("youtube_ready_timeout");
+        return;
+      }
+      const current = player.current;
+      if (!ready || !current) return;
+      const state = Number(current.getPlayerState?.() ?? -1);
+      if (state === 0) { finish(); return; }
+      const currentTime = Number(current.getCurrentTime?.() ?? 0);
+      if (state === 1 && currentTime > lastTime + 0.25) {
+        lastTime = currentTime;
+        lastProgressAt = now;
+        if (!playbackStartAt) playbackStartAt = now;
+      }
+      // The playlist item duration is authoritative, even when YouTube ignores 'end'.
+      if (playbackStartAt && Number.isFinite(duration) && duration > 0 && now - playbackStartAt >= duration * 1000) {
+        finish(); return;
+      }
+      const stalledFor = now - lastProgressAt;
+      if (stalledFor >= 7_000 && now - lastRecoveryAt >= 7_000) resumeMuted();
+      if (stalledFor >= 25_000) finish("youtube_stalled");
+    }, 1000);
     loadYouTubeApi().then(() => {
       if (!active || !host.current) return;
       player.current = new window.YT.Player(host.current, {
@@ -1605,83 +1649,50 @@ function YouTubeStage({ videoId, options, onEnd, onError }: { videoId: string; o
         playerVars: { autoplay: 1, controls: controls ? 1 : 0, mute: 1, start, end, playsinline: 1, rel: 0, loop: 0, modestbranding: 1, origin: window.location.origin },
         events: {
           onReady: (event: any) => {
-            // The first playback must be muted before any play request. Otherwise
-            // Chromium may permanently gate the iframe behind user interaction.
+            if (!active) return;
+            ready = true;
+            lastProgressAt = Date.now();
             event.target.mute?.();
             event.target.setVolume?.(volume);
             event.target.playVideo?.();
-            lastProgressAt = Date.now();
-            // Audible autoplay is often rejected by Android TV WebViews and browsers.
-            // Only fall back to muted playback when the first attempt did not start.
-            recoveryTimer = window.setTimeout(() => {
-              if (!active || failed || started) return;
-              const state = Number(player.current?.getPlayerState?.() ?? -1);
-              if (state !== 1 && state !== 3) resumeMuted();
-            }, 1800);
-            watchdog = window.setInterval(() => {
-              const current = player.current;
-              if (!current || failed) return;
-              const state = Number(current.getPlayerState?.() ?? -1);
-              if (state === 0) return;
-              const currentTime = Number(current.getCurrentTime?.() ?? 0);
-              if (currentTime > lastTime + 0.25) {
-                lastTime = currentTime;
-                lastProgressAt = Date.now();
-                return;
-              }
-              const stalledFor = Date.now() - lastProgressAt;
-              if (stalledFor >= 8_000 && Date.now() - lastRecoveryAt >= 8_000) {
-                resumeMuted();
-              }
-              if (stalledFor >= 35_000) {
-                failed = true;
-                onErrorRef.current("youtube_stalled");
-              }
-            }, 5_000);
+            schedule(() => {
+              if (!started && Number(player.current?.getPlayerState?.() ?? -1) !== 1) resumeMuted();
+            }, 1500);
           },
           onStateChange: (event: any) => {
-            if (event.data === 0) onEndRef.current();
+            if (!active) return;
+            if (event.data === 0) { finish(); return; }
             if (event.data === 1) {
               started = true;
               lastProgressAt = Date.now();
-              if (recoveryTimer) window.clearTimeout(recoveryTimer);
-              // Respect each item's audio setting. Browsers may reject unmuting
-              // without a gesture; in that case resume muted instead of freezing.
+              if (!playbackStartAt) playbackStartAt = Date.now();
               if (!mute && !audioAttempted) {
                 audioAttempted = true;
-                window.setTimeout(() => {
-                  if (!active || failed || !player.current) return;
-                  try {
-                    (player.current as YTPlayer & { unMute?: () => void }).unMute?.();
-                    audioFallbackTimer = window.setTimeout(() => {
-                      if (!active || failed || !player.current) return;
-                      const state = Number(player.current.getPlayerState?.() ?? -1);
-                      if (state !== 1 && state !== 3) resumeMuted();
-                    }, 1400);
-                  } catch { resumeMuted(); }
+                schedule(() => {
+                  try { (player.current as YTPlayer & { unMute?: () => void })?.unMute?.(); }
+                  catch { resumeMuted(); }
+                  schedule(() => {
+                    const state = Number(player.current?.getPlayerState?.() ?? -1);
+                    if (state !== 1 && state !== 3) resumeMuted();
+                  }, 1300);
                 }, 400);
               }
             }
-            if (event.data === 2 && !started) window.setTimeout(resumeMuted, 750);
           },
-          onAutoplayBlocked: () => {
-            // Some browsers emit this event immediately instead of onStateChange.
-            window.setTimeout(resumeMuted, 150);
-          },
-          onError: (event: any) => onErrorRef.current(`youtube_${event.data}`),
+          onAutoplayBlocked: () => schedule(resumeMuted, 150),
+          onError: (event: any) => finish(`youtube_${event.data}`),
         },
       });
-    }).catch(() => onErrorRef.current("youtube_api_error"));
+    }).catch(() => finish("youtube_api_error"));
     return () => {
       active = false;
-      if (watchdog) window.clearInterval(watchdog);
-      if (recoveryTimer) window.clearTimeout(recoveryTimer);
-      if (audioFallbackTimer) window.clearTimeout(audioFallbackTimer);
+      window.clearInterval(watchdog);
+      timeouts.forEach((id) => window.clearTimeout(id));
       const current = player.current;
       player.current = null;
       current?.destroy?.();
     };
-  }, [videoId, controls, mute, volume, start, end]);
+  }, [videoId, controls, mute, volume, start, end, duration]);
   return <div className="youtube-stage" ref={host} />;
 }
 
