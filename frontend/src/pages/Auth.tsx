@@ -11,6 +11,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { AsyncButton, FormMessage, formData } from "../components/ui";
 import "../auth-main.css";
+import { InstallApp } from "../components/InstallApp";
 
 function AuthLayout({
   title,
@@ -138,6 +139,7 @@ export function LoginPage() {
           Esqueci minha senha
         </Link>
       </form>
+      <InstallApp />
     </AuthLayout>
   );
 }
