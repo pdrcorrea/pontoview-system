@@ -229,7 +229,7 @@ export function PlaylistsPage() {
 
   return (
     <>
-      <PageHead eyebrow="Organização" title="Playlists" text="Defina a ordem, duração e opções de cada conteúdo exibido." action="Nova playlist" onAction={() => setCreating(true)} />
+      <PageHead eyebrow="Programação" title="O que vai passar na TV?" text="Organize os conteúdos na ordem em que deseja exibir. Você pode ajustar a duração de cada item." action="Criar programação" onAction={() => setCreating(true)} />
       <FormMessage error={error} />
 
       {playlists.length ? (
