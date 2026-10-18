@@ -28,8 +28,11 @@ const primary = [
   ["/dashboard", "Início", LayoutDashboard],
   ["/conteudo", "Biblioteca", AppWindow],
   ["/playlists", "Programação", ListVideo],
-  ["/mensagens", "Mensagens", MessageSquareText],
   ["/telas", "Minhas TVs", Monitor],
+] as const;
+
+const libraryExtras = [
+  ["/mensagens", "Avisos e mensagens", MessageSquareText],
   ["/apps", "Painéis prontos", Sparkles],
 ] as const;
 
@@ -61,10 +64,11 @@ export function AppShell() {
     [location.pathname],
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
+  const [extrasOpen, setExtrasOpen] = useState(() => ["/mensagens", "/apps"].some(path => location.pathname.startsWith(path)));
   const [screenHealth, setScreenHealth] = useState({ total: 0, online: 0 });
   const title = location.pathname.startsWith("/programacoes")
     ? "Programação de grupos"
-    : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
+    : [...primary, ...libraryExtras, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
   const initials = (profile?.full_name || profile?.email || "PV")
     .split(/\s+/)
     .slice(0, 2)
@@ -154,7 +158,11 @@ export function AppShell() {
         </div>
 
         <div className="nav-label">PontoView Telas</div>
-        <nav>{links(primary)}</nav>
+        <nav aria-label="Navegação principal">{links(primary)}</nav>
+        <div className="pv-more-area">
+          <button type="button" className="pv-more-toggle" aria-expanded={extrasOpen} onClick={() => setExtrasOpen(value => !value)}><Sparkles size={18} /><span>Mais recursos</span><ChevronDown size={16} /></button>
+          {extrasOpen && <nav className="pv-more-links" aria-label="Recursos adicionais">{links(libraryExtras)}</nav>}
+        </div>
 
         <div className="account-menu-block">
           <button
