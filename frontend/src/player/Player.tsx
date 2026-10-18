@@ -1595,6 +1595,7 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
     let lastTime = -1;
     let lastProgressAt = Date.now();
     let lastRecoveryAt = 0;
+    const itemStartedAt = Date.now();
     let playbackStartAt = 0;
     const timeouts = new Set<number>();
     const schedule = (fn: () => void, ms: number) => {
@@ -1620,6 +1621,9 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
     const watchdog = window.setInterval(() => {
       if (!active) return;
       const now = Date.now();
+      if (Number.isFinite(duration) && duration > 0 && now - itemStartedAt >= duration * 1000) {
+        finish(); return;
+      }
       if (!ready && now - lastProgressAt > 15_000) {
         finish("youtube_ready_timeout");
         return;
@@ -1666,7 +1670,10 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
               started = true;
               lastProgressAt = Date.now();
               if (!playbackStartAt) playbackStartAt = Date.now();
-              if (!mute && !audioAttempted) {
+              const policy = (navigator as Navigator & { getAutoplayPolicy?: (type: string) => string }).getAutoplayPolicy?.("mediaelement");
+              // Never unmute automatically when audible autoplay is blocked: doing
+              // so can re-trigger the YouTube click-to-play overlay mid-rotation.
+              if (!mute && !audioAttempted && policy === "allowed") {
                 audioAttempted = true;
                 schedule(() => {
                   try { (player.current as YTPlayer & { unMute?: () => void })?.unMute?.(); }
