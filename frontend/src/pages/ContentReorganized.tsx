@@ -538,7 +538,7 @@ export function ContentReorganizedPage() {
 
   return (
     <>
-      <PageHead eyebrow="Biblioteca" title="Conteúdo" text="Google Drive, YouTube, páginas web, Painéis PontoView e comunicados em uma única biblioteca." action="Adicionar conteúdo" onAction={() => { setError(null); setModal(true); }} />
+      <PageHead eyebrow="Biblioteca" title="Minha biblioteca" text="Escolha imagens, vídeos ou painéis prontos para mostrar na TV." action="Adicionar conteúdo" onAction={() => { setError(null); setModal(true); }} />
 
       <div className="toolbar content-toolbar">
         <div className="tabs">
