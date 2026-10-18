@@ -25,12 +25,12 @@ import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabase";
 
 const primary = [
-  ["/dashboard", "Visão geral", LayoutDashboard],
-  ["/conteudo", "Conteúdo", AppWindow],
-  ["/playlists", "Playlists", ListVideo],
+  ["/dashboard", "Início", LayoutDashboard],
+  ["/conteudo", "Biblioteca", AppWindow],
+  ["/playlists", "Programação", ListVideo],
   ["/mensagens", "Mensagens", MessageSquareText],
-  ["/telas", "Telas", Monitor],
-  ["/apps", "Painéis PontoView", Sparkles],
+  ["/telas", "Minhas TVs", Monitor],
+  ["/apps", "Painéis prontos", Sparkles],
 ] as const;
 
 const account = [
@@ -45,9 +45,9 @@ const account = [
 const mobileNav = [
   ["/dashboard", "Início", LayoutDashboard],
   ["/conteudo", "Conteúdo", AppWindow],
-  ["/playlists", "Playlists", ListVideo],
+  ["/playlists", "Programação", ListVideo],
   ["/mensagens", "Mensagens", MessageSquareText],
-  ["/telas", "Telas", Monitor],
+  ["/telas", "TVs", Monitor],
   ["/apps", "Painéis", Sparkles],
   ["/conta", "Conta", UserRound],
 ] as const;
