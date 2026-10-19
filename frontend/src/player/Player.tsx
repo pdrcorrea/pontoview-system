@@ -1574,9 +1574,11 @@ async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
   return URL.createObjectURL(await response.blob());
 }
 
-function YouTubeStage({ videoId, options, duration, onEnd }: { videoId: string; options: Record<string, unknown>; duration: number; onEnd: () => void; onError: (detail: string) => void }) {
+function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId: string; options: Record<string, unknown>; duration: number; onEnd: () => void; onError: (detail: string) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const onEndRef = useRef(onEnd);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
   useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
   const mute = Boolean(options?.mute);
   const controls = Boolean(options?.controls);
@@ -1587,7 +1589,15 @@ function YouTubeStage({ videoId, options, duration, onEnd }: { videoId: string; 
   useEffect(() => {
     let active = true;
     let player: YTPlayer | null = null;
-    const timer = window.setTimeout(() => { if (active) onEndRef.current(); }, seconds * 1000);
+    let ready = false;
+    let started = false;
+    let failed = false;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      active = false;
+      if (failed || !ready || !started) onErrorRef.current(failed ? "youtube_player_error" : !ready ? "youtube_ready_timeout" : "youtube_never_started");
+      else onEndRef.current();
+    }, seconds * 1000);
     loadYouTubeApi().then(() => {
       if (!active || !host.current) return;
       const params = new URLSearchParams({
@@ -1609,12 +1619,21 @@ function YouTubeStage({ videoId, options, duration, onEnd }: { videoId: string; 
         events: {
           onReady: (event: any) => {
             if (!active) return;
+            ready = true;
             if (mute) event.target.mute();
             event.target.playVideo();
           },
+          onStateChange: (event: any) => { if (active && event.data === 1) started = true; },
+          onAutoplayBlocked: () => { if (active) failed = true; },
+          onError: (event: any) => {
+            if (!active) return;
+            active = false;
+            window.clearTimeout(timer);
+            onErrorRef.current(`youtube_${String(event.data ?? "unknown")}`);
+          },
         },
       });
-    }).catch(() => { /* Timer still advances the playlist if YouTube is unavailable. */ });
+    }).catch(() => { if (active) failed = true; });
     return () => {
       active = false;
       window.clearTimeout(timer);
