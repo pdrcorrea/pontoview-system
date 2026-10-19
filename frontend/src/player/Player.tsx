@@ -1595,7 +1595,7 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
     const timer = window.setTimeout(() => {
       if (!active) return;
       active = false;
-      if (failed || !ready || !started) onErrorRef.current(failed ? "youtube_player_error" : !ready ? "youtube_ready_timeout" : "youtube_never_started");
+      if (!ready || !started) onErrorRef.current(!ready ? "youtube_ready_timeout" : failed ? "youtube_autoplay_blocked" : "youtube_never_started");
       else onEndRef.current();
     }, seconds * 1000);
     loadYouTubeApi().then(() => {
