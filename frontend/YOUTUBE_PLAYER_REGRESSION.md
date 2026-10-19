@@ -1,11 +1,11 @@
 # YouTube playback regression guard
 
-The current production-tested approach uses a fresh YouTube embed iframe for each playlist cycle. Reference commits: `534506d8` (timed iframe implementation) and `e5418106` (remove obsolete autoplay interceptor).
+The player uses a fresh YouTube embed iframe for each playlist cycle. Commit `578e1fe` adds an explicit `playVideo()` call from the IFrame API `onReady` event. This change requires Android-TV validation and must not yet be described as production-tested.
 
 ## Invariants
 
-- Do not reintroduce the YouTube IFrame API wrapper, `youtube-autoplay.js`, or `youtubeAutoplayGuard.ts` into the player bootstrap.
-- Recreate the iframe on each playlist item rotation; never reuse an old YouTube iframe.
+- Do not reintroduce the global `youtube-autoplay.js` or `youtubeAutoplayGuard.ts` interceptors into the player bootstrap. The localized YouTube IFrame API inside YouTubeStage is used only to start the video explicitly.
+- Recreate the iframe on each playlist item rotation; never reuse an old YouTube iframe. Start the video explicitly in `onReady`.
 - Preserve per-content mute/controls/start/end settings. Browser autoplay policy may block audible playback; do not claim guaranteed unmuted autoplay.
 - The playlist duration is enforced by PontoView even when the YouTube embed does not emit lifecycle events.
 - Changes to the player must avoid extra polling or backend requests.
