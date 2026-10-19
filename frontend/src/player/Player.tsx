@@ -1575,6 +1575,7 @@ async function fetchDriveAsset(media: ManifestItem["media"], device: Device) {
 }
 
 function YouTubeStage({ videoId, options, duration, onEnd }: { videoId: string; options: Record<string, unknown>; duration: number; onEnd: () => void; onError: (detail: string) => void }) {
+  const host = useRef<HTMLDivElement>(null);
   const onEndRef = useRef(onEnd);
   useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
   const mute = Boolean(options?.mute);
@@ -1582,34 +1583,47 @@ function YouTubeStage({ videoId, options, duration, onEnd }: { videoId: string; 
   const start = Number(options?.start || 0);
   const rawEnd = Number(options?.end || 0);
   const seconds = Number.isFinite(duration) && duration > 0 ? duration : 15;
-  const src = useMemo(() => {
-    const params = new URLSearchParams({
-      autoplay: "1",
-      mute: mute ? "1" : "0",
-      playsinline: "1",
-      controls: controls ? "1" : "0",
-      rel: "0",
-    });
-    if (start > 0) params.set("start", String(start));
-    if (rawEnd > 0) params.set("end", String(rawEnd));
-    return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
-  }, [videoId, mute, controls, start, rawEnd]);
+
   useEffect(() => {
-    const timer = window.setTimeout(() => onEndRef.current(), seconds * 1000);
-    return () => window.clearTimeout(timer);
-  }, [src, seconds]);
-  return (
-    <div className="youtube-stage">
-      <iframe
-        src={src}
-        title="Vídeo do YouTube"
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-        allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-        style={{ display: "block", width: "100%", height: "100%", border: 0 }}
-      />
-    </div>
-  );
+    let active = true;
+    let player: YTPlayer | null = null;
+    const timer = window.setTimeout(() => { if (active) onEndRef.current(); }, seconds * 1000);
+    loadYouTubeApi().then(() => {
+      if (!active || !host.current) return;
+      const params = new URLSearchParams({
+        enablejsapi: "1", autoplay: "1", mute: mute ? "1" : "0",
+        playsinline: "1", controls: controls ? "1" : "0",
+        rel: "0", origin: window.location.origin,
+      });
+      if (start > 0) params.set("start", String(start));
+      if (rawEnd > 0) params.set("end", String(rawEnd));
+      const iframe = document.createElement("iframe");
+      iframe.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+      iframe.title = "Vídeo do YouTube";
+      iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      iframe.style.cssText = "display:block;width:100%;height:100%;border:0";
+      host.current.replaceChildren(iframe);
+      player = new window.YT.Player(iframe, {
+        events: {
+          onReady: (event: any) => {
+            if (!active) return;
+            if (mute) event.target.mute();
+            event.target.playVideo();
+          },
+        },
+      });
+    }).catch(() => { /* Timer still advances the playlist if YouTube is unavailable. */ });
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      player?.destroy?.();
+      host.current?.replaceChildren();
+    };
+  }, [videoId, mute, controls, start, rawEnd, seconds]);
+
+  return <div className="youtube-stage" ref={host} />;
 }
 
 let youtubePromise: Promise<void> | null = null;
