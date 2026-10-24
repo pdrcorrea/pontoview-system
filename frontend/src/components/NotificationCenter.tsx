@@ -105,12 +105,46 @@ export function NotificationCenter() {
   const unread = notices.filter((n) => !seen.includes(n.id));
   const markRead = (id: string) => setSeen((previous) => [...new Set([...previous, id])].slice(-200));
   const toggleDesktop = async () => {
-    if (!("Notification" in window)) { setPermissionMessage("Este navegador não oferece notificações."); return; }
-    if (prefs.desktop) { setPrefs((p) => ({ ...p, desktop: false })); return; }
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") { setPermissionMessage("Permissão não concedida. Você pode ativá-la nas configurações do navegador."); return; }
-    setPrefs((p) => ({ ...p, desktop: true }));
-    setPermissionMessage("Permissão ativada. As notificações funcionam enquanto o painel está aberto. Para funcionar com o app fechado, ainda é necessária a entrega Push pelo servidor.");
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setPermissionMessage("Este dispositivo ou navegador não oferece Web Push."); return;
+    }
+    if (!organization || !user) return;
+    try {
+      const registration = await navigator.serviceWorker.register("/push-sw.js", { scope: "/" });
+      const current = await registration.pushManager.getSubscription();
+      if (prefs.desktop) {
+        if (current) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", current.endpoint).eq("user_id", user.id);
+          await current.unsubscribe();
+        }
+        setPrefs((p) => ({ ...p, desktop: false }));
+        setPermissionMessage("Notificações push desativadas neste dispositivo.");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPermissionMessage("Permissão não concedida. Ative as notificações nas configurações do aparelho.");
+        return;
+      }
+      const { data: publicKey, error: keyError } = await supabase.rpc("push_public_key");
+      if (keyError || typeof publicKey !== "string" || !publicKey) throw new Error("Chave de notificações indisponível.");
+      const base64 = publicKey.replace(/-/g, "+").replace(/_/g, "/");
+      const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+      const applicationServerKey = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      const sub = current || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+      const subscription = sub.toJSON();
+      if (!subscription.keys?.p256dh || !subscription.keys.auth) throw new Error("Inscrição push incompleta.");
+      const { error } = await supabase.from("push_subscriptions").upsert({
+        user_id: user.id, organization_id: organization.id, endpoint: sub.endpoint,
+        p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, enabled: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "endpoint" });
+      if (error) throw error;
+      setPrefs((p) => ({ ...p, desktop: true }));
+      setPermissionMessage("Notificações ativadas neste dispositivo, inclusive com o PWA fechado.");
+    } catch (error) {
+      setPermissionMessage(error instanceof Error ? error.message : "Não foi possível configurar as notificações.");
+    }
   };
   return (
     <div style={{ position: "relative" }}>
