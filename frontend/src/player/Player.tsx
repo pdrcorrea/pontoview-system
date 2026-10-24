@@ -654,7 +654,7 @@ export function PlayerPage() {
       ? "translate(-50%, -50%) rotate(90deg)"
       : "translate(-50%, -50%)",
   };
-  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`connection-dot ${connected ? "" : "offline"}`}>{connected ? "" : <><WifiOff /> Conteúdo offline</>}</div><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${shouldRotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} canvasWidth={canvasWidth} canvasHeight={canvasHeight} onEnd={handleEnd} onError={handleError} /></div></div>;
+  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${shouldRotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} canvasWidth={canvasWidth} canvasHeight={canvasHeight} onEnd={handleEnd} onError={handleError} /></div></div>;
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
