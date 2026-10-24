@@ -1,16 +1,16 @@
 :root{
-  --seasonal-bg:#fff;
-  --seasonal-bg-2:#f6f8fb;
+  --seasonal-bg:#f2f5f7;
+  --seasonal-bg-2:#e5ebf0;
   --seasonal-accent:#315f86;
   --seasonal-accent-2:#244f7e;
   --seasonal-deep:#17344f;
   --seasonal-text:#17344f;
-  --seasonal-soft:#61768a;
-  --seasonal-chip-bg:rgba(255,255,255,.84);
-  --seasonal-chip-border:rgba(23,52,79,.08);
-  --seasonal-card-bg:rgba(255,255,255,.94);
-  --seasonal-card-border:rgba(23,52,79,.09);
-  --seasonal-shadow:rgba(23,52,79,.12);
+  --seasonal-soft:#455b6f;
+  --seasonal-chip-bg:rgba(247,250,252,.94);
+  --seasonal-chip-border:rgba(23,52,79,.16);
+  --seasonal-card-bg:rgba(247,250,252,.97);
+  --seasonal-card-border:rgba(23,52,79,.17);
+  --seasonal-shadow:rgba(23,52,79,.18);
 }
 *{box-sizing:border-box}
 html,body{
