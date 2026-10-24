@@ -24,6 +24,19 @@ export function NotificationCenter() {
   const [permissionMessage, setPermissionMessage] = useState("");
 
   useEffect(() => { localStorage.setItem(key, JSON.stringify(prefs)); }, [key, prefs]);
+  useEffect(() => {
+    if (!user || !prefs.desktop) return;
+    void (async () => {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration("/push-sw.js");
+        const sub = await reg?.pushManager.getSubscription();
+        if (sub) await supabase.from("push_subscriptions").update({
+          notify_seasonal: prefs.seasonal, notify_offline: prefs.offline,
+          notify_errors: prefs.errors, notify_recovered: prefs.recovered,
+        }).eq("endpoint", sub.endpoint).eq("user_id", user.id);
+      } catch { /* Mantém a preferência local se o navegador não suportar. */ }
+    })();
+  }, [user?.id, prefs.desktop, prefs.seasonal, prefs.offline, prefs.errors, prefs.recovered]);
   const seenKey = `pv:notification-seen:${user?.id || "guest"}`;
   useEffect(() => { try { localStorage.setItem(seenKey, JSON.stringify(seen.slice(-200))); } catch {} }, [seen, seenKey]);
 
@@ -85,23 +98,6 @@ export function NotificationCenter() {
     return () => window.clearInterval(interval);
   }, [load]);
 
-  useEffect(() => {
-    if (!prefs.desktop || !("Notification" in window) || Notification.permission !== "granted") return;
-    const baselineKey = `pv:notification-baseline:${user?.id || "guest"}`;
-    const previous: string[] | null = (() => {
-      try { const value = localStorage.getItem(baselineKey); return value ? JSON.parse(value) : null; } catch { return null; }
-    })();
-    const current = notices.map((item) => item.id);
-    if (previous) {
-      const old = new Set(previous);
-      for (const notice of notices.filter((item) => !old.has(item.id)).slice(0, 3)) {
-        const alert = new Notification(notice.title, { body: notice.body, icon: "/assets/icon.png", tag: notice.id });
-        alert.onclick = () => { window.focus(); navigate(notice.href); alert.close(); };
-      }
-    }
-    try { localStorage.setItem(baselineKey, JSON.stringify(current)); } catch {}
-  }, [notices, prefs.desktop, navigate, user?.id]);
-
   const unread = notices.filter((n) => !seen.includes(n.id));
   const markRead = (id: string) => setSeen((previous) => [...new Set([...previous, id])].slice(-200));
   const toggleDesktop = async () => {
@@ -137,6 +133,7 @@ export function NotificationCenter() {
       const { error } = await supabase.from("push_subscriptions").upsert({
         user_id: user.id, organization_id: organization.id, endpoint: sub.endpoint,
         p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, enabled: true,
+        notify_seasonal: prefs.seasonal, notify_offline: prefs.offline, notify_errors: prefs.errors, notify_recovered: prefs.recovered,
         updated_at: new Date().toISOString()
       }, { onConflict: "endpoint" });
       if (error) throw error;
@@ -165,7 +162,7 @@ export function NotificationCenter() {
         </button>)}
         <details style={{ borderTop: "1px solid #e4eaf0", marginTop: 12, paddingTop: 12 }}>
           <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Preferências</summary>
-          {([["seasonal", "Painéis sazonais"], ["offline", "TV desconectada"], ["errors", "Erros de conteúdo"]] as const).map(([field, label]) => <label key={field} style={{ display: "flex", alignItems: "center", gap: 9, margin: "12px 0", fontSize: 13 }}><input type="checkbox" checked={prefs[field]} onChange={(e) => setPrefs((p) => ({ ...p, [field]: e.target.checked }))} />{label}</label>)}
+          {([["seasonal", "Painéis sazonais"], ["offline", "TV desconectada"], ["errors", "Erros de conteúdo"], ["recovered", "TV reconectada"]] as const).map(([field, label]) => <label key={field} style={{ display: "flex", alignItems: "center", gap: 9, margin: "12px 0", fontSize: 13 }}><input type="checkbox" checked={prefs[field]} onChange={(e) => setPrefs((p) => ({ ...p, [field]: e.target.checked }))} />{label}</label>)}
           <button type="button" onClick={() => void toggleDesktop()} style={{ display: "flex", alignItems: "center", gap: 7, border: "1px solid #d6e2ec", borderRadius: 10, padding: 9, background: "transparent", color: "inherit" }}>{prefs.desktop ? <BellOff size={15} /> : <Bell size={15} />}{prefs.desktop ? "Desativar permissão" : "Autorizar notificações no dispositivo"}</button>
           {permissionMessage && <p style={{ fontSize: 12 }}>{permissionMessage}</p>}
         </details>
