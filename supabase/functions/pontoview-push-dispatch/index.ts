@@ -14,13 +14,14 @@ Deno.serve(async req=>{
  if(!supplied||supplied!==secrets.cron) return json({error:"unauthorized"},401);
  webpush.setVapidDetails("mailto:contato@pontoview.com.br",secrets.public,secrets.private);
  const cutoff=new Date(Date.now()-24*3600000).toISOString();
- const [subsRes,screensRes,eventsRes,orgRes]=await Promise.all([
+ const [subsRes,screensRes,eventsRes,orgRes,membersRes]=await Promise.all([
   db.from("push_subscriptions").select("id,user_id,organization_id,endpoint,p256dh,auth,notify_seasonal,notify_offline,notify_errors,notify_recovered").eq("enabled",true).limit(2000),
   db.from("screens").select("id,name,organization_id,screen_status(last_seen)").eq("is_active",true).limit(1000),
   db.from("screen_events").select("screen_id,organization_id,media_id,event_type,occurred_at,media(name)").in("event_type",["media_error","content_ended"]).gte("occurred_at",cutoff).order("occurred_at",{ascending:false}).limit(1000),
-  db.from("organizations").select("id,timezone").limit(1000)
+  db.from("organizations").select("id,timezone,created_by").limit(1000),
+  db.from("organization_users").select("organization_id,user_id").limit(5000)
  ]);
- if(subsRes.error||screensRes.error||eventsRes.error||orgRes.error)return json({error:"data unavailable"},503);
+ if(subsRes.error||screensRes.error||eventsRes.error||orgRes.error||membersRes.error)return json({error:"data unavailable"},503);
  const now=Date.now();
  const {data: priorStates}=await db.from("push_screen_states").select("screen_id,was_online").limit(2000);
  const presence=new Map((priorStates||[]).map((s:any)=>[s.screen_id,s.was_online]));
@@ -66,8 +67,11 @@ Deno.serve(async req=>{
     });
   }
  }
+ const allowed = new Set((membersRes.data||[]).map((m:any)=>m.organization_id+":"+m.user_id));
+ for(const org of orgRes.data||[])if(org.created_by)allowed.add(org.id+":"+org.created_by);
  let sent=0,failed=0;
  for(const sub of subsRes.data||[]){
+  if(!allowed.has(sub.organization_id+":"+sub.user_id))continue;
   for(const notice of (all[sub.organization_id]||[]).filter((n:any)=>n.key.startsWith("season:")?sub.notify_seasonal:n.key.startsWith("offline:")?sub.notify_offline:n.key.startsWith("reconnected:")?sub.notify_recovered:sub.notify_errors).slice(0,25)){
    const {error:dedupe}=await db.from("push_delivery_log").insert({organization_id:sub.organization_id,user_id:sub.user_id,dedupe_key:sub.id+":"+notice.key}).select("id").single();
    if(dedupe){if(dedupe.code!=="23505")failed++;continue;}
