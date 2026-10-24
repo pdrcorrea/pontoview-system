@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabase";
+import { NotificationCenter } from "./NotificationCenter";
 
 const primary = [
   ["/dashboard", "Visão geral", LayoutDashboard],
@@ -192,6 +193,7 @@ export function AppShell() {
           <div><strong>{title}</strong></div>
           <div className="top-actions">
             <span className="system-ok">● Conectado</span>
+            <NotificationCenter />
             <NavLink className="help-button" to="/ajuda" title="Ajuda"><CircleHelp size={17} /></NavLink>
           </div>
         </header>
