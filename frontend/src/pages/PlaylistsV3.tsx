@@ -168,7 +168,15 @@ export function PlaylistsPage() {
     setBusy(false);
     if (mediaResult.error) setError(mediaResult.error.message); else setMedia((mediaResult.data || []) as Media[]);
     if (itemsResult.error) setError(itemsResult.error.message);
-    else setEditorItems((itemsResult.data || []).map((row: any) => ({ id: row.id, mediaId: row.media_id, name: row.media?.name || "Conteúdo", type: row.media?.type || "", durationSeconds: row.duration_seconds ?? row.media?.duration_seconds, settings: row.settings || {} })));
+    else if (!mediaResult.error) {
+      const availableIds = new Set((mediaResult.data || []).map((item) => item.id));
+      const rows = (itemsResult.data || []) as Array<any>;
+      const validRows = rows.filter((row) => availableIds.has(row.media_id));
+      setEditorItems(validRows.map((row) => ({ id: row.id, mediaId: row.media_id, name: row.media?.name || "Conteúdo", type: row.media?.type || "", durationSeconds: row.duration_seconds ?? row.media?.duration_seconds, settings: row.settings || {} })));
+      if (validRows.length !== rows.length) {
+        setError(`${rows.length - validRows.length} conteúdo(s) excluído(s) ou indisponível(is) foram retirados do editor. Salve a playlist para confirmar a limpeza.`);
+      }
+    }
   };
 
   const addMedia = (id: string) => {
@@ -203,7 +211,18 @@ export function PlaylistsPage() {
   const save = async () => {
     if (!editing) return;
     setBusy(true); setError(null);
-    const result = await supabase.rpc("replace_playlist_items", { p_playlist_id: editing.id, p_items: editorItems.map((item) => ({ mediaId: item.mediaId, durationSeconds: item.durationSeconds, settings: item.settings })) });
+    if (!organization) { setBusy(false); return; }
+    // Revalidate at save time too: content might be archived while the editor is open.
+    const available = await supabase.from("media").select("id").eq("organization_id", organization.id).eq("status", "ready");
+    if (available.error) {
+      setBusy(false);
+      setError(available.error.message);
+      return;
+    }
+    const availableIds = new Set((available.data || []).map((item) => item.id));
+    const validItems = editorItems.filter((item) => availableIds.has(item.mediaId));
+    if (validItems.length !== editorItems.length) setEditorItems(validItems);
+    const result = await supabase.rpc("replace_playlist_items", { p_playlist_id: editing.id, p_items: validItems.map((item) => ({ mediaId: item.mediaId, durationSeconds: item.durationSeconds, settings: item.settings })) });
     setBusy(false);
     if (result.error) setError(result.error.message); else { setEditing(null); await load(); }
   };
