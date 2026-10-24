@@ -117,12 +117,15 @@ type Group = {
   screen_group_members: Array<{ screen_id: string }>;
 };
 
+type PlaybackIssue = { name: string; detail: string; occurredAt: string };
+
 export function ScreensSimplePage() {
   const { organization, user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [screens, setScreens] = useState<Screen[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [playbackIssues, setPlaybackIssues] = useState<Record<string, PlaybackIssue[]>>({});
   const [selected, setSelected] = useState<Screen | null>(null);
   const [pairing, setPairing] = useState(params.get("parear") === "1");
   const [groupModal, setGroupModal] = useState(false);
@@ -131,7 +134,7 @@ export function ScreensSimplePage() {
 
   const load = useCallback(async () => {
     if (!organization) return;
-    const [screenResult, playlistResult, groupResult] = await Promise.all([
+    const [screenResult, playlistResult, groupResult, eventsResult] = await Promise.all([
       supabase
         .from("screens")
         .select("id,organization_id,name,slug,orientation,rotation,default_playlist_id,is_active,settings_revision,reload_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(*)")
@@ -140,12 +143,39 @@ export function ScreensSimplePage() {
         .order("created_at", { ascending: false }),
       supabase.from("playlists").select("*").eq("organization_id", organization.id).order("name"),
       supabase.from("screen_groups").select("id,name,screen_group_members(screen_id)").eq("organization_id", organization.id).order("name"),
+      supabase.from("screen_events")
+        .select("screen_id,media_id,event_type,payload,occurred_at,media(name)")
+        .eq("organization_id", organization.id)
+        .in("event_type", ["media_error", "content_ended"])
+        .gte("occurred_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .order("occurred_at", { ascending: false }).limit(150),
     ]);
 
     if (screenResult.error) setError(screenResult.error.message);
     else setScreens((screenResult.data || []) as unknown as Screen[]);
     if (playlistResult.data) setPlaylists(playlistResult.data as Playlist[]);
     if (groupResult.data) setGroups((groupResult.data || []) as unknown as Group[]);
+    if (!eventsResult.error) {
+      const resolved = new Set<string>();
+      const issues: Record<string, PlaybackIssue[]> = {};
+      for (const raw of eventsResult.data || []) {
+        const event = raw as unknown as {
+          screen_id: string; media_id: string | null; event_type: string;
+          occurred_at: string; payload: { detail?: string } | null;
+          media: { name: string } | { name: string }[] | null;
+        };
+        if (!event.media_id) continue;
+        const key = event.screen_id + ":" + event.media_id;
+        if (resolved.has(key)) continue;
+        resolved.add(key);
+        if (event.event_type !== "media_error") continue;
+        const media = Array.isArray(event.media) ? event.media[0] : event.media;
+        const detail = event.payload?.detail || "Falha ao reproduzir";
+        const name = media?.name || "Conteúdo não identificado";
+        (issues[event.screen_id] ||= []).push({ name, detail, occurredAt: event.occurred_at });
+      }
+      setPlaybackIssues(issues);
+    }
   }, [organization]);
 
   useEffect(() => {
@@ -270,6 +300,7 @@ export function ScreensSimplePage() {
               key={screen.id}
               screen={screen}
               playlists={playlists}
+              issues={playbackIssues[screen.id] || []}
               onManage={() => setSelected(screen)}
             />
           ))}
@@ -360,7 +391,7 @@ export function ScreensSimplePage() {
   );
 }
 
-function ScreenCard({ screen, playlists, onManage }: { screen: Screen; playlists: Playlist[]; onManage: () => void }) {
+function ScreenCard({ screen, playlists, issues, onManage }: { screen: Screen; playlists: Playlist[]; issues: PlaybackIssue[]; onManage: () => void }) {
   const status = firstStatus(screen);
   const settings = firstSettings(screen);
   const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 120000);
@@ -384,6 +415,17 @@ function ScreenCard({ screen, playlists, onManage }: { screen: Screen; playlists
         <div><small>Último contato</small><b>{timeAgo(status?.last_seen)}</b></div>
       </div>
 
+      {issues.length > 0 && (
+        <div style={{ padding: "12px 14px", marginTop: 10, border: "1px solid #e9c9a5", background: "#fff8ed", color: "#694719", borderRadius: 12 }}>
+          <strong style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Falhas recentes de conteúdo ({issues.length})</strong>
+          {issues.slice(0, 3).map((issue, position) => (
+            <div key={position} style={{ fontSize: 12, lineHeight: 1.45, padding: "5px 0" }}>
+              <b>{issue.name}</b>
+              <span style={{ display: "block", opacity: .85 }}>{issue.detail === "offline_content_skipped" ? "Conteúdo requer internet" : "Erro de reprodução"} · {timeAgo(issue.occurredAt)}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <button className="btn primary full screen-manage-button" onClick={onManage}>
         <Settings2 /> Configurar esta tela
       </button>
