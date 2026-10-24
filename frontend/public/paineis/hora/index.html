@@ -6,9 +6,9 @@
 <title>PontoView • Horário</title>
 <style>
 :root{
-  --bg:#f4f4f1;
+  --bg:#e9eef3;
   --ink:#14191f;
-  --muted:#69717b;
+  --muted:#4f5964;
   --pv:#08479A;
   --pv-dark:#032A61;
   --pv-cyan:#69CFF2;
@@ -29,7 +29,7 @@ body{
   position:relative;
   overflow:hidden;
   background:
-    radial-gradient(circle at 79% 49%, rgba(105,207,242,.16), transparent 26%),
+    radial-gradient(circle at 79% 49%, rgba(105,207,242,.24), transparent 30%),
     var(--bg);
   isolation:isolate;
 }
@@ -173,14 +173,14 @@ body{
   position:absolute;
   inset:7%;
   border-radius:50%;
-  background:radial-gradient(circle at 45% 40%, rgba(255,255,255,.9), rgba(255,255,255,.18) 54%, rgba(105,207,242,.06) 72%, transparent 73%);
-  border:1px solid rgba(8,71,154,.08);
+  background:radial-gradient(circle at 45% 40%, rgba(255,255,255,.64), rgba(205,224,238,.34) 54%, rgba(105,207,242,.14) 72%, transparent 74%);
+  border:1px solid rgba(8,71,154,.18);
 }
 
 .orbit{
   position:absolute;
   inset:13%;
-  border:1px solid rgba(8,71,154,.15);
+  border:2px solid rgba(8,71,154,.24);
   border-radius:50%;
   animation:spin 22s linear infinite;
 }
@@ -202,9 +202,9 @@ body{
   width:56%;
   height:56%;
   border-radius:50%;
-  background:rgba(255,255,255,.54);
-  border:1px solid rgba(255,255,255,.78);
-  box-shadow:0 24px 70px rgba(3,42,97,.07);
+  background:linear-gradient(145deg,rgba(242,247,251,.98),rgba(218,231,241,.94));
+  border:2px solid rgba(8,71,154,.20);
+  box-shadow:0 24px 70px rgba(3,42,97,.16), inset 0 0 0 1px rgba(255,255,255,.72);
   -webkit-backdrop-filter:blur(16px);
   backdrop-filter:blur(16px);
 }
@@ -214,7 +214,7 @@ body{
   position:absolute;
   inset:10%;
   border-radius:50%;
-  border:1px solid rgba(20,25,31,.06);
+  border:1px solid rgba(20,25,31,.14);
 }
 
 .tick{
@@ -232,10 +232,10 @@ body{
   height:8%;
   min-height:6px;
   border-radius:10px;
-  background:rgba(20,25,31,.20);
+  background:rgba(20,25,31,.44);
   transform:translateY(-100%);
 }
-.tick.major::after{height:13%;background:rgba(8,71,154,.42)}
+.tick.major::after{height:13%;background:rgba(8,71,154,.72)}
 
 .hand{
   position:absolute;
