@@ -164,7 +164,7 @@ export function NotificationCenter() {
           <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Preferências</summary>
           {([["seasonal", "Painéis sazonais"], ["offline", "TV desconectada"], ["errors", "Erros de conteúdo"], ["recovered", "TV reconectada"]] as const).map(([field, label]) => <label key={field} style={{ display: "flex", alignItems: "center", gap: 9, margin: "12px 0", fontSize: 13 }}><input type="checkbox" checked={prefs[field]} onChange={(e) => setPrefs((p) => ({ ...p, [field]: e.target.checked }))} />{label}</label>)}
           <button type="button" onClick={() => void toggleDesktop()} style={{ display: "flex", alignItems: "center", gap: 7, border: "1px solid #d6e2ec", borderRadius: 10, padding: 9, background: "transparent", color: "inherit" }}>{prefs.desktop ? <BellOff size={15} /> : <Bell size={15} />}{prefs.desktop ? "Desativar permissão" : "Autorizar notificações no dispositivo"}</button>
-          {permissionMessage && <p style={{ fontSize: 12 }}>{permissionMessage}</p>}
+
         </details>
       </div>}
     </div>
