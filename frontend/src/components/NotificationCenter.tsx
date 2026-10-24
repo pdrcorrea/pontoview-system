@@ -85,6 +85,23 @@ export function NotificationCenter() {
     return () => window.clearInterval(interval);
   }, [load]);
 
+  useEffect(() => {
+    if (!prefs.desktop || !("Notification" in window) || Notification.permission !== "granted") return;
+    const baselineKey = `pv:notification-baseline:${user?.id || "guest"}`;
+    const previous: string[] | null = (() => {
+      try { const value = localStorage.getItem(baselineKey); return value ? JSON.parse(value) : null; } catch { return null; }
+    })();
+    const current = notices.map((item) => item.id);
+    if (previous) {
+      const old = new Set(previous);
+      for (const notice of notices.filter((item) => !old.has(item.id)).slice(0, 3)) {
+        const alert = new Notification(notice.title, { body: notice.body, icon: "/assets/icon.png", tag: notice.id });
+        alert.onclick = () => { window.focus(); navigate(notice.href); alert.close(); };
+      }
+    }
+    try { localStorage.setItem(baselineKey, JSON.stringify(current)); } catch {}
+  }, [notices, prefs.desktop, navigate, user?.id]);
+
   const unread = notices.filter((n) => !seen.includes(n.id));
   const markRead = (id: string) => setSeen((previous) => [...new Set([...previous, id])].slice(-200));
   const toggleDesktop = async () => {
@@ -93,7 +110,7 @@ export function NotificationCenter() {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") { setPermissionMessage("Permissão não concedida. Você pode ativá-la nas configurações do navegador."); return; }
     setPrefs((p) => ({ ...p, desktop: true }));
-    setPermissionMessage("Permissão ativada. Alertas automáticos com o aplicativo fechado exigem a configuração do servidor Push.");
+    setPermissionMessage("Permissão ativada. As notificações funcionam enquanto o painel está aberto. Para funcionar com o app fechado, ainda é necessária a entrega Push pelo servidor.");
   };
   return (
     <div style={{ position: "relative" }}>
