@@ -759,7 +759,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, canvasWidth, canv
     width: `${Math.round(mediaWidth)}px`,
     height: `${Math.round(mediaHeight)}px`,
   };
-  const stage = <div className="player-media-frame" style={mediaFrameStyle}><div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div></div>;
+  const stage = <div className="player-media-frame" style={mediaFrameStyle}><ReusableMediaStage manifest={manifest} item={item} device={device} playbackCycle={playbackCycle} transition={settings.transition} onEnd={onEnd} onError={onError} /></div>;
   if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen player-media-host">{stage}</main></>;
   const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
   const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
@@ -883,6 +883,53 @@ function messageDisplayMs(message: PlayerMessage) {
   const words = text ? text.split(/\s+/).length : 0;
   const readingSeconds = 4 + words / 3;
   return Math.round(Math.min(24, Math.max(8, readingSeconds)) * 1000);
+}
+
+function ReusableMediaStage({ manifest, item, device, playbackCycle, transition, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; transition: string; onEnd: () => void; onError: (detail: string) => void }) {
+  // Only two first-party panels stay mounted. Third-party pages and video players
+  // are deliberately excluded: hidden iframes can still run timers and use RAM.
+  const reusable = useMemo(() => manifest.items
+    .filter((entry) => {
+      if (entry.media.type !== "webpage" || !entry.media.pageUrl) return false;
+      try {
+        const url = new URL(entry.media.pageUrl, window.location.origin);
+        return url.origin === window.location.origin && url.pathname.startsWith("/paineis/");
+      } catch { return false; }
+    })
+    .slice(0, 2), [manifest.items]);
+  const currentReusable = item && reusable.find((entry) => entry.itemId === item.itemId);
+  const onEndRef = useRef(onEnd);
+  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+  useEffect(() => {
+    if (!currentReusable) return;
+    const seconds = item?.durationSeconds || item?.media.durationSeconds || 15;
+    const timer = window.setTimeout(() => onEndRef.current(), Math.max(1, seconds) * 1000);
+    return () => window.clearTimeout(timer);
+  }, [currentReusable?.itemId, playbackCycle, item?.durationSeconds, item?.media.durationSeconds]);
+
+  return <>
+    {reusable.map((entry) => (
+      <div
+        key={entry.itemId}
+        className="timed-stage"
+        style={{ display: currentReusable?.itemId === entry.itemId ? "block" : "none", width: "100%", height: "100%" }}
+        aria-hidden={currentReusable?.itemId !== entry.itemId}
+      >
+        <iframe
+          src={cacheBustedUrl(entry.media.pageUrl!, Number(manifest.screen.reloadRevision || 0))}
+          title={entry.media.name}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          loading="eager"
+          style={{ display: "block", width: "100%", height: "100%", border: 0 }}
+        />
+      </div>
+    ))}
+    {!currentReusable && (
+      <div className={`pv-stage-transition ${transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}>
+        <MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} />
+      </div>
+    )}
+  </>;
 }
 
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: { item: ManifestItem | null; device: Device; organization: PlayerManifest["organization"]; cacheRevision: number; onEnd: () => void; onError: (detail: string) => void; }) {
