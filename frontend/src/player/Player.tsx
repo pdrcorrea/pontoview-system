@@ -890,13 +890,41 @@ function MediaStage({ item, device, organization, cacheRevision, onEnd, onError 
   const media = item.media; const duration = item.durationSeconds || media.durationSeconds || 15;
   if (media.type === "youtube" && media.youtubeVideoId) return <YouTubeStage videoId={media.youtubeVideoId} options={media.youtubeOptions} duration={duration} onEnd={onEnd} onError={onError} />;
   if (media.type === "drive_image" || media.type === "drive_video") return <DriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
-  if (media.type === "webpage" && media.pageUrl) return <TimedStage seconds={duration} onEnd={onEnd}><iframe src={cacheBustedUrl(media.pageUrl, cacheRevision)} title={media.name} sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onError={() => onError("webpage_load_error")} /></TimedStage>;
+  if (media.type === "webpage" && media.pageUrl) return <WebpageStage url={cacheBustedUrl(media.pageUrl, cacheRevision)} title={media.name} seconds={duration} onEnd={onEnd} onError={onError} />;
   if (media.type === "message") return <TimedStage seconds={duration} onEnd={onEnd}><div className="message-stage"><small>COMUNICADO</small><h1>{String(media.messageContent?.title || media.name)}</h1><p>{String(media.messageContent?.body || "")}</p></div></TimedStage>;
   if (media.type === "app") return <TimedStage seconds={duration} onEnd={onEnd}><AppStage appKey={media.appKey} name={media.name} organization={organization} /></TimedStage>;
   return <TimedStage seconds={duration} onEnd={onEnd}><div className="player-standby"><h1>{media.name}</h1></div></TimedStage>;
 }
 
 function TimedStage({ seconds, onEnd, children }: { seconds: number; onEnd: () => void; children: React.ReactNode }) { useEffect(() => { const timer = window.setTimeout(onEnd, Math.max(1, seconds) * 1000); return () => window.clearTimeout(timer); }, [seconds, onEnd]); return <div className="timed-stage">{children}</div>; }
+
+function WebpageStage({ url, title, seconds, onEnd, onError }: { url: string; title: string; seconds: number; onEnd: () => void; onError: (detail: string) => void }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    return () => {
+      const frame = frameRef.current;
+      if (!frame) return;
+      try {
+        frame.src = "about:blank";
+        frame.removeAttribute("srcdoc");
+        frame.contentWindow?.stop?.();
+      } catch {}
+      try { frame.remove(); } catch {}
+    };
+  }, [url]);
+
+  return <TimedStage seconds={seconds} onEnd={onEnd}>
+    <iframe
+      ref={frameRef}
+      src={url}
+      title={title}
+      loading="eager"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      onError={() => onError("webpage_load_error")}
+    />
+  </TimedStage>;
+}
 
 const driveCacheWarms = new Map<string, Promise<void>>();
 
