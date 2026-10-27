@@ -58,23 +58,12 @@ export function NotificationCenter() {
         }
       }
     }
-    const [screens, events] = await Promise.all([
-      supabase.from("screens").select("id,name,screen_status(last_seen)").eq("organization_id", organization.id).eq("is_active", true),
+    const [events] = await Promise.all([
       supabase.from("screen_events").select("screen_id,media_id,event_type,payload,occurred_at,media(name),screens(name)")
         .eq("organization_id", organization.id).in("event_type", ["media_error", "content_ended"])
         .gte("occurred_at", new Date(now - 24 * 60 * 60 * 1000).toISOString())
         .order("occurred_at", { ascending: false }).limit(150),
     ]);
-    if (!screens.error) for (const screen of screens.data || []) {
-      const raw = screen.screen_status as { last_seen?: string } | { last_seen?: string }[] | null;
-      const status = Array.isArray(raw) ? raw[0] : raw;
-      const last = status?.last_seen ? new Date(status.last_seen).getTime() : 0;
-      if (prefs.offline && last && now - last > 5 * 60_000) next.push({
-        id: `offline:${screen.id}:${Math.floor(last / (5 * 60_000))}`,
-        title: `TV desconectada: ${screen.name}`, body: "Sem comunicação há mais de 5 minutos.",
-        href: "/telas", type: "offline",
-      });
-    }
     if (!events.error) {
       const latest = new Set<string>();
       for (const raw of events.data || []) {
@@ -94,8 +83,7 @@ export function NotificationCenter() {
 
   useEffect(() => {
     void load();
-    const interval = window.setInterval(() => void load(), 5 * 60_000);
-    return () => window.clearInterval(interval);
+    // No automatic screen-presence polling. Other notifications load on entry.
   }, [load]);
 
   const unread = notices.filter((n) => !seen.includes(n.id));
