@@ -178,19 +178,8 @@ export function ScreensSimplePage() {
     }
   }, [organization]);
 
-  useEffect(() => {
-    void load();
-    if (!organization) return;
-    const channel = supabase
-      .channel(`screens-simple:${organization.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "screen_status", filter: `organization_id=eq.${organization.id}` },
-        () => void load(),
-      )
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  }, [load, organization]);
+  // Status is checked on demand; avoid a full data reload for each status event.
+  useEffect(() => { void load(); }, [load]);
 
   const closePair = () => {
     setPairing(false);
