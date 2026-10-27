@@ -30,7 +30,7 @@ const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_STATE_CHECK_MS = 60_000;
-const BUILD_CHECK_MS = 6 * 60 * 60_000; // Release check only every 6 hours, not every minute.
+const BUILD_CHECK_MS = 24 * 60 * 60_000; // Lightweight daily version check, never force playback reload.
 const PLAYER_RUNTIME_STYLE = `
   .pv-orientation-canvas { position: fixed; left: 50%; top: 50%; overflow: hidden; background: #000; transform-origin: center center; }
   .pv-orientation-canvas .player-fullscreen, .pv-orientation-canvas .player-lframe { width: 100% !important; height: 100% !important; min-width: 0; min-height: 0; }
@@ -367,9 +367,8 @@ export function PlayerPage() {
         const payload = await response.json() as { version?: string };
         const remoteVersion = String(payload?.version || "");
         if (!remoteVersion || remoteVersion === __APP_VERSION__ || !active) return;
-        const reloadUrl = new URL(window.location.href);
-        reloadUrl.searchParams.set("pv_build", remoteVersion.slice(0, 16));
-        window.location.replace(reloadUrl.toString());
+        // Keep playing. The new build is picked up on the next normal player start.
+        // Administrative reload requests remain handled by reloadRevision.
       } catch {
         // Falha silenciosa: o Player continua operando e tenta novamente no próximo ciclo.
       } finally {
@@ -759,7 +758,7 @@ function PlayerLayout({ manifest, item, device, playbackCycle, canvasWidth, canv
     width: `${Math.round(mediaWidth)}px`,
     height: `${Math.round(mediaHeight)}px`,
   };
-  const stage = <div className="player-media-frame" style={mediaFrameStyle}><ReusableMediaStage manifest={manifest} item={item} device={device} playbackCycle={playbackCycle} transition={settings.transition} onEnd={onEnd} onError={onError} /></div>;
+  const stage = <div className="player-media-frame" style={mediaFrameStyle}><div className={`pv-stage-transition ${settings.transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}><MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} /></div></div>;
   if (settings.layout_mode !== "lframe") return <>{preloader}<main className="player-fullscreen player-media-host">{stage}</main></>;
   const currentNews = newsEntries.length ? newsEntries[newsIndex % newsEntries.length] : null;
   const currentInfo = footerInfo.length ? footerInfo[infoIndex % footerInfo.length] : null;
@@ -885,53 +884,6 @@ function messageDisplayMs(message: PlayerMessage) {
   return Math.round(Math.min(24, Math.max(8, readingSeconds)) * 1000);
 }
 
-function ReusableMediaStage({ manifest, item, device, playbackCycle, transition, onEnd, onError }: { manifest: PlayerManifest; item: ManifestItem | null; device: Device; playbackCycle: number; transition: string; onEnd: () => void; onError: (detail: string) => void }) {
-  // Only two first-party panels stay mounted. Third-party pages and video players
-  // are deliberately excluded: hidden iframes can still run timers and use RAM.
-  const reusable = useMemo(() => manifest.items
-    .filter((entry) => {
-      if (entry.media.type !== "webpage" || !entry.media.pageUrl) return false;
-      try {
-        const url = new URL(entry.media.pageUrl, window.location.origin);
-        return url.origin === window.location.origin && url.pathname.startsWith("/paineis/");
-      } catch { return false; }
-    })
-    .slice(0, 2), [manifest.items]);
-  const currentReusable = item && reusable.find((entry) => entry.itemId === item.itemId);
-  const onEndRef = useRef(onEnd);
-  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
-  useEffect(() => {
-    if (!currentReusable) return;
-    const seconds = item?.durationSeconds || item?.media.durationSeconds || 15;
-    const timer = window.setTimeout(() => onEndRef.current(), Math.max(1, seconds) * 1000);
-    return () => window.clearTimeout(timer);
-  }, [currentReusable?.itemId, playbackCycle, item?.durationSeconds, item?.media.durationSeconds]);
-
-  return <>
-    {reusable.map((entry) => (
-      <div
-        key={entry.itemId}
-        className="timed-stage"
-        style={{ display: currentReusable?.itemId === entry.itemId ? "block" : "none", width: "100%", height: "100%" }}
-        aria-hidden={currentReusable?.itemId !== entry.itemId}
-      >
-        <iframe
-          src={cacheBustedUrl(entry.media.pageUrl!, Number(manifest.screen.reloadRevision || 0))}
-          title={entry.media.name}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          loading="eager"
-          style={{ display: "block", width: "100%", height: "100%", border: 0 }}
-        />
-      </div>
-    ))}
-    {!currentReusable && (
-      <div className={`pv-stage-transition ${transition === "cut" ? "cut" : ""}`} key={`${item?.itemId || "standby"}-${playbackCycle}`}>
-        <MediaStage item={item} device={device} organization={manifest.organization} cacheRevision={Number(manifest.screen.reloadRevision || 0)} onEnd={onEnd} onError={onError} />
-      </div>
-    )}
-  </>;
-}
-
 function MediaStage({ item, device, organization, cacheRevision, onEnd, onError }: { item: ManifestItem | null; device: Device; organization: PlayerManifest["organization"]; cacheRevision: number; onEnd: () => void; onError: (detail: string) => void; }) {
   if (!item) return <div className="player-standby"><span className="player-mark"><BrandMark /></span><h1>{organization.displayName}</h1><p>Aguardando conteúdo na playlist.</p></div>;
   const media = item.media; const duration = item.durationSeconds || media.durationSeconds || 15;
@@ -949,15 +901,10 @@ function WebpageStage({ url, title, seconds, onEnd, onError }: { url: string; ti
   const frameRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
+    const frame = frameRef.current;
     return () => {
-      const frame = frameRef.current;
       if (!frame) return;
-      try {
-        frame.src = "about:blank";
-        frame.removeAttribute("srcdoc");
-        frame.contentWindow?.stop?.();
-      } catch {}
-      try { frame.remove(); } catch {}
+      try { frame.src = "about:blank"; } catch { /* iframe already discarded */ }
     };
   }, [url]);
 
