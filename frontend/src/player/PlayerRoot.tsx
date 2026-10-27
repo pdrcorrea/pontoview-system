@@ -23,6 +23,22 @@ import "../mobile-dock-safety.css";
 
 export default function PlayerRoot() {
   useEffect(() => {
+    // Restricted scope: cache only PontoView internal panels, never auth or APIs.
+    if (!("serviceWorker" in navigator)) return;
+    let cancelled = false;
+    const register = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/pv-panel-sw.js", { scope: "/paineis/" });
+        if (!cancelled) void registration.update().catch(() => {});
+      } catch {
+        // TV browsers without service worker support continue normally.
+      }
+    };
+    void register();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     // These controllers are enhancements, not boot requirements. Loading them
     // after React commits the player prevents DOM observers from competing with
     // the initial render on memory-constrained Android TV devices.
