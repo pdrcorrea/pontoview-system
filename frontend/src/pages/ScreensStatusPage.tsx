@@ -24,7 +24,7 @@ export function ScreensStatusPage() {
       return;
     }
 
-    setMessage("Status atualizado agora.");
+    setMessage("Verificação concluída. Veja o resultado e o horário em cada tela.");
     setRefreshKey((value) => value + 1);
   };
 
