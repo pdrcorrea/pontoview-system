@@ -137,7 +137,7 @@ export function ScreensSimplePage() {
     const [screenResult, playlistResult, groupResult, eventsResult] = await Promise.all([
       supabase
         .from("screens")
-        .select("id,organization_id,name,slug,orientation,rotation,default_playlist_id,is_active,settings_revision,reload_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at),screen_settings(*)")
+        .select("id,organization_id,name,slug,orientation,rotation,default_playlist_id,is_active,settings_revision,reload_revision,screen_status(last_seen,current_media_id,current_playlist_id,player_version,screenshot_url,screenshot_at,checked_at,checked_connectivity),screen_settings(*)")
         .eq("organization_id", organization.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
@@ -394,7 +394,7 @@ export function ScreensSimplePage() {
 function ScreenCard({ screen, playlists, issues, onManage }: { screen: Screen; playlists: Playlist[]; issues: PlaybackIssue[]; onManage: () => void }) {
   const status = firstStatus(screen);
   const settings = firstSettings(screen);
-  const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 120000);
+  const online = status?.checked_connectivity === "online";
   const playlistName = playlists.find((playlist) => playlist.id === screen.default_playlist_id)?.name || "Sem playlist padrão";
 
   return (
@@ -406,13 +406,13 @@ function ScreenCard({ screen, playlists, issues, onManage }: { screen: Screen; p
           <p>{screen.orientation === "portrait" ? "Vertical" : "Horizontal"} · {settings?.layout_mode === "lframe" ? "Com informações" : "Tela cheia"}</p>
         </div>
         <span className={online ? "status active" : "status offline-status"}>
-          {online ? <Wifi /> : <WifiOff />}{online ? " Online" : " Offline"}
+          {!status?.checked_at ? <Clock3 /> : online ? <Wifi /> : <WifiOff />}{!status?.checked_at ? " Não verificada" : online ? " Online" : " Sem resposta"}
         </span>
       </div>
 
       <div className="simple-screen-summary">
         <div><small>Conteúdo padrão</small><b>{playlistName}</b></div>
-        <div><small>Último contato</small><b>{timeAgo(status?.last_seen)}</b></div>
+        <div><small>Verificado em</small><b>{formatStatusCheck(status?.checked_at)}</b></div>
       </div>
 
       {issues.length > 0 && (
@@ -489,7 +489,7 @@ function ScreenEditor({
   const [success, setSuccess] = useState<string | null>(null);
 
   const status = firstStatus(screen);
-  const online = Boolean(status?.last_seen && Date.now() - new Date(status.last_seen).getTime() < 120000);
+  const online = status?.checked_connectivity === "online";
   const currentPlaylistName = playlists.find((item) => item.id === status?.current_playlist_id)?.name
     || playlists.find((item) => item.id === playlist)?.name
     || "Sem playlist";
@@ -692,10 +692,10 @@ function ScreenEditor({
       </div>
 
       <div className="screen-health-strip">
-        <span className={online ? "screen-health online" : "screen-health offline"}>{online ? <Wifi /> : <WifiOff />}<b>{online ? "Online" : "Offline"}</b></span>
+        <span className={online ? "screen-health online" : "screen-health offline"}>{!status?.checked_at ? <Clock3 /> : online ? <Wifi /> : <WifiOff />}<b>{!status?.checked_at ? "Não verificada" : online ? "Online" : "Sem resposta"}</b></span>
         <span><Play /><b>{currentPlaylistName}</b></span>
         <span><Clock3 /><b>{operatingHoursSummary(settings.operating_hours)}</b></span>
-        <span className="screen-health-last">Último contato: {timeAgo(status?.last_seen)}</span>
+        <span className="screen-health-last">Verificado em: {formatStatusCheck(status?.checked_at)}</span>
       </div>
 
       <nav className="screen-config-tabs" aria-label="Áreas da configuração">
@@ -1451,7 +1451,7 @@ function AdvancedSettings({
         <div className="diagnostic-grid">
           <div className={online ? "diagnostic-item ok" : "diagnostic-item warn"}>
             {online ? <Wifi /> : <WifiOff />}
-            <span><small>Conexão</small><b>{online ? "TV conectada" : "Sem comunicação"}</b></span>
+            <span><small>Última verificação</small><b>{!status?.checked_at ? "Ainda não verificada" : online ? "TV conectada" : "Sem resposta"}</b></span>
           </div>
           <div className={status?.player_version === CURRENT_PLAYER_VERSION ? "diagnostic-item ok" : "diagnostic-item"}>
             <RefreshCw />
@@ -1718,4 +1718,10 @@ function readPairError(message: string) {
   if (message.includes("SCREEN_LIMIT")) return "O limite de telas do plano foi atingido.";
   if (message.includes("SUBSCRIPTION")) return "A assinatura precisa estar ativa para conectar uma nova tela.";
   return message;
+}
+
+function formatStatusCheck(value: string | null | undefined): string {
+  if (!value) return "Ainda não verificado";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Ainda não verificado" : date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
