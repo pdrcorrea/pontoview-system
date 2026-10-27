@@ -31,7 +31,7 @@ export function ScreensStatusPage() {
   return (
     <>
       <ScreensSimplePage key={refreshKey} statusControl={
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10, margin: "4px 0 20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10, margin: "4px 0 20px" }}>
         {message && (
           <span
             role="status"
@@ -47,7 +47,7 @@ export function ScreensStatusPage() {
               boxShadow: "0 8px 24px rgba(28, 45, 60, .10)",
               fontSize: 13,
               fontWeight: 700,
-              }}
+            }}
           >
             <CheckCircle2 size={16} /> {message}
           </span>
@@ -59,13 +59,11 @@ export function ScreensStatusPage() {
           onClick={() => void checkStatus()}
           disabled={checking}
           title="Consultar agora a comunicação das telas"
-          style={{
-          }}
         >
           {checking ? <RefreshCw className="spin" /> : <Wifi />}
           {checking ? "Verificando…" : "Verificar status"}
         </button>
-      </div>
+        </div>
       } />
     </>
   );
