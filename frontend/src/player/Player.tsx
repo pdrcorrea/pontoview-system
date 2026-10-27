@@ -446,7 +446,7 @@ export function PlayerPage() {
         try { native.bridge.syncManifest(native.session, activeDevice.screenId, activeDevice.token, JSON.stringify(next)); } catch {}
       }
       setManifest(next); setConnected(true); setError(null); setIndex((current) => Math.min(current, Math.max(0, next.items.length - 1)));
-      const stateResult = await supabase.rpc("get_player_state", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token });
+      const stateResult = await supabase.rpc("get_player_state_v2", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_player_version: CURRENT_PLAYER_VERSION });
       if (!stateResult.error && stateResult.data && typeof (stateResult.data as { stateKey?: unknown }).stateKey === "string") {
         stateKeyRef.current = String((stateResult.data as { stateKey: string }).stateKey);
       }
