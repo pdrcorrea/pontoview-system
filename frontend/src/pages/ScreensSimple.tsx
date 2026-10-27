@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   Building2,
   CalendarClock,
@@ -119,7 +119,7 @@ type Group = {
 
 type PlaybackIssue = { name: string; detail: string; occurredAt: string };
 
-export function ScreensSimplePage() {
+export function ScreensSimplePage({ statusControl }: { statusControl?: ReactNode }) {
   const { organization, user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [screens, setScreens] = useState<Screen[]>([]);
@@ -281,6 +281,7 @@ export function ScreensSimplePage() {
         onAction={() => setPairing(true)}
       />
       <FormMessage error={!pairing ? error : null} />
+      {statusControl}
 
       {screens.length ? (
         <div className="simple-screen-grid">
