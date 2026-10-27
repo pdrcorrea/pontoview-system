@@ -30,7 +30,7 @@ const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
 const DEVICE_KEY = "pontoview_player_device_v1";
 const NEWS_REFRESH_MS = 5 * 60_000;
 const PLAYER_STATE_CHECK_MS = 60_000;
-const BUILD_CHECK_MS = 60_000;
+const BUILD_CHECK_MS = 6 * 60 * 60_000; // Release check only every 6 hours, not every minute.
 const PLAYER_RUNTIME_STYLE = `
   .pv-orientation-canvas { position: fixed; left: 50%; top: 50%; overflow: hidden; background: #000; transform-origin: center center; }
   .pv-orientation-canvas .player-fullscreen, .pv-orientation-canvas .player-lframe { width: 100% !important; height: 100% !important; min-width: 0; min-height: 0; }
