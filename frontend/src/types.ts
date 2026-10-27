@@ -80,6 +80,8 @@ export interface Screen {
 
 export interface ScreenStatus {
   last_seen: string;
+  checked_at?: string | null;
+  checked_connectivity?: "online" | "offline" | null;
   current_media_id: string | null;
   current_playlist_id: string | null;
   player_version: string | null;
