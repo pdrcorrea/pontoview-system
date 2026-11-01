@@ -106,6 +106,7 @@ export function HomePage() {
           <a href="#como-funciona">Como funciona</a>
           <a href="#recursos">Recursos</a>
           <a href="#aplicacoes">Aplicações</a>
+          <Link to="/downloads">Baixar player</Link>
         </nav>
 
         <div className="pv-home-header-actions">
@@ -142,6 +143,7 @@ export function HomePage() {
             <button type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}><X /></button>
           </div>
           <div className="pv-home-menu-actions">
+            <Link className="pv-home-menu-login" to="/downloads" onClick={() => setMenuOpen(false)}>Baixar o player</Link>
             {!user && (
               <Link className="pv-home-menu-login" to="/login" onClick={() => setMenuOpen(false)}>
                 Entrar
