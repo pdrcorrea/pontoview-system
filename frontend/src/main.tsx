@@ -67,7 +67,7 @@ if (isDedicatedPlayer) {
     recoverPlayerBoot();
   }
 } else if (PLAYER_HOSTS.has(window.location.hostname.toLowerCase()) && isDownloadsRoute) {
-  import("./pages/Downloads").then(({ DownloadsPage }) => render(<DownloadsPage />)).catch(() => {
+  import("./pages/Downloads").then(({ DownloadsPage }) => render(<BrowserRouter><DownloadsPage /></BrowserRouter>)).catch(() => {
     if (rootElement) rootElement.textContent = "Não foi possível abrir os downloads.";
   });
 } else {
