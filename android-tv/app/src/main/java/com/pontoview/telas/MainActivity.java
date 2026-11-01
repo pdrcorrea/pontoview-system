@@ -31,10 +31,10 @@ public class MainActivity extends Activity {
     private long lastRendererRestartMs = 0L;
     private int rendererCrashes = 0;
     private final Handler reconnectHandler = new Handler(Looper.getMainLooper());
+    private WebView webView;
     private final Runnable reconnect = () -> {
         if (webView != null && !isFinishing()) webView.loadUrl(HOME_URL);
     };
-    private WebView webView;
     private FrameLayout root;
     private FrameLayout nativeLayer;
     private NativeMediaBridge nativeBridge;
