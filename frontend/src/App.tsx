@@ -25,6 +25,7 @@ import { BillingPage } from "./pages/Billing";
 import { HelpPage } from "./pages/Help";
 import { SupportPage } from "./pages/Support";
 import { PlayerPage } from "./player/Player";
+import { DownloadsPage } from "./pages/Downloads";
 import "./styles.css";
 import "./styles-v2.css";
 import "./system.css";
@@ -118,7 +119,7 @@ export default function App() {
   const path = window.location.pathname;
 
   if (PLAYER_HOSTS.has(host)) {
-    return <Routes><Route path="*" element={<PlayerPage />} /></Routes>;
+    return <Routes><Route path="/downloads" element={<DownloadsPage />} /><Route path="/download" element={<DownloadsPage />} /><Route path="*" element={<PlayerPage />} /></Routes>;
   }
   if (CENTRAL_HOSTS.has(host)) return <CentralHostApp />;
   if (CONTENT_HOSTS.has(host)) return <ContentHostApp />;
@@ -129,6 +130,8 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/downloads" element={<DownloadsPage />} />
+        <Route path="/download" element={<DownloadsPage />} />
         <Route path="/player" element={<PlayerPage />} />
         <Route path="/player/:screenId" element={<PlayerPage />} />
         <Route path="/auth/confirmado" element={<AuthCallback />} />
