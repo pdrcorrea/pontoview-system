@@ -162,6 +162,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 if (isTrustedTopLevelUrl(Uri.parse(url))) {
+                    reconnectHandler.removeCallbacks(reconnect);
                     injectNativeRuntime();
                     view.postDelayed(() -> injectNativeRuntime(), 500);
                     view.postDelayed(() -> injectNativeRuntime(), 1500);
@@ -221,7 +222,7 @@ public class MainActivity extends Activity {
                 "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
                 "window.__PV_NATIVE_APP_VERSION='2.0.0-beta11';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta10'}}));" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta11'}}));" +
                 "})();";
         webView.evaluateJavascript(script, null);
         injectPlaybackCompatibility();
