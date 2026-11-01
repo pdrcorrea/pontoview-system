@@ -1,0 +1,48 @@
+name: Build PontoView Player Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/windows-player-beta
+    paths:
+      - 'windows-player/**'
+      - '.github/workflows/build-windows-player.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        working-directory: windows-player
+        run: npm install --no-audit --no-fund
+
+      - name: Check main process syntax
+        working-directory: windows-player
+        run: npm run check
+
+      - name: Build Windows installer
+        working-directory: windows-player
+        run: npm run build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Upload Windows beta installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: PontoView-Player-Windows-beta1
+          path: windows-player/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
