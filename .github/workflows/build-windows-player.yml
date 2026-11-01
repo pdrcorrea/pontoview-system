@@ -30,17 +30,18 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Bootstrap versioned dependency lockfile (first run only)
+      - name: Synchronize dependency lockfile
         shell: pwsh
         working-directory: windows-player
         run: |
-          if (-not (Test-Path package-lock.json)) {
-            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-            if ($LASTEXITCODE -ne 0) { throw "Could not generate lockfile" }
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw "Could not resolve dependency lockfile" }
+          git add package-lock.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "build(windows): pin dependency graph for reproducible releases"
+            git commit -m "build(windows): refresh pinned dependency graph"
             git push origin "HEAD:${{ github.ref_name }}"
             if ($LASTEXITCODE -ne 0) { throw "Could not persist dependency lockfile" }
           }
