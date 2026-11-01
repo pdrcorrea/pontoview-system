@@ -1,22 +1,24 @@
-# PontoView Telas Android TV 2.0.0 beta 9
+# PontoView Telas Android TV 2.0.0 beta 11
 
-Arquitetura de vídeo otimizada para sticks Android de baixo custo.
+Versão de teste do aplicativo Android TV. Mantém o motor nativo de mídia e o cache persistente da beta 10.
 
-## Estratégia
-- O Android baixa vídeos do Google Drive por completo para armazenamento persistente.
-- O vídeo é servido internamente pela própria APK em uma origem privada HTTPS interceptada pelo WebView.
-- O servidor local suporta requisições HTTP Range, evitando carregar o MP4 inteiro em memória.
-- A reprodução usa o motor HTML5/WebView, que foi o caminho mais compatível observado no Pro Eletronic.
-- A rede não participa da reprodução depois que o arquivo foi preparado.
-- Apenas um decoder de vídeo fica ativo por vez.
-- O pré-carregamento baixa arquivos, mas não cria um segundo elemento <video>.
-- Se a rota local falhar, o Player ainda pode recorrer ao fluxo web tradicional.
+## Melhorias da beta 11
+- Reconstrução da WebView quando o processo de renderização é encerrado, liberando a instância inválida e o motor nativo associado
+- Recuperação com espera progressiva para evitar reinícios contínuos
+- Nova tentativa após falha de carregamento da página principal, sem buscar dados no Supabase a cada tentativa
+- Restrição de navegação da janela principal a `https://tv.pontoview.com.br/`
+- Acesso a arquivos locais desabilitado, conteúdo misto bloqueado, depuração WebView desativada e janelas automáticas bloqueadas
+- Versão e User-Agent atualizados
 
-## Conteúdo
-- Drive vídeo: arquivo local + WebView.
-- Drive imagem: biblioteca local otimizada.
-- YouTube, sites e painéis: WebView.
-- Start automático: configuração por tela persistida no Android.
+## Características preservadas
+- Instalação APK Android TV, inicialização automática quando o dispositivo permite e a preferência está ativa
+- Vinculação via código e playlists atuais do PontoView
+- Vídeos do Google Drive armazenados em biblioteca local, servidos com HTTP Range
+- Cache persistente de imagens e vídeos; conteúdo HTML e YouTube pelo WebView
+- Limite de um decoder de vídeo ativo e watchdog de reprodução
 
-## Compatibilidade
-Para maior previsibilidade em hardware heterogêneo, o perfil recomendado continua sendo MP4 H.264/AAC, 1920x1080, 30 fps.
+## Avisos
+- **Não instalar por cima da beta 10** sem validar compatibilidade de assinatura e dados de vinculação. APK debug assinado em outro runner pode exigir desinstalação.
+- **Não é uma versão comercial assinada.** Os artifacts do GitHub Actions são destinados a testes internos, sem publicação no main.
+- Não existe garantia de reprodução totalmente offline de páginas externas ou do YouTube.
+- Testar em Android TV de baixo custo por 24 a 72 horas antes de distribuir.
