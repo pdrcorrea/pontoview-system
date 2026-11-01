@@ -1,43 +1,33 @@
-.pv-downloads{min-height:100vh;background:#061426;color:#eef6ff;font-family:Arial,Helvetica,sans-serif;position:relative;isolation:isolate;display:flex;flex-direction:column}
-.pv-downloads *{box-sizing:border-box}
-.pv-downloads a{text-decoration:none}
-.pv-downloads-bg{position:absolute;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(ellipse 55% 40% at 51% -4%,rgba(29,125,230,.23),transparent),radial-gradient(ellipse 25% 28% at 100% 50%,rgba(7,87,182,.13),transparent)}
-.pv-downloads-header{width:min(1160px,calc(100% - 44px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:25px 0}
-.pv-downloads-logo{display:inline-flex;align-items:center;gap:11px;color:#eef6ff}
-.pv-downloads-logo img{width:45px;height:45px;object-fit:contain}
-.pv-downloads-logo span{display:flex;flex-direction:column;line-height:1.05}
-.pv-downloads-logo strong{font-size:19px;letter-spacing:-.035em}
-.pv-downloads-logo small{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#93b5d8;margin-top:4px}
-.pv-downloads-back{display:inline-flex;align-items:center;gap:8px;color:#bbd2e8;font-size:14px;font-weight:700}
-.pv-downloads-back:hover{color:white}
-.pv-downloads-content{width:min(1160px,calc(100% - 44px));margin:0 auto;flex:1}
-.pv-downloads-intro{text-align:center;padding:55px 0 47px;max-width:790px;margin:auto}
-.pv-downloads-eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid #284e78;border-radius:100px;background:rgba(8,35,69,.9);padding:8px 14px;color:#a9d3fb;font-size:11px;letter-spacing:.15em;font-weight:800;text-transform:uppercase}
-.pv-downloads-pulse{width:7px;height:7px;background:#6cbdff;border-radius:50%;box-shadow:0 0 12px #49a8ff}
-.pv-downloads-intro h1{font-weight:800;font-size:clamp(36px,5.2vw,65px);line-height:1.08;letter-spacing:-.055em;margin:23px 0 16px;color:#fff}
-.pv-downloads-intro h1 span{display:block;color:#77b9ff}
-.pv-downloads-intro p{color:#a9bfd3;max-width:610px;margin:0 auto;font-size:clamp(15px,1.6vw,18px);line-height:1.65}
-.pv-downloads-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-.pv-downloads-card{border:1px solid #294360;background:linear-gradient(150deg,rgba(21,49,79,.88),rgba(8,25,45,.94));border-radius:22px;padding:30px;display:flex;flex-direction:column;min-height:370px;box-shadow:0 18px 45px rgba(0,0,0,.08)}
-.pv-downloads-card:hover{border-color:#3b78b5}
-.pv-downloads-icon{width:58px;height:58px;display:grid;place-items:center;background:#133d6a;border:1px solid #235383;border-radius:17px;color:#86c5ff;margin-bottom:25px}
-.pv-downloads-meta{color:#83b9e8;font-size:10px;letter-spacing:.16em;font-weight:800}
-.pv-downloads-card h2{font-size:29px;letter-spacing:-.04em;margin:8px 0 10px;color:#fff}
-.pv-downloads-card p{color:#adbed0;font-size:14px;line-height:1.65;margin:0}
+/* Segue a linguagem visual da home: fundo claro, navegação flutuante,
+   tipografia, cartões e botões da família pv-home. */
+.pv-downloads{font-family:inherit;min-height:100vh;display:flex;flex-direction:column;background:#f7f9fc;color:#152238}
+.pv-downloads-content{width:min(1210px,calc(100% - 44px));margin:0 auto;flex:1}
+.pv-downloads-intro{text-align:center;max-width:850px;margin:0 auto;padding:clamp(50px,7vw,96px) 0 46px}
+.pv-downloads-intro .pv-home-kicker{justify-content:center}
+.pv-downloads-intro h1{font-size:clamp(40px,5.3vw,70px);line-height:1.02;letter-spacing:-.06em;color:#102038;margin:20px 0 17px;font-weight:800}
+.pv-downloads-intro h1 span{color:#1766b2}
+.pv-downloads-intro p{max-width:650px;margin:0 auto;color:#617186;font-size:clamp(14px,1.5vw,17px);line-height:1.7}
+.pv-downloads .pv-home-header .pv-home-nav a[aria-current="page"]{color:#073f85;background:#edf6fb}
+.pv-downloads-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.pv-downloads-card{background:#fff;border:1px solid #dfe6ed;border-radius:19px;min-height:360px;padding:29px;display:flex;flex-direction:column;box-shadow:0 12px 36px rgba(31,56,87,.045);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.pv-downloads-card:hover{border-color:#b9d0e5;box-shadow:0 22px 45px rgba(31,56,87,.09);transform:translateY(-3px)}
+.pv-downloads-icon{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;color:#0b5da8;background:#eaf2fb;margin-bottom:23px}
+.pv-downloads-icon svg{width:23px;height:23px}
+.pv-downloads-meta{color:#1766b2;font-weight:800;font-size:10px;letter-spacing:.12em}
+.pv-downloads-card h2{margin:9px 0 10px;font-size:27px;letter-spacing:-.04em;line-height:1.12;color:#1e3048}
+.pv-downloads-card p{margin:0;color:#6b7b8f;font-size:13px;line-height:1.7}
 .pv-downloads-spacer{flex:1;min-height:30px}
-.pv-downloads-button{min-height:51px;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:11px;background:#163e6a;color:#fff!important;font-size:13px;font-weight:800;padding:11px;text-align:center;border:1px solid #3b638a;transition:background .2s,transform .2s}
-.pv-downloads-button:hover{background:#22558a;transform:translateY(-2px)}
-.pv-downloads-primary{background:#1371de;border-color:#278af4}
-.pv-downloads-primary:hover{background:#2183f0}
-.pv-downloads-card>small{font-size:11px;color:#92a9c1;line-height:1.45;margin-top:12px;text-align:center}
-.pv-downloads-inline-link{color:#9ecfff!important;text-decoration:underline!important}
-.pv-downloads-notes{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:37px 0 55px}
-.pv-downloads-notes>div{display:flex;align-items:flex-start;gap:15px;color:#79b5ed}
-.pv-downloads-notes span{display:flex;flex-direction:column;gap:3px}
-.pv-downloads-notes strong{font-size:14px;color:#dcecff}
-.pv-downloads-notes small{font-size:12px;line-height:1.55;color:#8fa9c2}
-.pv-downloads-footer{border-top:1px solid #1b324a;display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center;padding:22px;color:#87a5c0;font-size:12px}
-.pv-downloads-footer a{color:#a5c3dc}
-@media(max-width:900px){.pv-downloads-grid{grid-template-columns:1fr;max-width:540px;margin:auto}.pv-downloads-card{min-height:290px}.pv-downloads-intro{padding-top:25px}.pv-downloads-notes{max-width:540px;margin:30px auto 50px;grid-template-columns:1fr}}
-@media(max-width:490px){.pv-downloads-header{padding:17px 0}.pv-downloads-back{font-size:12px}.pv-downloads-card{padding:23px}.pv-downloads-intro h1{font-size:37px}}
-@media(prefers-reduced-motion:reduce){.pv-downloads-button{transition:none}.pv-downloads-button:hover{transform:none}}
+.pv-downloads-button{min-height:48px;padding:11px 14px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-size:12px;font-weight:800;background:#073f85;color:#fff!important;border:1px solid #073f85;transition:background .2s ease,transform .2s ease}
+.pv-downloads-button:hover{background:#0a4d9e;transform:translateY(-1px)}
+.pv-downloads-primary{background:#073f85}
+.pv-downloads-card>small{display:block;margin-top:13px;font-size:11px;line-height:1.45;color:#74859a;text-align:center}
+.pv-downloads-inline-link{color:#0b5da8!important;text-decoration:underline!important}
+.pv-downloads-notes{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:36px 0 68px}
+.pv-downloads-notes>div{display:flex;gap:13px;align-items:flex-start;padding:20px 22px;border:1px solid #e1e7ee;border-radius:15px;background:#fff;color:#1766b2}
+.pv-downloads-notes span{display:flex;flex-direction:column;gap:5px}
+.pv-downloads-notes strong{color:#1e3048;font-size:13px}
+.pv-downloads-notes small{color:#6b7b8f;font-size:12px;line-height:1.55}
+.pv-downloads .pv-home-footer{width:100%}
+@media(max-width:900px){.pv-downloads-grid{grid-template-columns:1fr;max-width:600px;margin:auto}.pv-downloads-card{min-height:260px}.pv-downloads-notes{max-width:600px;grid-template-columns:1fr;margin:25px auto 55px}}
+@media(max-width:760px){.pv-downloads-intro{padding-top:40px}.pv-downloads-card{padding:23px}.pv-downloads-intro h1{font-size:clamp(35px,9vw,49px)}}
+@media(prefers-reduced-motion:reduce){.pv-downloads-card,.pv-downloads-button{transition:none}.pv-downloads-card:hover,.pv-downloads-button:hover{transform:none}}
