@@ -1,40 +1,75 @@
-import { useEffect } from "react";
-import { ArrowLeft, ArrowUpRight, Download, Globe2, MonitorDown, ShieldCheck, Smartphone, Tv } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, ArrowUpRight, Download, Globe2, Menu, MonitorDown, ShieldCheck, Smartphone, Sparkles, Tv, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import "../home.css";
+import "../home-refinements.css";
 import "./Downloads.css";
 
-// URLs verificadas no repositório oficial PontoView.
-// O Windows permanece como artifact de CI para teste: GitHub exige login e não oferece URL pública permanente.
+// Windows permanece disponível como artefato de testes, não como download público definitivo.
 const WEB_PLAYER = "https://tv.pontoview.com.br/";
 const WINDOWS_BETA = "https://github.com/pdrcorrea/pontoview-system/actions/runs/41302855220";
 const ANDROID_APK = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta4/PontoView-Telas-v3.0.0-beta4.apk";
 const ANDROID_SHA256 = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta4/PontoView-Telas-v3.0.0-beta4.sha256";
 
 export function DownloadsPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
-    const title = document.title;
+    const previousTitle = document.title;
     document.title = "Baixar PontoView Player | PontoView Telas";
-    return () => { document.title = title; };
+    return () => { document.title = previousTitle; };
+  }, []);
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
   }, []);
 
   return (
-    <div className="pv-downloads">
-      <div className="pv-downloads-bg" aria-hidden="true" />
-      <header className="pv-downloads-header">
-        <Link to="/" className="pv-downloads-logo" aria-label="Voltar ao PontoView Telas">
-          <img src="/assets/TelasIconBranco.png" alt="" />
-          <span><strong>PontoView</strong><small>Telas</small></span>
+    <div className="pv-home pv-downloads">
+      <header className="pv-home-header">
+        <Link className="pv-home-brand" to="/" aria-label="PontoView Telas, página inicial">
+          <span className="pv-home-brandmark">
+            <img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-4" alt="" />
+          </span>
+          <span className="pv-home-brandname"><strong>PontoView</strong><small>Telas</small></span>
         </Link>
-        <Link to="/" className="pv-downloads-back"><ArrowLeft size={17} /> Voltar ao site</Link>
-      </header>
-      <main className="pv-downloads-content">
-        <div className="pv-downloads-intro">
-          <div className="pv-downloads-eyebrow"><span className="pv-downloads-pulse" /> PontoView Player</div>
-          <h1>Seu conteúdo. <span>Em qualquer tela.</span></h1>
-          <p>Escolha como reproduzir suas playlists e painéis. Use diretamente no navegador ou instale o aplicativo no seu dispositivo.</p>
+        <nav className="pv-home-nav" aria-label="Navegação principal">
+          <Link to="/">Início</Link>
+          <Link to="/#como-funciona">Como funciona</Link>
+          <Link to="/#recursos">Recursos</Link>
+          <Link to="/downloads" aria-current="page">Baixar player</Link>
+        </nav>
+        <div className="pv-home-header-actions">
+          <Link className="pv-home-header-login" to="/login">Entrar</Link>
+          <Link className="pv-home-header-cta" to="/cadastro">Criar conta <ArrowRight /></Link>
         </div>
+        <button className="pv-home-menu-button" type="button" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}>
+          {menuOpen ? <X/> : <Menu/>}
+        </button>
+      </header>
+      <div className={`pv-home-menu-overlay${menuOpen ? " open" : ""}`} aria-hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
+        <div className="pv-home-menu-panel" onClick={event => event.stopPropagation()}>
+          <div className="pv-home-menu-head"><span>PontoView Telas</span><button type="button" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X /></button></div>
+          <div className="pv-home-menu-actions">
+            <Link className="pv-home-menu-login" to="/login" onClick={() => setMenuOpen(false)}>Entrar</Link>
+            <Link className="pv-home-menu-primary" to="/cadastro" onClick={() => setMenuOpen(false)}>Criar conta <ArrowRight /></Link>
+          </div>
+          <div className="pv-home-menu-grid">
+            <Link to="/" onClick={() => setMenuOpen(false)}><strong>Página inicial</strong><span>Conheça o PontoView Telas</span></Link>
+            <Link to="/downloads" onClick={() => setMenuOpen(false)}><strong>Baixar player</strong><span>Windows, Android TV e navegador</span></Link>
+            <a href="https://pontoview.com.br/legal/" onClick={() => setMenuOpen(false)}><strong>Privacidade e segurança</strong><span>Dados, termos e transparência</span></a>
+            <a href="https://pontoview.com.br/suporte/" onClick={() => setMenuOpen(false)}><strong>Suporte</strong><span>Precisa de ajuda?</span></a>
+          </div>
+        </div>
+      </div>
 
-        <div className="pv-downloads-grid">
+      <main className="pv-downloads-content">
+        <section className="pv-downloads-intro">
+          <span className="pv-home-kicker"><Sparkles /> PontoView Telas · Player</span>
+          <h1>Suas telas prontas <span>para reproduzir.</span></h1>
+          <p>Escolha a melhor forma de exibir seus conteúdos. Abra o player no navegador ou instale o aplicativo no Windows e no Android TV.</p>
+        </section>
+                <div className="pv-downloads-grid">
           <article className="pv-downloads-card">
             <span className="pv-downloads-icon"><Globe2 size={28} strokeWidth={1.8}/></span>
             <div className="pv-downloads-meta">SEM INSTALAÇÃO</div>
@@ -72,12 +107,25 @@ export function DownloadsPage() {
           </article>
         </div>
 
+
         <div className="pv-downloads-notes">
-          <div><ShieldCheck size={21}/><span><strong>Vinculação simples</strong><small>Ao abrir o player, use o código na seção Telas do seu painel de controle.</small></span></div>
-          <div><Smartphone size={21}/><span><strong>Instale com segurança</strong><small>Utilize apenas arquivos oficiais. As versões beta ainda exigem testes de compatibilidade.</small></span></div>
+          <div><ShieldCheck size={21}/><span><strong>Vinculação simples</strong><small>Ao abrir o player, use o código na seção Telas do painel de controle.</small></span></div>
+          <div><Smartphone size={21}/><span><strong>Instalação segura</strong><small>Utilize os arquivos oficiais. As versões beta ainda exigem testes de compatibilidade.</small></span></div>
         </div>
       </main>
-      <footer className="pv-downloads-footer"><span>© 2026 PontoView · Telas</span><a href="https://pontoview.com.br/legal/privacidade/">Privacidade</a><a href="https://pontoview.com.br/suporte/">Suporte</a></footer>
+
+      <footer className="pv-home-footer">
+        <Link className="pv-home-brand pv-home-footer-brand" to="/">
+          <span className="pv-home-brandmark"><img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-4" alt="" /></span>
+          <span className="pv-home-brandname"><strong>PontoView</strong><small>Telas</small></span>
+        </Link>
+        <p>PontoView Telas · um produto PontoView</p>
+        <nav aria-label="Links institucionais">
+          <a href="https://pontoview.com.br">Ecossistema</a>
+          <a href="https://pontoview.com.br/legal/privacidade/">Privacidade</a>
+          <a href="https://pontoview.com.br/suporte/">Suporte</a>
+        </nav>
+      </footer>
     </div>
   );
 }
