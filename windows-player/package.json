@@ -1,14 +1,15 @@
 {
   "name": "pontoview-player-windows",
   "productName": "PontoView Player",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "private": true,
   "description": "Reprodutor dedicado de sinalizacao digital PontoView para Windows",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
     "build:win": "electron-builder --win nsis --x64 --publish never",
-    "check": "node --check main.cjs"
+    "check": "node --check main.cjs && node --check security.cjs && npm test",
+    "test": "node --test security.test.cjs"
   },
   "devDependencies": {
     "electron": "45.2.1",
@@ -18,9 +19,34 @@
     "appId": "br.com.pontoview.player",
     "productName": "PontoView Player",
     "asar": true,
-    "files": ["main.cjs", "offline.html", "package.json"],
-    "directories": {"output": "dist"},
-    "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "artifactName": "PontoView-Player-Windows-${version}-Setup.${ext}"},
-    "nsis": {"oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true}
+    "files": [
+      "main.cjs",
+      "security.cjs",
+      "offline.html",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "PontoView-Player-Windows-${version}-Setup.${ext}",
+      "icon": "../android-tv/app/src/main/res/drawable/pontoview_icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "npmRebuild": false
   }
 }
