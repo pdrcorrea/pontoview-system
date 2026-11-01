@@ -5,9 +5,10 @@ import "../home.css";
 import "../home-refinements.css";
 import "./Downloads.css";
 
-// Windows permanece disponível como artefato de testes, não como download público definitivo.
+// Download direto do executável de testes publicado como asset público de uma prerelease.
+// O arquivo permanece sem assinatura digital Authenticode.
 const WEB_PLAYER = "https://tv.pontoview.com.br/";
-const WINDOWS_BETA = "https://github.com/pdrcorrea/pontoview-system/actions/runs/41302855220";
+const WINDOWS_BETA = "https://github.com/pdrcorrea/pontoview-system/releases/download/windows-v1.0.0-beta.2-unsigned/PontoView-Player-Windows-1.0.0-beta.2-Setup.exe";
 const ANDROID_APK = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta4/PontoView-Telas-v3.0.0-beta4.apk";
 const ANDROID_SHA256 = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta4/PontoView-Telas-v3.0.0-beta4.sha256";
 
@@ -89,9 +90,9 @@ export function DownloadsPage() {
             <p>Aplicativo para computador com execução em tela cheia, início automático no login e recuperação de falhas.</p>
             <div className="pv-downloads-spacer"/>
             <a className="pv-downloads-button" href={WINDOWS_BETA} target="_blank" rel="noopener noreferrer">
-              Acessar instalador de testes <ArrowUpRight size={18} />
+              <Download size={18} /> Baixar para Windows
             </a>
-            <small>Disponível em Artifacts no GitHub, requer login. Beta sem assinatura digital.</small>
+            <small>Download direto do instalador .exe · Beta sem assinatura digital.</small>
           </article>
 
           <article className="pv-downloads-card">
