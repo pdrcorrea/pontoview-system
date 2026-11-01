@@ -1,11 +1,13 @@
 'use strict';
 
-const { app, BrowserWindow, dialog, powerSaveBlocker, shell, session } = require('electron');
+const { app, BrowserWindow, dialog, powerSaveBlocker, session } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+const { PLAYER_ORIGIN, isTrustedNavigation, isAllowedResourceRequest, getSafeOrigin } = require('./security.cjs');
 
-const PLAYER_URL = 'https://tv.pontoview.com.br/';
-const PLAYER_ORIGIN = new URL(PLAYER_URL).origin;
+const PLAYER_URL = PLAYER_ORIGIN + '/';
+const PARTITION = 'persist:pontoview-player';
 const MAX_LOG_BYTES = 2 * 1024 * 1024;
 const MAX_RECENT_CRASHES = 5;
 const CRASH_WINDOW_MS = 10 * 60 * 1000;
@@ -22,6 +24,7 @@ let currentOffline = false;
 const recentCrashes = [];
 
 app.setName('PontoView Player');
+if (process.platform === 'win32') app.setAppUserModelId('br.com.pontoview.player');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 
@@ -69,14 +72,14 @@ async function loadPlayer() {
     currentOffline = false;
     log('player-loaded');
   } catch (error) {
-    log('player-load-failed', { message: error.message });
+    log('player-load-failed', { code: String(error.code || 'LOAD_FAILED').slice(0, 48) });
     showOffline();
     scheduleRetry();
   }
 }
 
 function handleCrash(reason, exitCode) {
-  if (quitting) return;
+  if (quitting || restartTimer) return;
   log('renderer-crash', { reason, exitCode });
   recentCrashes.push(Date.now());
   while (recentCrashes.length && Date.now() - recentCrashes[0] > CRASH_WINDOW_MS) {
@@ -87,22 +90,36 @@ function handleCrash(reason, exitCode) {
   restartTimer = setTimeout(() => {
     restartTimer = null;
     restarting = true;
-    if (window && !window.isDestroyed()) {
-      window.destroy();
+    try {
+      if (window && !window.isDestroyed()) window.destroy();
+      window = null;
+      createWindow();
+    } finally {
+      restarting = false;
     }
-    window = null;
-    createWindow();
-    restarting = false;
   }, extraDelay);
 }
 
-function isTrustedNavigation(rawUrl) {
-  try {
-    const parsed = new URL(rawUrl);
-    return parsed.origin === PLAYER_ORIGIN || parsed.protocol === 'about:';
-  } catch {
-    return false;
-  }
+function restrictWebContents(contents) {
+  // Do not allow remote HTML to open external links in the user's browser.
+  contents.setWindowOpenHandler(({ url }) => {
+    log('blocked-popup', { origin: getSafeOrigin(url) });
+    return { action: 'deny' };
+  });
+  contents.on('will-navigate', (event, url) => {
+    if (!isTrustedNavigation(url)) {
+      event.preventDefault();
+      log('blocked-navigation', { origin: getSafeOrigin(url) });
+    }
+  });
+  contents.on('will-redirect', (event, url, _isInPlace, isMainFrame) => {
+    if (isMainFrame && !isTrustedNavigation(url)) {
+      event.preventDefault();
+      log('blocked-redirect', { origin: getSafeOrigin(url) });
+    }
+  });
+  contents.on('will-attach-webview', (event) => event.preventDefault());
+  contents.on('devtools-opened', () => contents.closeDevTools());
 }
 
 function createWindow() {
@@ -118,33 +135,29 @@ function createWindow() {
     autoHideMenuBar: true,
     backgroundColor: '#030b19',
     webPreferences: {
-      partition: 'persist:pontoview-player',
+      partition: PARTITION,
       nodeIntegration: false,
+      nodeIntegrationInWorker: false,
       contextIsolation: true,
       sandbox: true,
       webSecurity: true,
+      allowRunningInsecureContent: false,
+      webviewTag: false,
+      devTools: false,
       backgroundThrottling: false,
       autoplayPolicy: 'no-user-gesture-required'
     }
   });
   window = player;
+  currentOffline = false;
   player.setMenuBarVisibility(false);
-  player.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https:\/\//i.test(url)) void shell.openExternal(url);
-    return { action: 'deny' };
-  });
-  player.webContents.on('will-navigate', (event, url) => {
-    if (!isTrustedNavigation(url)) {
-      event.preventDefault();
-      log('blocked-navigation', { origin: (() => { try { return new URL(url).origin; } catch { return 'invalid'; } })() });
-    }
-  });
+  restrictWebContents(player.webContents);
   player.webContents.on('render-process-gone', (_event, details) => {
     handleCrash(details.reason, details.exitCode);
   });
   player.webContents.on('did-fail-load', (_event, code, description, validatedURL, isMainFrame) => {
-    if (!isMainFrame || code === -3 || currentOffline || !validatedURL.startsWith(PLAYER_ORIGIN)) return;
-    log('load-error', { code, description });
+    if (!isMainFrame || code === -3 || currentOffline || !isTrustedNavigation(validatedURL)) return;
+    log('load-error', { code });
   });
   player.on('closed', () => {
     if (window === player) window = null;
@@ -177,18 +190,29 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.whenReady().then(() => {
     log('app-start', { version: app.getVersion(), platform: process.platform });
+    // Respect users who disable autostart. Only configure it on first installed launch.
     if (process.platform === 'win32' && app.isPackaged) {
-      // Startup follows the logged-in Windows user; this does not require elevation.
-      const current = app.getLoginItemSettings();
-      if (!current.openAtLogin) {
-        app.setLoginItemSettings({ openAtLogin: true, path: process.execPath });
+      const marker = path.join(app.getPath('userData'), 'startup-preference-initialized');
+      if (!fs.existsSync(marker)) {
+        try {
+          app.setLoginItemSettings({ openAtLogin: true, path: process.execPath });
+          fs.writeFileSync(marker, new Date().toISOString());
+          log('login-startup', { enabled: app.getLoginItemSettings().openAtLogin });
+        } catch (error) {
+          log('login-startup-failed', { reason: String(error.message).slice(0, 100) });
+        }
       }
-      log('login-startup', { enabled: app.getLoginItemSettings().openAtLogin });
     }
     powerBlockerId = powerSaveBlocker.start('prevent-display-sleep');
-    session.fromPartition('persist:pontoview-player').setPermissionRequestHandler((_wc, permission, callback) => {
-      // External pages never receive camera, microphone, geolocation or notification rights.
-      callback(false);
+    const playerSession = session.fromPartition(PARTITION);
+    playerSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    playerSession.setPermissionCheckHandler(() => false);
+    playerSession.on('will-download', (event) => { event.preventDefault(); log('blocked-download'); });
+    const offlineUrl = pathToFileURL(path.join(__dirname, 'offline.html')).href;
+    playerSession.webRequest.onBeforeRequest((details, callback) => {
+      const allowed = details.url === offlineUrl || isAllowedResourceRequest(details.url);
+      if (!allowed) log('blocked-insecure-request', { origin: getSafeOrigin(details.url) });
+      callback({ cancel: !allowed });
     });
     createWindow();
   }).catch((error) => {
