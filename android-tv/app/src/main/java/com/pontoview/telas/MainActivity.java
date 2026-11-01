@@ -11,6 +11,10 @@ import android.os.SystemClock;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.RenderProcessGoneDetail;
+import android.webkit.WebViewRenderProcess;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceResponse;
+import android.util.Log;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -22,7 +26,15 @@ import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String HOME_URL = "https://tv.pontoview.com.br/";
+    private static final String TAG = "PontoViewTV";
+    private static final long RECONNECT_DELAY_MS = 30_000L;
+    private long lastRendererRestartMs = 0L;
+    private int rendererCrashes = 0;
+    private final Handler reconnectHandler = new Handler(Looper.getMainLooper());
     private WebView webView;
+    private final Runnable reconnect = () -> {
+        if (webView != null && !isFinishing()) webView.loadUrl(HOME_URL);
+    };
     private FrameLayout root;
     private FrameLayout nativeLayer;
     private NativeMediaBridge nativeBridge;
@@ -104,8 +116,13 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setSupportMultipleWindows(false);
+        WebView.setWebContentsDebuggingEnabled(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta10");
+        settings.setUserAgentString(settings.getUserAgentString() + " PontoViewTV/2.0.0-beta11");
 
         nativeBridge = new NativeMediaBridge(this, webView, nativeLayer);
         webView.addJavascriptInterface(nativeBridge, "PontoViewNative");
@@ -145,6 +162,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 if (isTrustedTopLevelUrl(Uri.parse(url))) {
+                    reconnectHandler.removeCallbacks(reconnect);
                     injectNativeRuntime();
                     view.postDelayed(() -> injectNativeRuntime(), 500);
                     view.postDelayed(() -> injectNativeRuntime(), 1500);
@@ -152,8 +170,37 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request != null && request.isForMainFrame() && isTrustedTopLevelUrl(request.getUrl())) {
+                    Log.w(TAG, "Falha de rede no player, codigo=" + (error == null ? -1 : error.getErrorCode()));
+                    reconnectHandler.removeCallbacks(reconnect);
+                    reconnectHandler.postDelayed(reconnect, RECONNECT_DELAY_MS);
+                }
+            }
+
+            @Override
             public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
-                restartActivity();
+                rendererCrashes++;
+                Log.e(TAG, "Processo WebView encerrado, crash=" + detail.didCrash() + ", prioridade=" + detail.rendererPriorityAtExit());
+                // A WebView cujo processo terminou não pode voltar a ser usada.
+                playerWatchdogHandler.removeCallbacks(playerWatchdog);
+                reconnectHandler.removeCallbacks(reconnect);
+                if (nativeBridge != null) {
+                    nativeBridge.release();
+                    nativeBridge = null;
+                }
+                if (root != null) root.removeAllViews();
+                webView = null;
+                view.destroy();
+                long now = SystemClock.elapsedRealtime();
+                long delay = (now - lastRendererRestartMs < 60_000L || rendererCrashes >= 3) ? 30_000L : 3_000L;
+                lastRendererRestartMs = now;
+                reconnectHandler.postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        buildPlayer();
+                        playerWatchdogHandler.postDelayed(playerWatchdog, 15_000L);
+                    }
+                }, delay);
                 return true;
             }
         });
@@ -166,7 +213,7 @@ public class MainActivity extends Activity {
         String host = uri.getHost();
         if (host == null) return false;
         host = host.toLowerCase();
-        return host.equals("pontoview.com.br") || host.endsWith(".pontoview.com.br");
+        return host.equals("tv.pontoview.com.br");
     }
 
     private void injectNativeRuntime() {
@@ -174,8 +221,8 @@ public class MainActivity extends Activity {
         String script =
                 "(function(){" +
                 "window.__PV_NATIVE_SESSION=" + JSONObject.quote(nativeBridge.getSessionToken()) + ";" +
-                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta10';" +
-                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta10'}}));" +
+                "window.__PV_NATIVE_APP_VERSION='2.0.0-beta11';" +
+                "window.dispatchEvent(new CustomEvent('pontoview-native-ready',{detail:{version:'2.0.0-beta11'}}));" +
                 "})();";
         webView.evaluateJavascript(script, null);
         injectPlaybackCompatibility();
@@ -297,11 +344,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         playerWatchdogHandler.removeCallbacks(playerWatchdog);
-        if (nativeBridge != null) nativeBridge.release();
+        reconnectHandler.removeCallbacksAndMessages(null);
+        if (nativeBridge != null) { nativeBridge.release(); nativeBridge = null; }
         if (webView != null) {
             webView.removeJavascriptInterface("PontoViewNative");
             webView.stopLoading();
+            if (root != null) root.removeView(webView);
             webView.destroy();
+            webView = null;
         }
         super.onDestroy();
     }
