@@ -10,7 +10,8 @@ import "./home-mobile-value-fix.css";
 
 const rootElement = document.getElementById("root");
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
-const isDedicatedPlayer = PLAYER_HOSTS.has(window.location.hostname.toLowerCase());
+const isDownloadsRoute = /^\/downloads?\/?$/.test(window.location.pathname);
+const isDedicatedPlayer = PLAYER_HOSTS.has(window.location.hostname.toLowerCase()) && !isDownloadsRoute;
 
 function render(node: React.ReactNode) {
   if (!rootElement) return;
@@ -65,6 +66,10 @@ if (isDedicatedPlayer) {
   } catch {
     recoverPlayerBoot();
   }
+} else if (PLAYER_HOSTS.has(window.location.hostname.toLowerCase()) && isDownloadsRoute) {
+  import("./pages/Downloads").then(({ DownloadsPage }) => render(<BrowserRouter><DownloadsPage /></BrowserRouter>)).catch(() => {
+    if (rootElement) rootElement.textContent = "Não foi possível abrir os downloads.";
+  });
 } else {
   import("./AdminRoot")
     .then(({ default: AdminRoot }) => render(<AdminRoot />))
