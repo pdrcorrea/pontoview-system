@@ -29,8 +29,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: windows-player/package-lock.json
 
       - name: Bootstrap versioned dependency lockfile (first run only)
         shell: pwsh
