@@ -17,6 +17,7 @@ let powerBlockerId = null;
 let restartTimer = null;
 let retryTimer = null;
 let quitting = false;
+let restarting = false;
 let currentOffline = false;
 const recentCrashes = [];
 
@@ -85,11 +86,13 @@ function handleCrash(reason, exitCode) {
   const extraDelay = recentCrashes.length >= MAX_RECENT_CRASHES ? 60_000 : RESTART_DELAY_MS;
   restartTimer = setTimeout(() => {
     restartTimer = null;
+    restarting = true;
     if (window && !window.isDestroyed()) {
       window.destroy();
     }
     window = null;
     createWindow();
+    restarting = false;
   }, extraDelay);
 }
 
@@ -203,5 +206,5 @@ app.on('before-quit', () => {
   log('app-exit');
 });
 app.on('window-all-closed', () => {
-  if (!quitting && !restartTimer) app.quit();
+  if (!quitting && !restarting && !restartTimer) app.quit();
 });
