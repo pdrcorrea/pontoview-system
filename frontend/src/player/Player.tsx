@@ -319,6 +319,7 @@ export function PlayerPage() {
   const [connected, setConnected] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
   const [runtimeNow, setRuntimeNow] = useState(new Date());
+  const [standbyReady, setStandbyReady] = useState(true);
   const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const activationStarted = useRef(false);
   const syncInFlight = useRef(false);
@@ -496,10 +497,34 @@ export function PlayerPage() {
     };
   }, [activeDevice, sync]);
 
+  const operating = manifest ? isWithinOperatingHours(manifest.settings?.operating_hours, manifest.organization.timezone, runtimeNow) : true;
   const newsCategoriesKey = (manifest?.settings?.news_categories || ["general"]).join(",");
 
   useEffect(() => {
-    if (!activeDevice || !manifest?.settings?.widgets?.news) return;
+    if (operating) {
+      setStandbyReady(false);
+      return;
+    }
+    // Paint black immediately, then release active media after the browser has
+    // had time to commit the blackout frame. Do not reload the entire page.
+    const timer = window.setTimeout(() => setStandbyReady(true), 1800);
+    return () => window.clearTimeout(timer);
+  }, [operating]);
+
+  useEffect(() => {
+    if (!manifest || !activeDevice) return;
+    const key = "pv_player_operating_transition_v1";
+    const state = operating ? "on" : "off";
+    try {
+      const previous = localStorage.getItem(key);
+      const parsed = previous ? JSON.parse(previous) as { screenId?: string; state?: string } : null;
+      if (parsed?.screenId === activeDevice.screenId && parsed?.state === state) return;
+      localStorage.setItem(key, JSON.stringify({ screenId: activeDevice.screenId, state, at: new Date().toISOString() }));
+    } catch { /* Diagnostics must never interrupt playback. */ }
+  }, [activeDevice, manifest?.screen?.id, operating]);
+
+  useEffect(() => {
+    if (!operating || !activeDevice || !manifest?.settings?.widgets?.news) return;
     let active = true;
 
     const refreshNews = async () => {
@@ -547,7 +572,7 @@ export function PlayerPage() {
       window.clearTimeout(first);
       window.clearInterval(timer);
     };
-  }, [activeDevice, manifest?.settings?.widgets?.news, newsCategoriesKey]);
+  }, [operating, activeDevice, manifest?.settings?.widgets?.news, newsCategoriesKey]);
 
   useEffect(() => {
     if (!manifest) return;
@@ -567,10 +592,9 @@ export function PlayerPage() {
     return () => window.removeEventListener("message", onPanelMessage);
   }, [manifest?.news]);
 
-  const operating = manifest ? isWithinOperatingHours(manifest.settings?.operating_hours, manifest.organization.timezone, runtimeNow) : true;
-  const item = operating ? manifest?.items[index] || null : null;
+  const item = manifest?.items[index] || null;
   const playbackRef = useRef<{ manifest: PlayerManifest | null; item: ManifestItem | null; index: number }>({ manifest: null, item: null, index: 0 });
-  useEffect(() => { playbackRef.current = { manifest, item, index }; }, [manifest, item, index]);
+  useEffect(() => { playbackRef.current = { manifest, item: operating ? item : null, index }; }, [manifest, item, index, operating]);
 
   useEffect(() => {
     if (!activeDevice) return;
@@ -630,7 +654,7 @@ export function PlayerPage() {
 
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
   if (!manifest) return <div className="player-boot"><span className="player-mark"><BrandMark /></span><Loader2 className="spin" /><p>Sincronizando conteúdo…</p>{error && <small>{error}</small>}</div>;
-  if (!operating) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
+  if (!operating && standbyReady) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
 
   const configuredPortrait = manifest.screen.orientation === "portrait";
   const viewportPortrait = viewport.height >= viewport.width;
@@ -653,7 +677,7 @@ export function PlayerPage() {
       ? "translate(-50%, -50%) rotate(90deg)"
       : "translate(-50%, -50%)",
   };
-  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${shouldRotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} canvasWidth={canvasWidth} canvasHeight={canvasHeight} onEnd={handleEnd} onError={handleError} /></div></div>;
+  return <div className={`pv-player-runtime ${configuredPortrait ? "portrait" : "landscape"}`}><style>{PLAYER_RUNTIME_STYLE}</style><div className={`pv-orientation-canvas ${configuredPortrait ? "logical-portrait" : "logical-landscape"} ${shouldRotateCanvas ? "rotated" : ""}`} style={canvasStyle}><PlayerLayout manifest={manifest} item={item} device={activeDevice} playbackCycle={playbackCycle} canvasWidth={canvasWidth} canvasHeight={canvasHeight} onEnd={handleEnd} onError={handleError} /></div>{!operating && <div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" />}</div>;
 }
 
 function ActivationView({ activation, error, onRetry }: { activation: { code: string; expiresAt: string } | null; error: string | null; onRetry: () => void }) {
