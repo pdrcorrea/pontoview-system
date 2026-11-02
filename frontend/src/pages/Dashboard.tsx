@@ -2,11 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ArrowRight,
   Cloud,
-  HelpCircle,
+  Images,
+  MonitorPlus,
   ListVideo,
   Monitor,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -24,34 +23,10 @@ const empty: DashboardData = {
 };
 
 const quickActions = [
-  {
-    step: "1",
-    title: "Conectar Google Drive",
-    text: "Autorize seus arquivos para usar imagens e vídeos sem duplicar a biblioteca.",
-    to: "/empresa#google-drive",
-    icon: Cloud,
-  },
-  {
-    step: "2",
-    title: "Adicionar conteúdo",
-    text: "Escolha arquivos do Drive, YouTube, páginas ou painéis prontos.",
-    to: "/conteudo",
-    icon: Cloud,
-  },
-  {
-    step: "3",
-    title: "Criar uma playlist",
-    text: "Organize a ordem do que será exibido na TV.",
-    to: "/playlists",
-    icon: ListVideo,
-  },
-  {
-    step: "4",
-    title: "Conectar uma TV",
-    text: "Use o código mostrado no Player e coloque a primeira tela no ar.",
-    to: "/telas?parear=1",
-    icon: Monitor,
-  },
+  { title: "Novo conteúdo", to: "/conteudo", icon: Images, tone: "content" },
+  { title: "Criar playlist", to: "/playlists", icon: ListVideo, tone: "playlist" },
+  { title: "Conectar TV", to: "/telas?parear=1", icon: MonitorPlus, tone: "screen" },
+  { title: "Google Drive", to: "/empresa#google-drive", icon: Cloud, tone: "drive" },
 ] as const;
 
 export function DashboardPage() {
@@ -107,9 +82,48 @@ export function DashboardPage() {
 
   const firstName = (profile?.full_name || "").split(" ")[0];
   const firstSetup = data.screensTotal === 0 || data.media === 0 || data.playlists === 0;
+  const actions = firstSetup ? [quickActions[2], quickActions[0], quickActions[1], quickActions[3]] : quickActions;
 
   return (
     <>
+
+      <style>{`
+        .pv-dash-overview,.pv-dash-actions{margin-bottom:20px}
+        .pv-dash-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+        .pv-dash-section-title small{display:block;font-size:10px;letter-spacing:.12em;font-weight:800;color:#64809a;margin-bottom:4px}
+        .pv-dash-section-title h2{margin:0;font-size:19px;line-height:1.25;letter-spacing:-.025em;color:#19314b}
+        .pv-dash-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+        .pv-dash-stat{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;min-height:116px;padding:15px;background:#fff;border:1px solid #dce6f1;border-radius:16px;text-decoration:none;color:#18324c;transition:border-color .18s,transform .18s}
+        .pv-dash-stat:hover,.pv-dash-action:hover{border-color:#97b9e9;transform:translateY(-2px)}
+        .pv-dash-stat>svg{width:20px;height:20px;color:#347bca;margin-bottom:4px}
+        .pv-dash-stat strong{font-size:27px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+        .pv-dash-stat span{font-size:12px;color:#687d92;font-weight:600}
+        .pv-dash-actions{padding:17px;border:1px solid #dce6f1;background:#f7faff;border-radius:20px}
+        .pv-dash-help{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;text-decoration:none;font-weight:700;font-size:12px;color:#306bac}
+        .pv-dash-action-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+        .pv-dash-action{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;min-width:0;min-height:105px;padding:15px;background:#fff;border:1px solid #e0e9f3;border-radius:15px;color:#223b55;text-decoration:none;transition:border-color .18s,transform .18s}
+        .pv-dash-action strong{font-size:13px;line-height:1.25;font-weight:750;overflow-wrap:anywhere}
+        .pv-dash-action-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#e8f4ff;color:#1384ca}
+        .pv-dash-action-icon svg{width:21px;height:21px}
+        .pv-dash-action--playlist .pv-dash-action-icon{background:#f0eaff;color:#8050d2}
+        .pv-dash-action--screen .pv-dash-action-icon{background:#e6f7ee;color:#178f5b}
+        .pv-dash-action--drive .pv-dash-action-icon{background:#e8efff;color:#2565cd}
+        .dashboard-screen-row .pv-dash-last-seen{font-size:11px;color:#698098;font-style:normal;white-space:nowrap}
+        @media(max-width:760px){
+          .pv-dash-overview,.pv-dash-actions{margin-bottom:16px}
+          .pv-dash-section-title h2{font-size:16px}
+          .pv-dash-stat-grid{gap:8px}
+          .pv-dash-stat{min-height:99px;padding:12px;border-radius:13px}
+          .pv-dash-stat strong{font-size:23px}
+          .pv-dash-stat span{font-size:11px}
+          .pv-dash-actions{padding:13px;border-radius:17px}
+          .pv-dash-action-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+          .pv-dash-action{min-height:94px;padding:13px;gap:9px}
+          .pv-dash-action strong{font-size:12px}
+        }
+        @media(max-width:380px){.pv-dash-stat{padding:10px}.pv-dash-stat span{font-size:10px}.pv-dash-action{padding:11px}}
+        @media(prefers-reduced-motion:reduce){.pv-dash-stat,.pv-dash-action{transition:none}}
+      `}</style>
       <PageHead
         eyebrow="Visão geral"
         title={firstName ? `Olá, ${firstName}.` : "Visão geral"}
@@ -120,54 +134,49 @@ export function DashboardPage() {
 
       {error && <div className="form-message error">{error}</div>}
 
-      <section className={firstSetup ? "dashboard-start dashboard-start-first" : "dashboard-start"}>
-        <div className="dashboard-start-head">
-          <div>
-            <small>{firstSetup ? "COMECE POR AQUI" : "ACESSO RÁPIDO"}</small>
-            <h2>{firstSetup ? "Sua primeira tela em poucos passos." : "O que você quer fazer agora?"}</h2>
-            <p>{firstSetup ? "Siga esta ordem na primeira configuração. Depois, estes atalhos continuam disponíveis para o dia a dia." : "Acesse as tarefas mais usadas sem procurar pelo menu."}</p>
-          </div>
-          <Link className="dashboard-help-link" to="/ajuda"><HelpCircle /> Ver passo a passo</Link>
+      <div className="pv-dash-overview">
+        <div className="pv-dash-section-title">
+          <div><small>VISÃO GERAL</small><h2>Seu espaço de trabalho</h2></div>
         </div>
+        <div className="pv-dash-stat-grid">
+          <Link to="/telas" className="pv-dash-stat">
+            <Monitor aria-hidden="true" />
+            <strong>{data.screensTotal}</strong>
+            <span>Telas</span>
+          </Link>
+          <Link to="/conteudo" className="pv-dash-stat">
+            <Images aria-hidden="true" />
+            <strong>{data.media}</strong>
+            <span>Conteúdos</span>
+          </Link>
+          <Link to="/playlists" className="pv-dash-stat">
+            <ListVideo aria-hidden="true" />
+            <strong>{data.playlists}</strong>
+            <span>Playlists</span>
+          </Link>
+        </div>
+      </div>
 
-        <div className="dashboard-quick-grid">
-          {quickActions.map(({ step, title, text, to, icon: Icon }) => (
-            <Link className="dashboard-quick-card" to={to} key={title}>
-              <span className="dashboard-quick-icon"><Icon /></span>
-              <span className="dashboard-quick-copy">
-                <small>{firstSetup ? `PASSO ${step}` : "ATALHO"}</small>
-                <b>{title}</b>
-                <em>{text}</em>
-              </span>
-              <ArrowRight />
+      <section className="pv-dash-actions" aria-labelledby="pv-dash-actions-title">
+        <div className="pv-dash-section-title">
+          <div><small>ACESSO RÁPIDO</small><h2 id="pv-dash-actions-title">O que deseja fazer?</h2></div>
+          <Link to="/ajuda" className="pv-dash-help">Ajuda <ArrowRight size={14} /></Link>
+        </div>
+        <div className="pv-dash-action-grid">
+          {actions.map(({ title, to, icon: Icon, tone }) => (
+            <Link className={`pv-dash-action pv-dash-action--${tone}`} to={to} key={title}>
+              <span className="pv-dash-action-icon"><Icon aria-hidden="true" /></span>
+              <strong>{title}</strong>
             </Link>
           ))}
         </div>
       </section>
 
-      <div className="dashboard-compact-stats">
-        <article>
-          <span><Monitor /> Telas</span>
-          <strong>{data.screensOnline}<small>/{data.screensTotal}</small></strong>
-          <p>{data.screensTotal ? "online agora" : "nenhuma conectada"}</p>
-        </article>
-        <article>
-          <span><Cloud /> Conteúdos</span>
-          <strong>{data.media}</strong>
-          <p>na biblioteca</p>
-        </article>
-        <article>
-          <span><ListVideo /> Playlists</span>
-          <strong>{data.playlists}</strong>
-          <p>criadas</p>
-        </article>
-      </div>
-
       <section className="panel dashboard-screens-panel">
         <div className="panel-title">
           <div>
             <h2>Suas telas</h2>
-            <p>Veja rapidamente quais Players estão conectados.</p>
+            <p>Última comunicação registrada de cada tela.</p>
           </div>
           <Link to="/telas">Gerenciar telas <ArrowRight size={14} /></Link>
         </div>
@@ -177,10 +186,6 @@ export function DashboardPage() {
             {screens.map((screen) => {
               const raw = screen.screen_status;
               const status = (Array.isArray(raw) ? raw[0] : raw) || null;
-              const online = Boolean(
-                status?.last_seen &&
-                  Date.now() - new Date(status.last_seen).getTime() < 90000,
-              );
               const settingsRaw = screen.screen_settings;
               const settings = (
                 Array.isArray(settingsRaw) ? settingsRaw[0] : settingsRaw
@@ -195,10 +200,7 @@ export function DashboardPage() {
                       {settings?.layout_mode === "lframe" ? "Com informações" : "Tela cheia"} · {timeAgo(status?.last_seen)}
                     </small>
                   </span>
-                  <em className={online ? "online" : "offline"}>
-                    {online ? <Wifi size={14} /> : <WifiOff size={14} />}
-                    {online ? "Online" : "Offline"}
-                  </em>
+                  <em className="pv-dash-last-seen">{status?.last_seen ? "Verificado em" : "Sem registro"}</em>
                   <ArrowRight className="screen-row-arrow" size={16} />
                 </Link>
               );
