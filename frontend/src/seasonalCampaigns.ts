@@ -681,11 +681,27 @@ export function isSeasonalCampaignActive(
     : current >= start || current <= end;
 }
 
-export function seasonalCampaignByKey(key: string | null | undefined) {
-  if (!key) return null;
-  return SEASONAL_CAMPAIGNS.find((campaign) => campaign.key === key) || null;
+// Tolerate historical media identifiers and display names, while keeping a
+// single canonical list of campaign routes for browser, Windows and Android TV.
+function normalizeCampaignIdentifier(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
-export function seasonalCampaignRoute(key: string | null | undefined) {
-  return seasonalCampaignByKey(key)?.route || null;
+export function seasonalCampaignByKey(key: string | null | undefined) {
+  if (!key) return null;
+  const normalized = normalizeCampaignIdentifier(key);
+  return SEASONAL_CAMPAIGNS.find((campaign) =>
+    normalizeCampaignIdentifier(campaign.key) === normalized
+    || normalizeCampaignIdentifier(campaign.name) === normalized
+    || normalizeCampaignIdentifier(campaign.route.split("/").filter(Boolean).pop() || "") === normalized
+  ) || null;
+}
+
+export function resolveSeasonalCampaign(key: string | null | undefined, displayName?: string | null) {
+  return seasonalCampaignByKey(key) || seasonalCampaignByKey(displayName);
+}
+
+export function seasonalCampaignRoute(key: string | null | undefined, displayName?: string | null) {
+  return resolveSeasonalCampaign(key, displayName)?.route || null;
 }

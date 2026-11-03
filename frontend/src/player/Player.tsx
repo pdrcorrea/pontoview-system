@@ -23,7 +23,7 @@ import {
 import { isWithinOperatingHours } from "../lib/operatingHours";
 import { CURRENT_PLAYER_VERSION } from "../lib/playerVersion";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
-import { isSeasonalCampaignActive, seasonalCampaignByKey, seasonalCampaignRoute } from "../seasonalCampaigns";
+import { isSeasonalCampaignActive, resolveSeasonalCampaign, seasonalCampaignRoute } from "../seasonalCampaigns";
 import type { PlayerManifest } from "../types";
 
 const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
@@ -645,11 +645,11 @@ export function PlayerPage() {
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
   useEffect(() => {
     if (!operating || !item || item.media.type !== "app") return;
-    const campaign = seasonalCampaignByKey(item.media.appKey);
+    const campaign = resolveSeasonalCampaign(item.media.appKey, item.media.name);
     if (!campaign || isSeasonalCampaignActive(campaign, runtimeNow, manifest?.organization.timezone)) return;
     const timer = window.setTimeout(() => advance(false, "seasonal_content_out_of_period"), 80);
     return () => window.clearTimeout(timer);
-  }, [operating, item?.itemId, item?.media.appKey, runtimeNow, manifest?.organization.timezone, advance]);
+  }, [operating, item?.itemId, item?.media.appKey, item?.media.name, runtimeNow, manifest?.organization.timezone, advance]);
   useEffect(() => { if (!operating) return; if (item?.media.onlineRequired && !navigator.onLine) { const timer = window.setTimeout(() => advance(true, "offline_content_skipped"), 500); return () => window.clearTimeout(timer); } }, [operating, item?.itemId, advance]);
 
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
@@ -1692,7 +1692,40 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
 }
 
 let youtubePromise: Promise<void> | null = null;
-function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if (youtubePromise) return youtubePromise; youtubePromise = new Promise((resolve, reject) => { const previous = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(); }; const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => { youtubePromise = null; reject(new Error("youtube")); }; document.head.appendChild(script); }); return youtubePromise; }
+function loadYouTubeApi() {
+  if (window.YT?.Player) return Promise.resolve();
+  if (youtubePromise) return youtubePromise;
+  youtubePromise = new Promise<void>((resolve, reject) => {
+    const previous = window.onYouTubeIframeAPIReady;
+    const script = document.createElement("script");
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      if (error) {
+        youtubePromise = null; // Retry on the next playlist cycle.
+        script.remove();
+        if (window.onYouTubeIframeAPIReady === ready) window.onYouTubeIframeAPIReady = previous;
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+    const ready = () => {
+      previous?.();
+      finish();
+    };
+    const timeout = window.setTimeout(() => finish(new Error("youtube_api_timeout")), 12_000);
+    window.onYouTubeIframeAPIReady = ready;
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = () => finish(new Error("youtube_api_load_error"));
+    document.head.appendChild(script);
+    if (window.YT?.Player) finish();
+  });
+  return youtubePromise;
+}
 
 function AppStage({ appKey, name, organization }: { appKey: string | null; name: string; organization: PlayerManifest["organization"] }) {
   const [now, setNow] = useState(new Date());
@@ -1705,7 +1738,7 @@ function AppStage({ appKey, name, organization }: { appKey: string | null; name:
     return <div className="clock-app"><b>{now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b><span>{now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span></div>;
   }
 
-  const seasonalRoute = seasonalCampaignRoute(appKey);
+  const seasonalRoute = seasonalCampaignRoute(appKey, name);
   if (seasonalRoute) {
     return <iframe src={seasonalRoute} title={name} sandbox="allow-scripts allow-same-origin" style={{ width: "100%", height: "100%", border: 0, display: "block", background: "transparent" }} />;
   }
