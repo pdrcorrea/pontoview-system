@@ -27,6 +27,26 @@ body.wx-sunny .sun{opacity:1;visibility:visible}body.wx-partly .sun{opacity:1;vi
 @media (max-height:760px) and (orientation:landscape){.shell{padding-top:18px;padding-bottom:16px;gap:10px}.temp{font-size:clamp(78px,10.8vw,148px)}.condition{font-size:clamp(28px,3.3vw,50px)}.metrics{margin-top:12px}.visual{width:min(29vw,57vh,430px)}.card{padding-top:9px;padding-bottom:9px}.forecast-title{margin-bottom:6px}}
 @media (orientation:portrait){.shell{padding:4.2vmin 4.4vmin 3.5vmin;gap:2vmin}.location{max-width:54%;font-size:1.8vmin}.kicker span:last-child{font-size:1.5vmin}.hero{grid-template-columns:1fr;grid-template-rows:minmax(0,40%) minmax(0,60%);gap:1.4vmin;text-align:center}.visual-wrap{grid-row:1}.visual{width:min(44vmin,54vw,44vh)}.copy{grid-row:2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}.today{font-size:1.9vmin}.temp{font-size:14vmin}.condition{font-size:4.8vmin;max-width:14ch;margin:.7vmin 0 1.1vmin}.range{justify-content:center;font-size:2.1vmin;gap:2.3vmin}.metrics{width:min(92%,74vmin);margin-top:2.2vmin}.metric{padding:1.25vmin 1vmin}.metric small{justify-content:center;font-size:1.15vmin}.metric b{font-size:2.7vmin}.alert{font-size:1.35vmin;margin-top:1.4vmin}.forecast-title{font-size:1.9vmin}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:1vmin}.card{padding:1.15vmin 1.25vmin;border-radius:1.8vmin}.card-icon{font-size:3.8vmin}.card-day{font-size:1.4vmin}.card-date{font-size:1.05vmin}.card-condition{font-size:1.2vmin}.card-rain{font-size:1vmin}.card-temps{font-size:1.95vmin}.boot-card{width:min(390px,88vw);padding:30px 24px}.pv-loader{width:98px}.season-orb.a{width:min(72%,620px);left:-26%;top:-13%}.season-orb.b{width:min(80%,720px);right:-30%;bottom:-18%}.season-wave{bottom:-10%;height:30%}}
 @media(max-width:520px){.kicker-dot,.location .material-symbols-rounded{display:none}.card-rain{display:none}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* Contraste de exibição em TVs: preserva os temas e a composição responsiva. */
+body:not(.wx-night){--muted:#4e6474;--line:rgba(40,80,109,.23);--panel:rgba(244,250,254,.91);--panel-strong:rgba(250,253,255,.97)}
+body:not(.wx-night) .kicker span:last-child{color:#3a596d}
+body:not(.wx-night) .metrics{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;box-shadow:0 6px 20px rgba(35,78,113,.045)}
+body:not(.wx-night) .metric small{color:#3c5669}
+body:not(.wx-night) .alert{border-color:var(--line);background:var(--panel-strong);box-shadow:0 4px 16px rgba(35,78,113,.05)}
+body:not(.wx-night) .card{border-color:var(--line);box-shadow:0 5px 18px rgba(35,78,113,.055)}
+body:not(.wx-night) .card:first-child{border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+body:not(.wx-night) .card-condition{color:#425b6b}
+body:not(.wx-night) .card-date,body:not(.wx-night) .card-rain,body:not(.wx-night) .card-temps .min{color:#526879}
+/* Nuvem: contorno e sombra visíveis inclusive em cenários muito iluminados. */
+.visual::before{background:radial-gradient(circle,color-mix(in srgb,var(--accent) 30%,transparent) 0 15%,color-mix(in srgb,var(--accent) 13%,transparent) 42%,transparent 73%)}
+.visual::after{border-color:color-mix(in srgb,var(--accent) 36%,transparent)}
+.art{filter:drop-shadow(0 17px 17px rgba(32,75,111,.23))}
+.cloud{background:linear-gradient(165deg,#fff 10%,#e6f3fa 54%,#a8c9dc 100%);border:2px solid rgba(58,111,145,.34);box-shadow:inset 0 2px 6px rgba(255,255,255,.85),0 13px 22px rgba(36,82,117,.24)}
+.cloud::before,.cloud::after{background:linear-gradient(155deg,#fff 18%,#dfedf6 70%,#a9cbdc 100%);border:2px solid rgba(58,111,145,.24);box-shadow:inset 0 2px 5px rgba(255,255,255,.7)}
+body.wx-night .cloud{border-color:rgba(180,213,232,.38)}
+body.wx-night .cloud::before,body.wx-night .cloud::after{border-color:rgba(180,213,232,.32)}
+
 </style>
 </head>
 <body class="wx-partly">
