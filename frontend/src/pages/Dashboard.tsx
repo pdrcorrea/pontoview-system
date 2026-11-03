@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Cloud,
   Images,
-  MonitorPlus,
   ListVideo,
   Monitor,
 } from "lucide-react";
@@ -25,7 +24,7 @@ const empty: DashboardData = {
 const quickActions = [
   { title: "Novo conteúdo", to: "/conteudo", icon: Images, tone: "content" },
   { title: "Criar playlist", to: "/playlists", icon: ListVideo, tone: "playlist" },
-  { title: "Conectar TV", to: "/telas?parear=1", icon: MonitorPlus, tone: "screen" },
+  { title: "Conectar TV", to: "/telas?parear=1", icon: Monitor, tone: "screen" },
   { title: "Google Drive", to: "/empresa#google-drive", icon: Cloud, tone: "drive" },
 ] as const;
 
