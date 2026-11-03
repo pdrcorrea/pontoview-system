@@ -119,6 +119,15 @@ export function DashboardPage() {
           .pv-dash-action-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
           .pv-dash-action{min-height:94px;padding:13px;gap:9px}
           .pv-dash-action strong{font-size:12px}
+          .pv-dash-overview{margin-top:0}
+          .pv-dash-section-title{margin-bottom:10px}
+          .pv-dash-actions{background:#f8fbff}
+          .pv-dash-stat{box-shadow:none}
+          .pv-dash-stat-grid,.pv-dash-action-grid{width:100%;max-width:100%}
+          .pv-dash-action{box-shadow:none;min-width:0}
+          .pv-dash-help{font-size:11px}
+          .dashboard-screens-panel{margin-top:4px}
+          .dashboard-screen-row .pv-dash-last-seen{display:none}
         }
         @media(max-width:380px){.pv-dash-stat{padding:10px}.pv-dash-stat span{font-size:10px}.pv-dash-action{padding:11px}}
         @media(prefers-reduced-motion:reduce){.pv-dash-stat,.pv-dash-action{transition:none}}
@@ -135,7 +144,7 @@ export function DashboardPage() {
 
       <div className="pv-dash-overview">
         <div className="pv-dash-section-title">
-          <div><small>VISÃO GERAL</small><h2>Seu espaço de trabalho</h2></div>
+          <div><small>RESUMO DA CONTA</small><h2>Seu espaço de trabalho</h2></div>
         </div>
         <div className="pv-dash-stat-grid">
           <Link to="/telas" className="pv-dash-stat">
@@ -199,7 +208,7 @@ export function DashboardPage() {
                       {settings?.layout_mode === "lframe" ? "Com informações" : "Tela cheia"} · {timeAgo(status?.last_seen)}
                     </small>
                   </span>
-                  <em className="pv-dash-last-seen">{status?.last_seen ? "Verificado em" : "Sem registro"}</em>
+                  <em className="pv-dash-last-seen">{status?.last_seen ? "Última comunicação" : "Sem registro"}</em>
                   <ArrowRight className="screen-row-arrow" size={16} />
                 </Link>
               );
