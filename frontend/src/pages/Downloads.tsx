@@ -9,8 +9,8 @@ import "./Downloads.css";
 // O arquivo permanece sem assinatura digital Authenticode.
 const WEB_PLAYER = "https://tv.pontoview.com.br/";
 const WINDOWS_BETA = "https://github.com/pdrcorrea/pontoview-system/releases/download/windows-v1.0.0-beta.2-unsigned/PontoView-Player-Windows-1.0.0-beta.2-Setup.exe";
-const ANDROID_APK = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta4/PontoView-Telas-v3.0.0-beta4.apk";
-const ANDROID_SHA256 = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta4/PontoView-Telas-v3.0.0-beta4.sha256";
+const ANDROID_APK = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta5/PontoView-Telas-v3.0.0-beta5.apk";
+const ANDROID_SHA256 = "https://github.com/pdrcorrea/pontoview-system/releases/download/android-v3.0.0-beta5/PontoView-Telas-v3.0.0-beta5.sha256";
 
 export function DownloadsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -97,14 +97,14 @@ export function DownloadsPage() {
 
           <article className="pv-downloads-card">
             <span className="pv-downloads-icon"><Tv size={28} strokeWidth={1.8}/></span>
-            <div className="pv-downloads-meta">ANDROID TV · BETA 4</div>
+            <div className="pv-downloads-meta">ANDROID TV · BETA 5</div>
             <h2>Android TV</h2>
             <p>APK otimizado para TVs e dispositivos Android compatíveis, com reprodução em tela cheia e cache local de mídias.</p>
             <div className="pv-downloads-spacer"/>
             <a className="pv-downloads-button" href={ANDROID_APK} rel="noopener noreferrer">
               <Download size={18} /> Baixar APK
             </a>
-            <small>Versão 3.0.0 beta 4 · <a className="pv-downloads-inline-link" href={ANDROID_SHA256} rel="noopener noreferrer">Verificar SHA-256</a></small>
+            <small>Versão 3.0.0 beta 5 · <a className="pv-downloads-inline-link" href={ANDROID_SHA256} rel="noopener noreferrer">Verificar SHA-256</a></small>
           </article>
         </div>
 
