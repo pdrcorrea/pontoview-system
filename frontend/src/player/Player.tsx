@@ -23,7 +23,7 @@ import {
 import { isWithinOperatingHours } from "../lib/operatingHours";
 import { CURRENT_PLAYER_VERSION } from "../lib/playerVersion";
 import { functionsUrl, supabase, supabasePublishableKey } from "../lib/supabase";
-import { isSeasonalCampaignActive, seasonalCampaignByKey, seasonalCampaignRoute } from "../seasonalCampaigns";
+import { isSeasonalCampaignActive, resolveSeasonalCampaign, seasonalCampaignRoute } from "../seasonalCampaigns";
 import type { PlayerManifest } from "../types";
 
 const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
@@ -645,11 +645,11 @@ export function PlayerPage() {
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
   useEffect(() => {
     if (!operating || !item || item.media.type !== "app") return;
-    const campaign = seasonalCampaignByKey(item.media.appKey);
+    const campaign = resolveSeasonalCampaign(item.media.appKey, item.media.name);
     if (!campaign || isSeasonalCampaignActive(campaign, runtimeNow, manifest?.organization.timezone)) return;
     const timer = window.setTimeout(() => advance(false, "seasonal_content_out_of_period"), 80);
     return () => window.clearTimeout(timer);
-  }, [operating, item?.itemId, item?.media.appKey, runtimeNow, manifest?.organization.timezone, advance]);
+  }, [operating, item?.itemId, item?.media.appKey, item?.media.name, runtimeNow, manifest?.organization.timezone, advance]);
   useEffect(() => { if (!operating) return; if (item?.media.onlineRequired && !navigator.onLine) { const timer = window.setTimeout(() => advance(true, "offline_content_skipped"), 500); return () => window.clearTimeout(timer); } }, [operating, item?.itemId, advance]);
 
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
@@ -1705,7 +1705,7 @@ function AppStage({ appKey, name, organization }: { appKey: string | null; name:
     return <div className="clock-app"><b>{now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</b><span>{now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</span></div>;
   }
 
-  const seasonalRoute = seasonalCampaignRoute(appKey);
+  const seasonalRoute = seasonalCampaignRoute(appKey, name);
   if (seasonalRoute) {
     return <iframe src={seasonalRoute} title={name} sandbox="allow-scripts allow-same-origin" style={{ width: "100%", height: "100%", border: 0, display: "block", background: "transparent" }} />;
   }
