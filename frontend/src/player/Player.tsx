@@ -1692,7 +1692,40 @@ function YouTubeStage({ videoId, options, duration, onEnd, onError }: { videoId:
 }
 
 let youtubePromise: Promise<void> | null = null;
-function loadYouTubeApi() { if (window.YT?.Player) return Promise.resolve(); if (youtubePromise) return youtubePromise; youtubePromise = new Promise((resolve, reject) => { const previous = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(); }; const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => { youtubePromise = null; reject(new Error("youtube")); }; document.head.appendChild(script); }); return youtubePromise; }
+function loadYouTubeApi() {
+  if (window.YT?.Player) return Promise.resolve();
+  if (youtubePromise) return youtubePromise;
+  youtubePromise = new Promise<void>((resolve, reject) => {
+    const previous = window.onYouTubeIframeAPIReady;
+    const script = document.createElement("script");
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      if (error) {
+        youtubePromise = null; // Retry on the next playlist cycle.
+        script.remove();
+        if (window.onYouTubeIframeAPIReady === ready) window.onYouTubeIframeAPIReady = previous;
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+    const ready = () => {
+      previous?.();
+      finish();
+    };
+    const timeout = window.setTimeout(() => finish(new Error("youtube_api_timeout")), 12_000);
+    window.onYouTubeIframeAPIReady = ready;
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = () => finish(new Error("youtube_api_load_error"));
+    document.head.appendChild(script);
+    if (window.YT?.Player) finish();
+  });
+  return youtubePromise;
+}
 
 function AppStage({ appKey, name, organization }: { appKey: string | null; name: string; organization: PlayerManifest["organization"] }) {
   const [now, setNow] = useState(new Date());
