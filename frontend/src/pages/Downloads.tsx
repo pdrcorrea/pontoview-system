@@ -85,33 +85,33 @@ export function DownloadsPage() {
 
           <article className="pv-downloads-card">
             <span className="pv-downloads-icon"><MonitorDown size={28} strokeWidth={1.8}/></span>
-            <div className="pv-downloads-meta">WINDOWS · BETA 2</div>
+            <div className="pv-downloads-meta">WINDOWS</div>
             <h2>Windows</h2>
             <p>Aplicativo para computador com execução em tela cheia, início automático no login e recuperação de falhas.</p>
             <div className="pv-downloads-spacer"/>
             <a className="pv-downloads-button" href={WINDOWS_BETA} target="_blank" rel="noopener noreferrer">
               <Download size={18} /> Baixar para Windows
             </a>
-            <small>Download direto do instalador .exe · Beta sem assinatura digital.</small>
+            <small>Download direto do instalador para Windows.</small>
           </article>
 
           <article className="pv-downloads-card">
             <span className="pv-downloads-icon"><Tv size={28} strokeWidth={1.8}/></span>
-            <div className="pv-downloads-meta">ANDROID TV · BETA 5</div>
+            <div className="pv-downloads-meta">ANDROID TV</div>
             <h2>Android TV</h2>
             <p>APK otimizado para TVs e dispositivos Android compatíveis, com reprodução em tela cheia e cache local de mídias.</p>
             <div className="pv-downloads-spacer"/>
             <a className="pv-downloads-button" href={ANDROID_APK} rel="noopener noreferrer">
               <Download size={18} /> Baixar APK
             </a>
-            <small>Versão 3.0.0 beta 5 · <a className="pv-downloads-inline-link" href={ANDROID_SHA256} rel="noopener noreferrer">Verificar SHA-256</a></small>
+            <small><a className="pv-downloads-inline-link" href={ANDROID_SHA256} rel="noopener noreferrer">Verificar integridade do arquivo</a></small>
           </article>
         </div>
 
 
         <div className="pv-downloads-notes">
           <div><ShieldCheck size={21}/><span><strong>Vinculação simples</strong><small>Ao abrir o player, use o código na seção Telas do painel de controle.</small></span></div>
-          <div><Smartphone size={21}/><span><strong>Instalação segura</strong><small>Utilize os arquivos oficiais. As versões beta ainda exigem testes de compatibilidade.</small></span></div>
+          <div><Smartphone size={21}/><span><strong>Instalação segura</strong><small>Utilize os instaladores disponibilizados oficialmente pelo PontoView.</small></span></div>
         </div>
       </main>
 
