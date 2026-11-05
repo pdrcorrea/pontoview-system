@@ -149,7 +149,8 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "4.1.0-experiment";
+        // Keep the existing experimental web bridge protocol. Actual APK version is 4.1.0-experiment.
+        return "4.0.0-lab1";
     }
 
     @JavascriptInterface
