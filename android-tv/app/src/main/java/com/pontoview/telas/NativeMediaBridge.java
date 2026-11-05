@@ -84,6 +84,10 @@ public class NativeMediaBridge {
     private volatile boolean watchdogVideoActive = false;
     private final ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
     private final ExecutorService preloadExecutor = Executors.newSingleThreadExecutor();
+    // Separate user-facing playback from playlist prefetch. A long queue of
+    // background downloads must never hold up the currently selected video.
+    private final ExecutorService foregroundVideoExecutor = Executors.newSingleThreadExecutor();
+    private volatile String requestedPlaybackId = "";
     private final Set<String> preloadingVideos = ConcurrentHashMap.newKeySet();
     private final Set<String> preloadingImages = ConcurrentHashMap.newKeySet();
 
@@ -100,6 +104,8 @@ public class NativeMediaBridge {
     private ImageView imageView;
     private final Handler videoWatchdog = new Handler(Looper.getMainLooper());
     private Runnable firstFrameTimeout;
+    private Runnable playbackProgressWatchdog;
+    private View decoderCover;
     private boolean firstFrameRendered;
     private String activeVideoId;
     private String activeImageId;
@@ -143,7 +149,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta10";
+        return "4.1.0-experiment";
     }
 
     @JavascriptInterface
@@ -539,8 +545,10 @@ public class NativeMediaBridge {
             double viewportWidth, double viewportHeight, boolean muted, double volume
     ) {
         if (!validSession(session) || empty(cacheKey) || empty(playbackId)) return;
+        requestedPlaybackId = playbackId;
 
         Runnable startLocal = () -> {
+            if (!playbackId.equals(requestedPlaybackId)) return;
             File localFile = videoFile(cacheKey);
             if (!localFile.exists() || localFile.length() <= 0) {
                 sendError(playbackId, "native_video_file_missing");
@@ -560,14 +568,16 @@ public class NativeMediaBridge {
             return;
         }
 
-        preloadExecutor.execute(() -> {
+        foregroundVideoExecutor.execute(() -> {
+            if (!playbackId.equals(requestedPlaybackId)) return;
             try {
                 sendDiagnostics(playbackId, "downloading_full_file", 0, 0);
                 cacheVideoFully(streamUrl, cacheKey);
                 startLocal.run();
             } catch (Exception e) {
-                Log.w(TAG, "Full video download failed", e);
-                sendError(playbackId, "native_video_full_download_failed");
+                Log.w(TAG, "Foreground video download failed", e);
+                if (playbackId.equals(requestedPlaybackId))
+                    sendError(playbackId, "native_video_full_download_failed");
             }
         });
     }
@@ -580,6 +590,8 @@ public class NativeMediaBridge {
             boolean muted, double volume
     ) {
         main.post(() -> {
+            // A download may finish after its playlist item has been replaced.
+            if (!playbackId.equals(requestedPlaybackId)) return;
             stopVideoInternal();
             stopImageInternal();
 
@@ -593,6 +605,14 @@ public class NativeMediaBridge {
             surfaceView = new SurfaceView(activity);
             surfaceView.setBackgroundColor(Color.BLACK);
             videoFrame.addView(surfaceView, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+            ));
+            // Similar to ScreenTinker's first-frame protection: never expose
+            // uninitialised hardware decoder buffers (which may appear green).
+            decoderCover = new View(activity);
+            decoderCover.setBackgroundColor(Color.BLACK);
+            videoFrame.addView(decoderCover, new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
             ));
@@ -625,6 +645,7 @@ public class NativeMediaBridge {
                     if (!playbackId.equals(activeVideoId)) return;
                     firstFrameRendered = true;
                     if (firstFrameTimeout != null) videoWatchdog.removeCallbacks(firstFrameTimeout);
+                    if (decoderCover != null) decoderCover.setVisibility(View.GONE);
                     sendDiagnostics(playbackId, "media3_first_frame", 0, 0);
                 }
 
@@ -649,6 +670,32 @@ public class NativeMediaBridge {
             player.setMediaItem(item);
             player.prepare();
             player.play();
+
+            // Detect silent codec freezes that do not emit an ExoPlayer error.
+            final long[] progressAt = { SystemClock.elapsedRealtime() };
+            final long[] previousPosition = { -1L };
+            playbackProgressWatchdog = new Runnable() {
+                @Override public void run() {
+                    if (!playbackId.equals(activeVideoId) || player == null) return;
+                    final long now = SystemClock.elapsedRealtime();
+                    final long position = player.getCurrentPosition();
+                    if (!firstFrameRendered || player.getPlaybackState() == Player.STATE_BUFFERING) {
+                        progressAt[0] = now;
+                    } else if (player.getPlaybackState() == Player.STATE_ENDED) {
+                        return;
+                    } else if (position > previousPosition[0] + 200L) {
+                        previousPosition[0] = position;
+                        progressAt[0] = now;
+                    } else if (now - progressAt[0] > 22_000L) {
+                        sendDiagnostics(playbackId, "media3_stalled", 0, 0);
+                        sendError(playbackId, "media3_stalled");
+                        stopVideoInternal();
+                        return;
+                    }
+                    videoWatchdog.postDelayed(this, 2000L);
+                }
+            };
+            videoWatchdog.postDelayed(playbackProgressWatchdog, 2000L);
 
             firstFrameTimeout = () -> {
                 if (!playbackId.equals(activeVideoId) || firstFrameRendered) return;
@@ -741,8 +788,11 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public void stopVideo(String session, String playbackId) {
-        if (!validSession(session) || !playbackId.equals(activeVideoId)) return;
-        main.post(this::stopVideoInternal);
+        if (!validSession(session) || empty(playbackId)) return;
+        if (playbackId.equals(requestedPlaybackId)) requestedPlaybackId = "";
+        main.post(() -> {
+            if (playbackId.equals(activeVideoId)) stopVideoInternal();
+        });
     }
 
     @JavascriptInterface
@@ -902,6 +952,11 @@ public class NativeMediaBridge {
 
     private void stopVideoInternal() {
         activeVideoId = null;
+        if (playbackProgressWatchdog != null) {
+            videoWatchdog.removeCallbacks(playbackProgressWatchdog);
+            playbackProgressWatchdog = null;
+        }
+        decoderCover = null;
         if (firstFrameTimeout != null) {
             videoWatchdog.removeCallbacks(firstFrameTimeout);
             firstFrameTimeout = null;
@@ -1056,6 +1111,7 @@ public class NativeMediaBridge {
             stopImageInternal();
         });
         preloadExecutor.shutdownNow();
+        foregroundVideoExecutor.shutdownNow();
         imageExecutor.shutdownNow();
         try {
             videoCache.release();
