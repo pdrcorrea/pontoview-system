@@ -316,6 +316,8 @@ export function PlayerPage() {
   const [manifest, setManifest] = useState<PlayerManifest | null>(null);
   const [index, setIndex] = useState(0);
   const [playbackCycle, setPlaybackCycle] = useState(0);
+  const [allMediaFailed, setAllMediaFailed] = useState(false);
+  const failedMediaRef = useRef<Set<string>>(new Set());
   const [connected, setConnected] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
   const [runtimeNow, setRuntimeNow] = useState(new Date());
@@ -592,7 +594,18 @@ export function PlayerPage() {
     return () => window.removeEventListener("message", onPanelMessage);
   }, [manifest?.news]);
 
-  const item = manifest?.items[index] || null;
+  // Quarantine failed media locally until the playlist contents change.
+  const playlistRevision = manifest
+    ? JSON.stringify([manifest.playlist?.id, manifest.items.map((entry) => [
+        entry.itemId, entry.media.id, entry.media.driveChecksum, entry.media.driveModifiedTime,
+      ])])
+    : "";
+  useEffect(() => {
+    failedMediaRef.current.clear();
+    setAllMediaFailed(false);
+  }, [activeDevice?.screenId, playlistRevision]);
+
+  const item = allMediaFailed ? null : (manifest?.items[index] || null);
   const playbackRef = useRef<{ manifest: PlayerManifest | null; item: ManifestItem | null; index: number }>({ manifest: null, item: null, index: 0 });
   useEffect(() => { playbackRef.current = { manifest, item: operating ? item : null, index }; }, [manifest, item, index, operating]);
 
@@ -637,9 +650,18 @@ export function PlayerPage() {
   const advance = useCallback((failed = false, detail?: string) => {
     const current = playbackRef.current; if (!current.manifest || !activeDevice || !current.item) return;
     void supabase.rpc("player_event", { p_screen_id: activeDevice.screenId, p_token: activeDevice.token, p_event_type: failed ? "media_error" : "content_ended", p_media_id: current.item.media.id, p_playlist_id: current.manifest.playlist?.id || null, p_payload: failed ? { detail: detail || "playback_error" } : { position: current.index } });
-    const itemCount = Math.max(1, current.manifest.items.length);
+    const items = current.manifest.items;
+    if (!items.length) return;
+    if (failed) failedMediaRef.current.add(current.item.itemId);
+    // Skip media already known to fail, without restarting the same bad decoder.
+    const nextOffset = Array.from({ length: items.length }, (_, step) => step + 1)
+      .find((offset) => !failedMediaRef.current.has(items[(current.index + offset) % items.length].itemId));
+    if (nextOffset === undefined) {
+      setAllMediaFailed(true);
+      return;
+    }
     setPlaybackCycle((cycle) => cycle + 1);
-    setIndex((position) => (position + 1) % itemCount);
+    setIndex((current.index + nextOffset) % items.length);
   }, [activeDevice]);
   const handleEnd = useCallback(() => advance(false), [advance]);
   const handleError = useCallback((detail: string) => advance(true, detail), [advance]);
@@ -655,6 +677,7 @@ export function PlayerPage() {
   if (!activeDevice) return <ActivationView activation={activation} error={error} onRetry={() => { setError(null); activationStarted.current = false; void startActivation(); }} />;
   if (!manifest) return <div className="player-boot"><span className="player-mark"><BrandMark /></span><Loader2 className="spin" /><p>Sincronizando conteúdo…</p>{error && <small>{error}</small>}</div>;
   if (!operating && standbyReady) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Tela fora do horário de funcionamento" /></>;
+  if (allMediaFailed) return <><style>{PLAYER_RUNTIME_STYLE}</style><div className="pv-player-power-off" aria-label="Aguardando atualização da playlist após falha de mídia" /></>;
 
   const configuredPortrait = manifest.screen.orientation === "portrait";
   const viewportPortrait = viewport.height >= viewport.width;
