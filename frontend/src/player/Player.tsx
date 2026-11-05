@@ -1454,12 +1454,14 @@ function NativeDriveStage({ media, duration, device, onEnd, onNativeFailure, nat
     window.__pvNativeOnError = failed;
     window.__pvNativeOnDiagnostics = diagnostics;
 
+    // Local downloads may take minutes. Do not declare the decoder broken
+    // while the native cache is still downloading the complete Drive file.
     const startupWatchdog = window.setTimeout(() => {
       if (!readyRef.current) {
-        console.warn("[PontoView] Native Drive player did not become ready in time; falling back to WebView.");
+        console.warn("[PontoView LAB] Native media startup deadline exceeded.");
         onNativeFailureRef.current();
       }
-    }, media.type === "drive_video" ? 12_000 : 20_000);
+    }, media.type === "drive_video" ? 5 * 60_000 : 20_000);
 
     return () => {
       window.clearTimeout(startupWatchdog);
