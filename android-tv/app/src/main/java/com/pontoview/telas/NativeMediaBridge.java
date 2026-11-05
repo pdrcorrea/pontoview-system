@@ -103,6 +103,7 @@ public class NativeMediaBridge {
     private ImageView imageView;
     private final Handler videoWatchdog = new Handler(Looper.getMainLooper());
     private Runnable firstFrameTimeout;
+    private Runnable nativeStallCheck;
     private boolean firstFrameRendered;
     private String activeVideoId;
     private String activeImageId;
@@ -659,6 +660,35 @@ public class NativeMediaBridge {
             player.prepare();
             player.play();
 
+            // ExoPlayer can wedge without STATE_ENDED or an exception. Guard actual
+            // playback progress, and recover only the video engine, not the WebView.
+            final long[] lastProgress = { SystemClock.elapsedRealtime() };
+            final long[] lastPosition = { -1L };
+            nativeStallCheck = new Runnable() {
+                @Override public void run() {
+                    if (!playbackId.equals(activeVideoId) || player == null) return;
+                    long now = SystemClock.elapsedRealtime();
+                    if (!firstFrameRendered) {
+                        lastProgress[0] = now;
+                    } else if (player.getPlaybackState() == Player.STATE_ENDED) {
+                        return;
+                    } else {
+                        long position = player.getCurrentPosition();
+                        if (position > lastPosition[0] + 200L) {
+                            lastPosition[0] = position;
+                            lastProgress[0] = now;
+                        } else if (now - lastProgress[0] > 25_000L) {
+                            sendDiagnostics(playbackId, "media3_stalled", 0, 0);
+                            sendError(playbackId, "media3_stalled");
+                            stopVideoInternal();
+                            return;
+                        }
+                    }
+                    videoWatchdog.postDelayed(this, 2_000L);
+                }
+            };
+            videoWatchdog.postDelayed(nativeStallCheck, 2_000L);
+
             firstFrameTimeout = () -> {
                 if (!playbackId.equals(activeVideoId) || firstFrameRendered) return;
                 sendDiagnostics(playbackId, "media3_no_first_frame", 0, 0);
@@ -914,6 +944,10 @@ public class NativeMediaBridge {
 
     private void stopVideoInternal() {
         activeVideoId = null;
+        if (nativeStallCheck != null) {
+            videoWatchdog.removeCallbacks(nativeStallCheck);
+            nativeStallCheck = null;
+        }
         if (firstFrameTimeout != null) {
             videoWatchdog.removeCallbacks(firstFrameTimeout);
             firstFrameTimeout = null;
