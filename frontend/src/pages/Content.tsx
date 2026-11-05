@@ -60,6 +60,33 @@ const typeLabel: Record<MediaType, string> = {
   message: "Comunicado",
 };
 
+type DriveVideoCandidate = {
+  name: string;
+  mimeType: string;
+  size?: string | number | null;
+  videoMediaMetadata?: { width?: number | string; height?: number | string } | null;
+};
+
+function confirmDriveVideoCompatibility(files: DriveVideoCandidate[]): boolean {
+  const warnings: string[] = [];
+  for (const file of files) {
+    if (!file.mimeType.startsWith("video/")) continue;
+    const width = Number(file.videoMediaMetadata?.width || 0);
+    const height = Number(file.videoMediaMetadata?.height || 0);
+    const reasons: string[] = [];
+    if (file.mimeType !== "video/mp4") reasons.push("formato fora do MP4 recomendado");
+    if (width > 1920 || height > 1080) reasons.push(`resolução ${width}×${height} acima de 1080p`);
+    if (Number(file.size || 0) > 1024 * 1024 * 1024) reasons.push("arquivo maior que 1 GB");
+    if (reasons.length) warnings.push(`• ${file.name}: ${reasons.join(", ")}`);
+  }
+  if (!warnings.length) return true;
+  return window.confirm(
+    "Atenção à compatibilidade com Android TV:\\n\\n" +
+    warnings.join("\\n") +
+    "\\n\\nO codec interno não é informado pelo Google Drive e a reprodução não pode ser garantida. Deseja adicionar mesmo assim?",
+  );
+}
+
 export function ContentPage() {
   const { organization, user } = useAuth();
   const [items, setItems] = useState<Media[]>([]);
@@ -404,6 +431,8 @@ export function ContentPage() {
           name: string;
           mimeType: string;
           connectionId: string;
+          size?: string | number | null;
+          videoMediaMetadata?: { width?: number | string; height?: number | string } | null;
         }>;
       }>("drive-files", {
         fileIds,
@@ -442,6 +471,7 @@ export function ContentPage() {
         setError("Os arquivos selecionados já estão na biblioteca.");
         return;
       }
+      if (!confirmDriveVideoCompatibility(filesToAdd)) return;
 
       const result = await supabase.from("media").insert(
         filesToAdd.map((file) => ({
@@ -537,6 +567,8 @@ export function ContentPage() {
           modifiedTime?: string | null;
           md5Checksum?: string | null;
           connectionId?: string;
+          size?: string | number | null;
+          videoMediaMetadata?: { width?: number | string; height?: number | string } | null;
         }>;
       }>("drive-files", {
         fileIds,
@@ -580,6 +612,7 @@ export function ContentPage() {
         setError("Os arquivos selecionados já estão na biblioteca.");
         return;
       }
+      if (!confirmDriveVideoCompatibility(filesToAdd)) return;
 
       const result = await supabase.from("media").insert(
         filesToAdd.map((file) => ({
