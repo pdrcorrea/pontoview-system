@@ -81,9 +81,9 @@ function confirmDriveVideoCompatibility(files: DriveVideoCandidate[]): boolean {
   }
   if (!warnings.length) return true;
   return window.confirm(
-    "Atenção à compatibilidade com Android TV:\\n\\n" +
-    warnings.join("\\n") +
-    "\\n\\nO codec interno não é informado pelo Google Drive e a reprodução não pode ser garantida. Deseja adicionar mesmo assim?",
+    "Atenção à compatibilidade com Android TV:\n\n" +
+    warnings.join("\n") +
+    "\n\nO codec interno não é informado pelo Google Drive e a reprodução não pode ser garantida. Deseja adicionar mesmo assim?",
   );
 }
 
