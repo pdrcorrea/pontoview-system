@@ -84,6 +84,9 @@ public class NativeMediaBridge {
     private volatile boolean watchdogVideoActive = false;
     private final ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
     private final ExecutorService preloadExecutor = Executors.newSingleThreadExecutor();
+    // Foreground playback cannot queue behind downloads for the whole playlist.
+    private final ExecutorService playbackExecutor = Executors.newSingleThreadExecutor();
+    private volatile String requestedVideoId = "";
     private final Set<String> preloadingVideos = ConcurrentHashMap.newKeySet();
     private final Set<String> preloadingImages = ConcurrentHashMap.newKeySet();
 
@@ -539,8 +542,10 @@ public class NativeMediaBridge {
             double viewportWidth, double viewportHeight, boolean muted, double volume
     ) {
         if (!validSession(session) || empty(cacheKey) || empty(playbackId)) return;
+        requestedVideoId = playbackId;
 
         Runnable startLocal = () -> {
+            if (!playbackId.equals(requestedVideoId)) return;
             File localFile = videoFile(cacheKey);
             if (!localFile.exists() || localFile.length() <= 0) {
                 sendError(playbackId, "native_video_file_missing");
@@ -560,14 +565,16 @@ public class NativeMediaBridge {
             return;
         }
 
-        preloadExecutor.execute(() -> {
+        playbackExecutor.execute(() -> {
+            if (!playbackId.equals(requestedVideoId)) return;
             try {
                 sendDiagnostics(playbackId, "downloading_full_file", 0, 0);
                 cacheVideoFully(streamUrl, cacheKey);
                 startLocal.run();
             } catch (Exception e) {
                 Log.w(TAG, "Full video download failed", e);
-                sendError(playbackId, "native_video_full_download_failed");
+                if (playbackId.equals(requestedVideoId))
+                    sendError(playbackId, "native_video_full_download_failed");
             }
         });
     }
@@ -580,6 +587,8 @@ public class NativeMediaBridge {
             boolean muted, double volume
     ) {
         main.post(() -> {
+            // A slow download can finish after the playlist has moved on.
+            if (!playbackId.equals(requestedVideoId)) return;
             stopVideoInternal();
             stopImageInternal();
 
@@ -741,8 +750,11 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public void stopVideo(String session, String playbackId) {
-        if (!validSession(session) || !playbackId.equals(activeVideoId)) return;
-        main.post(this::stopVideoInternal);
+        if (!validSession(session) || empty(playbackId)) return;
+        if (playbackId.equals(requestedVideoId)) requestedVideoId = "";
+        main.post(() -> {
+            if (playbackId.equals(activeVideoId)) stopVideoInternal();
+        });
     }
 
     @JavascriptInterface
@@ -1056,6 +1068,7 @@ public class NativeMediaBridge {
             stopImageInternal();
         });
         preloadExecutor.shutdownNow();
+        playbackExecutor.shutdownNow();
         imageExecutor.shutdownNow();
         try {
             videoCache.release();
