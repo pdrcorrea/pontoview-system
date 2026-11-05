@@ -143,7 +143,7 @@ public class NativeMediaBridge {
 
     @JavascriptInterface
     public String getVersion() {
-        return "2.0.0-beta10";
+        return "4.0.0-lab1";
     }
 
     @JavascriptInterface
