@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - experiment/android-player-native-v2
     paths:
       - "android-tv/**"
       - "frontend/src/player/Player.tsx"
@@ -52,28 +53,28 @@ jobs:
 
       - name: Prepare artifact
         run: |
-          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Telas-v3.0.0-beta5.apk
-          sha256sum PontoView-Telas-v3.0.0-beta5.apk > PontoView-Telas-v3.0.0-beta5.sha256
+          cp android-tv/app/build/outputs/apk/debug/app-debug.apk PontoView-Player-Android-v4.1.0-experiment.apk
+          sha256sum PontoView-Player-Android-v4.1.0-experiment.apk > PontoView-Player-Android-v4.1.0-experiment.sha256
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PontoView-Telas-v3.0.0-beta5
+          name: PontoView-Player-Android-v4.1.0-experiment
           path: |
-            PontoView-Telas-v3.0.0-beta5.apk
-            PontoView-Telas-v3.0.0-beta5.sha256
+            PontoView-Player-Android-v4.1.0-experiment.apk
+            PontoView-Player-Android-v4.1.0-experiment.sha256
           retention-days: 30
 
       - name: Publish testing release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/experiment/android-player-native-v2'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-v3.0.0-beta5"
-          APK="PontoView-Telas-v3.0.0-beta5.apk"
-          SUM="PontoView-Telas-v3.0.0-beta5.sha256"
+          TAG="android-v4.1.0-experiment"
+          APK="PontoView-Player-Android-v4.1.0-experiment.apk"
+          SUM="PontoView-Player-Android-v4.1.0-experiment.sha256"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" "$SUM" --clobber
           else
-            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Telas 2.0.0 beta 10"               --notes "APK de testes com Media3/ExoPlayer, cache local, otimização local de imagens e identidade oficial PontoView. Sem Cloudflare R2."               --prerelease
+            gh release create "$TAG" "$APK" "$SUM"               --target "$GITHUB_SHA"               --title "PontoView Player Android 4.1.0 Experimental"               --notes "Aplicativo de testes instalável separadamente do PontoView Telas. Reprodução de vídeos Drive por Media3 nativo, cache local, fallback web, monitor de travamentos e proteção contra quadro verde. Não substitui o APK oficial."               --prerelease
           fi
