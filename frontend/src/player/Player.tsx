@@ -1137,6 +1137,10 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
   const native = useNativeBridgeContext();
 
   if (native && media.type === "drive_video") {
+    if (native.bridge.getVersion() === "4.0.0-lab1") {
+      return <NativeDriveStage media={media} duration={duration} device={device}
+        onEnd={onEnd} onNativeFailure={() => onError("android_native_video_failed")} native={native} />;
+    }
     return <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />;
   }
 
