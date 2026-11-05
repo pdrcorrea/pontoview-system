@@ -1141,14 +1141,8 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
     // existing tested WebView video path until the Android TV trial succeeds.
     const nativeLab = native.bridge.getVersion() === "4.0.0-lab1";
     if (nativeLab) {
-      return <NativeDriveStage
-        media={media}
-        duration={duration}
-        device={device}
-        onEnd={onEnd}
-        onNativeFailure={() => onError("android_native_video_failed")}
-        native={native}
-      />;
+      return <AndroidLabDriveVideoStage media={media} device={device} duration={duration}
+        onEnd={onEnd} onError={onError} native={native} />;
     }
     return <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />;
   }
@@ -1165,6 +1159,27 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
   }
 
   return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
+}
+
+// Only 4.0.0-lab1 uses this experimental route; released APKs remain unchanged.
+function AndroidLabDriveVideoStage({ media, device, duration, onEnd, onError, native }: {
+  media: ManifestItem["media"];
+  device: Device;
+  duration: number;
+  onEnd: () => void;
+  onError: (detail: string) => void;
+  native: NativeBridgeContext;
+}) {
+  const [useWebView, setUseWebView] = useState(false);
+  const failureCount = useRef(0);
+  const failure = () => {
+    if (failureCount.current++ > 0) return;
+    setUseWebView(true);
+  };
+  return useWebView
+    ? <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />
+    : <NativeDriveStage media={media} duration={duration} device={device}
+        onEnd={onEnd} onNativeFailure={failure} native={native} />;
 }
 
 function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: {
