@@ -1483,7 +1483,7 @@ function NativeDriveStage({ media, duration, device, onEnd, onNativeFailure, nat
         console.warn("[PontoView] Native Drive player did not become ready in time; falling back to WebView.");
         onNativeFailureRef.current();
       }
-    }, media.type === "drive_video" ? 12_000 : 20_000);
+    }, media.type === "drive_video" ? (window.__PV_NATIVE_APP_VERSION === "4.1.0-experiment" ? 5 * 60_000 : 12_000) : 20_000);
 
     return () => {
       window.clearTimeout(startupWatchdog);
