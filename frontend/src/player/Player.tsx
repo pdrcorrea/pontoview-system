@@ -1137,6 +1137,19 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
   const native = useNativeBridgeContext();
 
   if (native && media.type === "drive_video") {
+    // The experimental APK opts into native Media3. Production APKs keep their
+    // existing tested WebView video path until the Android TV trial succeeds.
+    const nativeLab = native.bridge.getVersion() === "4.0.0-lab1";
+    if (nativeLab) {
+      return <NativeDriveStage
+        media={media}
+        duration={duration}
+        device={device}
+        onEnd={onEnd}
+        onNativeFailure={() => onError("android_native_video_failed")}
+        native={native}
+      />;
+    }
     return <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />;
   }
 
