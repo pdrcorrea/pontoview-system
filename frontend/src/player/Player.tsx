@@ -1138,8 +1138,8 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
 
   if (native && media.type === "drive_video") {
     if (native.bridge.getVersion() === "4.0.0-lab1") {
-      return <NativeDriveStage media={media} duration={duration} device={device}
-        onEnd={onEnd} onNativeFailure={() => onError("android_native_video_failed")} native={native} />;
+      return <AndroidLabDriveVideoStage media={media} device={device} duration={duration}
+        onEnd={onEnd} onError={onError} native={native} />;
     }
     return <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />;
   }
@@ -1156,6 +1156,28 @@ function DriveStage({ media, duration, device, onEnd, onError }: { media: Manife
   }
 
   return <WebDriveStage media={media} duration={duration} device={device} onEnd={onEnd} onError={onError} />;
+}
+
+// LAB: A native decoder error must not disable the whole playlist.
+// Fall back once to the original cached WebView video route for this item.
+function AndroidLabDriveVideoStage({ media, device, duration, onEnd, onError, native }: {
+  media: ManifestItem["media"];
+  device: Device;
+  duration: number;
+  onEnd: () => void;
+  onError: (detail: string) => void;
+  native: NativeBridgeContext;
+}) {
+  const [useWebView, setUseWebView] = useState(false);
+  const failureCount = useRef(0);
+  const failure = () => {
+    if (failureCount.current++ > 0) return;
+    setUseWebView(true);
+  };
+  return useWebView
+    ? <AndroidLocalDriveVideoStage media={media} device={device} onEnd={onEnd} onError={onError} native={native} />
+    : <NativeDriveStage media={media} duration={duration} device={device}
+        onEnd={onEnd} onNativeFailure={failure} native={native} />;
 }
 
 function AndroidLocalDriveVideoStage({ media, device, onEnd, onError, native }: {
