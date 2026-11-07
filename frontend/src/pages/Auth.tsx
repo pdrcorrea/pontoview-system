@@ -17,7 +17,7 @@ import { InstallApp } from "../components/InstallApp";
 function isServiceUnavailable(error: { message: string; status?: number } | null): boolean {
   if (!error) return false;
   if ([402, 429, 500, 502, 503, 504, 520, 522, 524].includes(error.status ?? 0)) return true;
-  return /quota|exceeded|bandwidth|egress|billing|payment required|service unavailable|temporarily unavailable|failed to fetch|networkerror|network request failed|fetch failed|gateway timeout/i.test(error.message);
+  return /quota|exceeded|exceed_egress_quota|restricted|violations|spend caps|upgrade their plan|bandwidth|egress|billing|payment required|service unavailable|temporarily unavailable|failed to fetch|networkerror|network request failed|fetch failed|gateway timeout/i.test(error.message);
 }
 
 function AuthLayout({
