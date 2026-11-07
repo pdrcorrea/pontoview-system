@@ -1,6 +1,5 @@
 import { Check, LoaderCircle, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { invokeFunction } from "../lib/supabase";
 import type { WeatherLocation } from "../types";
 import "./WeatherLocationPicker.css";
 
@@ -53,10 +52,11 @@ export function WeatherLocationPicker({
       setMessage(null);
 
       try {
-        const data = await invokeFunction<LocationSearchResponse>("screens-weather", {
-          action: "locations",
-          query: normalizedQuery,
-        });
+        const endpoint = new URL("https://pontoview-clima.pedrhc258.workers.dev/api/localidades");
+        endpoint.searchParams.set("q", normalizedQuery);
+        const response = await fetch(endpoint.toString());
+        if (!response.ok) throw new Error(`CITY_SEARCH_${response.status}`);
+        const data = await response.json() as LocationSearchResponse;
 
         if (requestId !== requestRef.current) return;
         const locations = Array.isArray(data?.locations) ? data.locations : [];
