@@ -1801,9 +1801,79 @@ type ForecastDay = { date: string; weather_code: number | null; condition?: stri
 type WeatherAlert = { id?: string | number | null; title?: string; severity?: string; level?: number; description?: string; ends_at?: string | null; };
 type WeatherData = { temperature: number | null; apparent_temperature?: number | null; humidity?: number | null; wind_speed?: number | null; weather_code?: number | null; condition?: string; name?: string; forecast?: ForecastDay[]; alerts?: WeatherAlert[]; };
 
-function WeatherWidget({ screenId, token, location, preset = "complete" }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; preset?: string; }) {
-  const [data, setData] = useState<WeatherData | null>(null); const locationKey = JSON.stringify(location || {});
-  useEffect(() => { let active = true; const load = () => void fetch(`${functionsUrl}/screens-weather`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": screenId, "x-screen-token": token }, body: "{}" }).then((response) => response.ok ? response.json() : null).then((result) => { if (active && result) setData(result); }).catch(() => {}); load(); const timer = window.setInterval(load, 10 * 60_000); return () => { active = false; window.clearInterval(timer); }; }, [screenId, token, locationKey]);
+const PONTOVIEW_CLIMA_API = "https://pontoview-clima.pedrhc258.workers.dev";
+const WEATHER_CODES: Record<number, string> = { 0: "Céu limpo", 1: "Predomínio de sol", 2: "Parcialmente nublado", 3: "Nublado", 45: "Neblina", 48: "Neblina", 51: "Garoa leve", 53: "Garoa", 55: "Garoa forte", 61: "Chuva leve", 63: "Chuva", 65: "Chuva forte", 80: "Pancadas de chuva", 81: "Pancadas de chuva", 82: "Pancadas fortes", 95: "Trovoadas", 96: "Trovoadas com granizo", 99: "Trovoadas com granizo" };
+async function resolveWidgetWeatherLocation(location: PlayerManifest["settings"]["weather_location"]) {
+  let latitude = Number(location?.latitude);
+  let longitude = Number(location?.longitude);
+  const named = String(location?.name || "").trim();
+  if (location?.latitude != null && location?.longitude != null && Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) return { latitude, longitude, name: named || "Local configurado" };
+  if (named) {
+    const searchUrl = new URL(PONTOVIEW_CLIMA_API + "/api/localidades");
+    searchUrl.searchParams.set("q", named);
+    const result = await fetch(searchUrl.toString());
+    if (!result.ok) throw new Error("Falha ao localizar cidade configurada");
+    const data = await result.json();
+    const found = Array.isArray(data?.locations) ? data.locations[0] : null;
+    if (!found) throw new Error("Cidade configurada não encontrada");
+    return { latitude: Number(found.latitude), longitude: Number(found.longitude), name: named };
+  }
+  try {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3500);
+    try {
+      const ipResponse = await fetch("https://ipwho.is/?lang=pt", { signal: controller.signal });
+      if (ipResponse.ok) {
+        const ipData = await ipResponse.json();
+        latitude = Number(ipData.latitude);
+        longitude = Number(ipData.longitude);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) return { latitude, longitude, name: [ipData.city, ipData.region_code].filter(Boolean).join(", ") || "Localização automática" };
+      }
+    } finally { window.clearTimeout(timeout); }
+  } catch {}
+  return { latitude: -19.5394, longitude: -40.6306, name: "Colatina, ES" };
+}
+async function requestPontoViewWeather(location: PlayerManifest["settings"]["weather_location"]): Promise<WeatherData> {
+  const selected = await resolveWidgetWeatherLocation(location);
+  const endpoint = new URL(PONTOVIEW_CLIMA_API + "/api/clima");
+  endpoint.searchParams.set("lat", String(selected.latitude));
+  endpoint.searchParams.set("lon", String(selected.longitude));
+  endpoint.searchParams.set("cidade", selected.name);
+  const response = await fetch(endpoint.toString());
+  if (!response.ok) throw new Error("Cloudflare clima " + response.status);
+  const data = await response.json();
+  if (!data?.ok || !data?.current || !data?.daily) throw new Error("Resposta meteorológica inválida");
+  const current = data.current;
+  const daily = data.daily;
+  const dates: string[] = Array.isArray(daily.time) ? daily.time : [];
+  return {
+    name: selected.name,
+    temperature: current.temperature_2m,
+    apparent_temperature: current.apparent_temperature,
+    humidity: current.relative_humidity_2m,
+    wind_speed: current.wind_speed_10m,
+    weather_code: current.weather_code,
+    condition: WEATHER_CODES[current.weather_code] || "Tempo variável",
+    forecast: dates.map((date: string, index: number) => ({
+      date,
+      weather_code: daily.weather_code?.[index] ?? null,
+      temp_max: daily.temperature_2m_max?.[index] ?? null,
+      temp_min: daily.temperature_2m_min?.[index] ?? null,
+      condition: WEATHER_CODES[daily.weather_code?.[index]] || "Tempo variável",
+    })),
+    alerts: Array.isArray(data.alerts) ? data.alerts : [],
+  };
+}
+function WeatherWidget({ screenId, location, preset = "complete" }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; preset?: string; }) {
+  const [data, setData] = useState<WeatherData | null>(null);
+  const locationKey = JSON.stringify(location || {});
+  useEffect(() => {
+    let active = true;
+    const load = () => { void requestPontoViewWeather(location).then(result => { if (active) setData(result); }).catch(error => { console.warn("Cloudflare clima indisponível", error); }); };
+    load();
+    const timer = window.setInterval(load, 20 * 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [screenId, locationKey]);
   const forecast = Array.isArray(data?.forecast) ? data.forecast.slice(1, 4) : [];
   const alerts = Array.isArray(data?.alerts) ? data.alerts.slice(0, 2) : [];
   return <div className="live-weather"><div className="weather-current"><WeatherGlyph code={data?.weather_code} /><span><b>{data?.temperature != null ? `${Math.round(data.temperature)}°` : "—"}</b><small className="condition">{data?.condition || "Clima"}</small><small>{data?.name || String(location?.name || "Configure a cidade")}</small>{preset === "complete" && (data?.apparent_temperature != null || data?.wind_speed != null) && <span className="weather-detail">{data?.apparent_temperature != null && <em style={{ fontStyle: "normal" }}>Sensação {Math.round(data.apparent_temperature)}°</em>}{data?.wind_speed != null && <em style={{ fontStyle: "normal", display: "inline-flex", alignItems: "center", gap: 3 }}><Wind />{Math.round(data.wind_speed)} km/h</em>}</span>}</span></div>{alerts.length > 0 && <div className="weather-alerts">{alerts.map((alert, position) => <div className={`weather-alert level-${Number(alert.level || 0)}`} key={String(alert.id ?? position)}><AlertTriangle /><span><b>{alert.severity || "Alerta meteorológico"}</b><small>{alert.title || alert.description || "Atenção às condições do tempo"}</small></span></div>)}</div>}{preset !== "essential" && forecast.length > 0 && <div className="weather-forecast">{forecast.map((day) => <div className="weather-day" key={day.date} title={day.condition || "Previsão"}><small>{forecastLabel(day.date)}</small><WeatherGlyph code={day.weather_code} /><span><b>{day.temp_max != null ? `${Math.round(day.temp_max)}°` : "—"}</b><i className="min">{day.temp_min != null ? `${Math.round(day.temp_min)}°` : "—"}</i></span></div>)}</div>}</div>;
