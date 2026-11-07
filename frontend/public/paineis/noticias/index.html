@@ -67,7 +67,7 @@ body{
 </div>
 <script src="../shared/pv.js?v=9"></script>
 <script>
-const CONTENT_FEED='https://fpdojntvnhiszagczfqr.supabase.co/functions/v1/content-feed?type=news&limit=5';
+const CONTENT_FEED='https://pontoview-noticias.pedrhc258.workers.dev/api/noticias?limit=16';
 const PUBLIC_CONTENT_URL='https://telas.pontoview.com.br/conteudo-publico';
 const app=document.getElementById('app'),bootScreen=document.getElementById('bootScreen'),copy=document.querySelector('.copy'),title=document.getElementById('title'),sourceRow=document.querySelector('.source-row'),sourceIconBox=document.getElementById('sourceIconBox'),sourceIcon=document.getElementById('sourceIcon'),sourceFallback=document.getElementById('sourceFallback'),sourceName=document.getElementById('sourceName'),media=document.getElementById('media'),image=document.getElementById('image'),qr=document.getElementById('qr'),qrImg=document.getElementById('qrImg');
 const bootStart=performance.now(),minBootTime=1100;let contentReady=false;

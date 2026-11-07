@@ -28,7 +28,9 @@ import type { PlayerManifest } from "../types";
 
 const PLAYER_VERSION = CURRENT_PLAYER_VERSION;
 const DEVICE_KEY = "pontoview_player_device_v1";
-const NEWS_REFRESH_MS = 5 * 60_000;
+const NEWS_REFRESH_MS = 30 * 60_000;
+const NEWS_WORKER_URL = "https://pontoview-noticias.pedrhc258.workers.dev/api/noticias";
+function newsApiUrl(categories: string) { const endpoint = new URL(NEWS_WORKER_URL); endpoint.searchParams.set("categories", categories || "general"); endpoint.searchParams.set("limit", "16"); return endpoint.toString(); }
 const PLAYER_STATE_CHECK_MS = 60_000;
 const BUILD_CHECK_MS = 24 * 60 * 60_000; // Lightweight daily version check, never force playback reload.
 const PLAYER_RUNTIME_STYLE = `
@@ -432,11 +434,11 @@ export function PlayerPage() {
 
       if (next.settings?.widgets?.news) {
         const categories = (next.settings.news_categories || ["general"]).join(",");
-        const shouldRefresh = newsFetch.current.key !== categories || Date.now() - newsFetch.current.at >= NEWS_REFRESH_MS || !newsFetch.current.items.length;
+        const shouldRefresh = newsFetch.current.key !== categories || Date.now() - newsFetch.current.at >= NEWS_REFRESH_MS;
         if (shouldRefresh) {
           try {
-            const news = await fetch(`${functionsUrl}/screens-news`, { method: "POST", headers: { "Content-Type": "application/json", apikey: supabasePublishableKey || "", "x-screen-id": activeDevice.screenId, "x-screen-token": activeDevice.token }, body: "{}" }).then((response) => response.ok ? response.json() : null);
-            if (Array.isArray(news?.items)) newsFetch.current = { key: categories, at: Date.now(), items: news.items };
+            const news = await fetch(newsApiUrl(categories), { headers: { Accept: "application/json" } }).then((response) => response.ok ? response.json() : null);
+            if (Array.isArray(news?.items) && news.items.length) newsFetch.current = { key: categories, at: Date.now(), items: news.items };
             else newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() };
           } catch { newsFetch.current = { ...newsFetch.current, key: categories, at: Date.now() }; }
         }
@@ -531,16 +533,7 @@ export function PlayerPage() {
 
     const refreshNews = async () => {
       try {
-        const response = await fetch(`${functionsUrl}/screens-news`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: supabasePublishableKey || "",
-            "x-screen-id": activeDevice.screenId,
-            "x-screen-token": activeDevice.token,
-          },
-          body: "{}",
-        });
+        const response = await fetch(newsApiUrl(newsCategoriesKey), { headers: { Accept: "application/json" } });
         if (!response.ok) return;
         const result = await response.json();
         if (!active || !Array.isArray(result?.items) || !result.items.length) return;
