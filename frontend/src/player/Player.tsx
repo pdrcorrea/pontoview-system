@@ -1864,7 +1864,7 @@ async function requestPontoViewWeather(location: PlayerManifest["settings"]["wea
     alerts: Array.isArray(data.alerts) ? data.alerts : [],
   };
 }
-function WeatherWidget({ screenId, token, location, preset = "complete" }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; preset?: string; }) {
+function WeatherWidget({ screenId, location, preset = "complete" }: { screenId: string; token: string; location: PlayerManifest["settings"]["weather_location"]; preset?: string; }) {
   const [data, setData] = useState<WeatherData | null>(null);
   const locationKey = JSON.stringify(location || {});
   useEffect(() => {
