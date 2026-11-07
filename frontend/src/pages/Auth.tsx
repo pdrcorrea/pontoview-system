@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
+  AlertTriangle,
   CheckCircle2,
   KeyRound,
   LockKeyhole,
@@ -12,6 +13,12 @@ import { supabase } from "../lib/supabase";
 import { AsyncButton, FormMessage, formData } from "../components/ui";
 import "../auth-main.css";
 import { InstallApp } from "../components/InstallApp";
+
+function isServiceUnavailable(error: { message: string; status?: number } | null): boolean {
+  if (!error) return false;
+  if ([402, 429, 500, 502, 503, 504, 520, 522, 524].includes(error.status ?? 0)) return true;
+  return /quota|exceeded|exceed_egress_quota|restricted|violations|spend caps|upgrade their plan|bandwidth|egress|billing|payment required|service unavailable|temporarily unavailable|failed to fetch|networkerror|network request failed|fetch failed|gateway timeout/i.test(error.message);
+}
 
 function AuthLayout({
   title,
@@ -87,20 +94,33 @@ function AuthLayout({
 export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
-    const data = formData(e);
-    const result = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    setBusy(false);
-    if (result.error) setError(result.error.message);
-    else navigate((location.state as { from?: string })?.from || "/dashboard");
+    setUnavailable(false);
+    try {
+      const data = formData(e);
+      const result = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (result.error) {
+        if (isServiceUnavailable(result.error)) setUnavailable(true);
+        else if (/invalid login credentials/i.test(result.error.message)) setError("E-mail ou senha incorretos.");
+        else setError(result.error.message);
+      } else {
+        navigate((location.state as { from?: string })?.from || "/dashboard");
+      }
+    } catch {
+      setUnavailable(true);
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <AuthLayout title="Bem-vindo." text="Entre com sua Conta PontoView para acessar o PontoView Telas.">
@@ -131,9 +151,26 @@ export function LoginPage() {
             />
           </span>
         </label>
+        {unavailable && (
+          <div role="alert" aria-live="polite" style={{
+            display: "flex", alignItems: "flex-start", gap: 12,
+            padding: "16px", borderRadius: 12,
+            background: "rgba(245, 158, 11, 0.08)",
+            border: "1px solid rgba(245, 158, 11, 0.28)",
+          }}>
+            <AlertTriangle size={22} style={{ flexShrink: 0, color: "#d97706", marginTop: 2 }} />
+            <div>
+              <strong style={{ display: "block", marginBottom: 6 }}>Serviço temporariamente indisponível</strong>
+              <span style={{ display: "block", fontSize: 14, lineHeight: 1.55 }}>
+                Não foi possível conectar ao PontoView agora. Seus dados permanecem preservados.
+                Tente novamente mais tarde. Caso o problema continue, entre em contato com o suporte.
+              </span>
+            </div>
+          </div>
+        )}
         <FormMessage error={error} />
         <AsyncButton busy={busy} className="btn primary full">
-          Entrar na Conta PontoView
+          Tentar entrar
         </AsyncButton>
         <Link className="forgot auth-main-forgot" to="/recuperar-senha">
           Esqueci minha senha
