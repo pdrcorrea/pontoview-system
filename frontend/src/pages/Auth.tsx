@@ -13,6 +13,7 @@ import { supabase } from "../lib/supabase";
 import { AsyncButton, FormMessage, formData } from "../components/ui";
 import "../auth-main.css";
 import { InstallApp } from "../components/InstallApp";
+import { AuthTurnstile, turnstileEnabled } from "../components/AuthTurnstile";
 
 function isServiceUnavailable(error: { message: string; status?: number } | null): boolean {
   if (!error) return false;
@@ -93,6 +94,8 @@ function AuthLayout({
 
 export function LoginPage() {
   const [busy, setBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const navigate = useNavigate();
@@ -100,6 +103,10 @@ export function LoginPage() {
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (busy) return;
+    if (turnstileEnabled && !captchaToken) {
+      setError("Conclua a verificação de segurança para continuar.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setUnavailable(false);
@@ -108,6 +115,7 @@ export function LoginPage() {
       const result = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
+        options: turnstileEnabled ? { captchaToken: captchaToken! } : undefined,
       });
       if (result.error) {
         if (isServiceUnavailable(result.error)) setUnavailable(true);
@@ -119,6 +127,8 @@ export function LoginPage() {
     } catch {
       setUnavailable(true);
     } finally {
+      setCaptchaToken(null);
+      setCaptchaAttempt((value) => value + 1);
       setBusy(false);
     }
   };
@@ -168,6 +178,7 @@ export function LoginPage() {
             </div>
           </div>
         )}
+        <AuthTurnstile onToken={setCaptchaToken} resetKey={captchaAttempt} />
         <FormMessage error={error} />
         <AsyncButton busy={busy} className="btn primary full">
           Tentar entrar
@@ -183,10 +194,16 @@ export function LoginPage() {
 
 export function SignupPage() {
   const [busy, setBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (turnstileEnabled && !captchaToken) {
+      setError("Conclua a verificação de segurança para continuar.");
+      return;
+    }
     setBusy(true);
     setError(null);
     const data = formData(e);
@@ -200,6 +217,7 @@ export function SignupPage() {
       password: data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/confirmado`,
+        ...(turnstileEnabled ? { captchaToken: captchaToken! } : {}),
         data: {
           full_name: data.name,
           organization_name: data.organization,
@@ -207,6 +225,8 @@ export function SignupPage() {
         },
       },
     });
+    setCaptchaToken(null);
+    setCaptchaAttempt((value) => value + 1);
     setBusy(false);
     if (result.error) setError(result.error.message);
     else setSent(true);
@@ -260,6 +280,7 @@ export function SignupPage() {
             />
           </span>
         </label>
+        <AuthTurnstile onToken={setCaptchaToken} resetKey={captchaAttempt} />
         <FormMessage error={error} />
         <AsyncButton busy={busy} className="btn primary full">
           Criar Conta PontoView
@@ -274,15 +295,24 @@ export function SignupPage() {
 
 export function RecoveryPage() {
   const [busy, setBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (turnstileEnabled && !captchaToken) {
+      setError("Conclua a verificação de segurança para continuar.");
+      return;
+    }
     setBusy(true);
     const data = formData(e);
     const result = await supabase.auth.resetPasswordForEmail(data.email, {
       redirectTo: `${window.location.origin}/redefinir-senha`,
+      ...(turnstileEnabled ? { captchaToken: captchaToken! } : {}),
     });
+    setCaptchaToken(null);
+    setCaptchaAttempt((value) => value + 1);
     setBusy(false);
     if (result.error) setError(result.error.message);
     else
@@ -300,6 +330,7 @@ export function RecoveryPage() {
             <input name="email" type="email" required />
           </span>
         </label>
+        <AuthTurnstile onToken={setCaptchaToken} resetKey={captchaAttempt} />
         <FormMessage error={error} success={message} />
         <AsyncButton busy={busy} className="btn primary full">
           Enviar link
