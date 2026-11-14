@@ -37,20 +37,6 @@ function AuthLayout({
   return (
     <div className="auth-page auth-main-style pv-auth-v1">
       <section className="auth-brand pv-auth-identity">
-        <div className="auth-main-brand">
-          <span className="auth-main-brandmark">
-            <img
-              src="/assets/pv-telas-soft3d.svg"
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-            />
-          </span>
-          <span>
-            <strong>PontoView</strong>
-            <small>Telas</small>
-          </span>
-        </div>
-
         <div className="auth-main-pitch">
           <span>ECOSSISTEMA PONTOVIEW</span>
           <h1>Transforme TVs em canais de comunicação.</h1>
@@ -58,13 +44,19 @@ function AuthLayout({
             Organize vídeos, imagens, YouTube, conteúdos integrados e painéis
             automáticos em uma experiência feita para TVs da sua empresa.
           </p>
+          <ul className="pv-auth-benefits">
+            <li>Conteúdos e playlists em um só lugar</li>
+            <li>Painéis inteligentes atualizados automaticamente</li>
+            <li>Controle das telas de qualquer lugar</li>
+          </ul>
         </div>
 
-        <small className="auth-main-foot">PontoView Telas · um produto PontoView</small>
+        <a className="pv-auth-company" href="https://pontoview.com.br">Um produto <strong>PontoView</strong></a>
       </section>
 
       <main className="auth-card pv-auth-form-side">
         <div className="auth-main-card pv-auth-form-surface">
+          <Link className="pv-auth-product" to="/" aria-label="Voltar ao PontoView Telas"><span>PontoView <small>Telas</small></span><img src="/assets/pv-telas-soft3d.svg" alt="" /></Link>
           <span className="auth-main-eyebrow">CONTA PONTOVIEW</span>
           <h2>{title}</h2>
           <p>{text}</p>
