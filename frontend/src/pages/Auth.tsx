@@ -12,6 +12,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { AsyncButton, FormMessage, formData } from "../components/ui";
 import "../auth-main.css";
+import "../pv-auth-design-system.css";
 import { InstallApp } from "../components/InstallApp";
 import { AuthTurnstile, turnstileEnabled } from "../components/AuthTurnstile";
 
@@ -34,12 +35,12 @@ function AuthLayout({
   const showTabs = ["/login", "/cadastro"].includes(location.pathname);
 
   return (
-    <div className="auth-page auth-main-style">
-      <section className="auth-brand">
+    <div className="auth-page auth-main-style pv-auth-v1">
+      <section className="auth-brand pv-auth-identity">
         <div className="auth-main-brand">
           <span className="auth-main-brandmark">
             <img
-              src="/assets/icon.png"
+              src="/assets/pv-telas-soft3d.svg"
               alt=""
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
@@ -62,8 +63,8 @@ function AuthLayout({
         <small className="auth-main-foot">PontoView Telas · um produto PontoView</small>
       </section>
 
-      <main className="auth-card">
-        <div className="auth-main-card">
+      <main className="auth-card pv-auth-form-side">
+        <div className="auth-main-card pv-auth-form-surface">
           <span className="auth-main-eyebrow">CONTA PONTOVIEW</span>
           <h2>{title}</h2>
           <p>{text}</p>
