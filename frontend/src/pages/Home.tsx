@@ -102,10 +102,10 @@ export function HomePage() {
       <header className={`pv-home-header${scrolled ? " is-compact" : ""}`}>
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas">
           <span className="pv-home-brandmark">
-            <img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-4" alt="" />
+            <img className="pv-home-brand-icon" src="/assets/IconeBranco.png" alt="" />
           </span>
           <span className="pv-home-brandname">
-            <strong>PontoView</strong>
+            <strong><b>Ponto</b><span>View</span></strong>
             <small>Telas</small>
           </span>
         </Link>
