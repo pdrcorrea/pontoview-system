@@ -1,5 +1,5 @@
 /* PontoView Light Motion: efeito local do ponteiro, sem backend nem timers. */
-const lightSelector = ".pv-home .pv-home-button, .auth-page .btn:not(.danger)";
+const lightSelector = ".pv-home .pv-home-button, .auth-page .btn:not(.danger), .pv-auth-v1 .pv-auth-form-surface button[type='submit']";
 if (typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
   document.addEventListener("pointermove", (event: PointerEvent) => {
     if (!(event.target instanceof Element)) return;
