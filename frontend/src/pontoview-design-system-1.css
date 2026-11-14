@@ -1,0 +1,54 @@
+/* PontoView Design System 1.0 — Telas
+   Apenas a landing e o sistema web; player Android TV e painéis de exibição ficam intactos. */
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap");
+.pv-home,.shell,.auth-page{--pv-deep:#052b72;--pv-mid:#0757be;--pv-cyan:#4cecf6;--pv-line:#c8def8;--pv-ink:#092e70;font-family:Arial,Helvetica,sans-serif}
+.pv-home :is(h1,h2,h3,h4),.shell :is(h1,h2,h3,h4),.auth-page :is(h1,h2,h3,h4){font-family:"Nunito Sans",Arial,sans-serif;letter-spacing:-.035em}
+.pv-home{background:#f8fbff;color:#092e70}
+.pv-home .pv-home-hero{
+  background:radial-gradient(ellipse at 85% 20%,#1269d5 0%,#0847aa 48%,#052b72 100%);
+  color:#fff;border-bottom-right-radius:70px;
+  max-width:none;padding-left:max(24px,calc((100vw - 1280px)/2));padding-right:max(24px,calc((100vw - 1280px)/2));
+}
+.pv-home .pv-home-hero h1{color:#fff;font-family:"Nunito Sans",Arial,sans-serif;line-height:1.04;font-weight:800}
+.pv-home .pv-home-hero-copy>p{color:#e3efff}
+.pv-home .pv-home-kicker{color:#80f2fa}
+.pv-home .pv-home-proof span{color:#d8ecfc}
+.pv-home .pv-home-proof svg{color:#66eef7}
+.pv-home .pv-home-header{background:rgba(5,40,105,.84)!important;border:1px solid #b1ddff42!important;box-shadow:0 16px 36px #00235b30!important;-webkit-backdrop-filter:blur(20px) saturate(140%);backdrop-filter:blur(20px) saturate(140%}
+.pv-home .pv-home-header .pv-home-brandname strong,.pv-home .pv-home-header .pv-home-brandname small,.pv-home .pv-home-header .pv-home-nav a,.pv-home .pv-home-header .pv-home-header-login{color:#fff!important}
+.pv-home .pv-home-header .pv-home-nav a:hover,.pv-home .pv-home-header .pv-home-header-login:hover{color:#fff!important;background:#ffffff1b}
+.pv-home .pv-home-header .pv-home-header-cta{background:#61eff8!important;color:#073b77!important;border-color:#61eff8!important}
+.pv-home .pv-home-header .pv-home-menu-button{background:#0a518f;color:#fff}
+.pv-home .pv-home-button,.pv-home .pv-home-header-cta,.auth-page .btn:not(.danger){
+  --pv-x:50%;--pv-y:50%;position:relative;isolation:isolate;overflow:hidden;
+  border-radius:15px;transition:background .25s,color .25s,border-color .25s,box-shadow .25s;transform:none;
+}
+.pv-home .pv-home-button:before,.auth-page .btn:not(.danger):before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;
+  background:radial-gradient(240px circle at var(--pv-x) var(--pv-y),#59e9fa94,transparent 80%);
+  transition:opacity .2s;
+}
+.pv-home .pv-home-hero .pv-home-button{background:#fff;color:#063778;border:1px solid #dbedff;box-shadow:0 8px 24px #00286645}
+.pv-home .pv-home-hero .pv-home-button:hover,.pv-home .pv-home-hero .pv-home-button:focus-visible{background:#073e8c;color:#fff;border-color:#50c8ed;transform:none}
+.pv-home .pv-home-button:hover:before,.auth-page .btn:not(.danger):hover:before{opacity:1}
+.pv-home .pv-home-floating-card,.pv-home .pv-home-steps article,.pv-home .pv-home-value-strip,.shell .panel,.shell .stats article{
+  border-radius:22px;border-color:#c8def8;
+}
+.pv-home .pv-home-steps article,.pv-home .pv-home-value-strip article{background:linear-gradient(145deg,#fff,#f3f8ff)}
+.pv-home .pv-home-browser{border:7px solid #e5f5ff;border-radius:26px;box-shadow:0 30px 60px #001f5580}
+.shell{--navy:#052b72;--navy-2:#0b488f;--blue:#0757be;--ink:#092e70;--muted:#536e94;--line:#c8def8;--soft:#f8fbff;background:#f8fbff;color:#092e70}
+.shell .sidebar{background:linear-gradient(165deg,#063b8c,#041e4d);border-right:1px solid #63b9e633}
+.shell .sidebar a{border-radius:12px}
+.shell .sidebar a:hover,.shell .sidebar a.active{background:#ffffff1b;color:#fff}
+.shell .topbar{background:#fff;border-color:#c8def8}
+.shell .head h1{font-family:"Nunito Sans",Arial,sans-serif}
+.shell .panel,.shell .stats article{background:#fff}
+.shell .btn:not(.danger){border-radius:13px}
+.shell .btn.primary:not(.danger):hover{background:#073e8c;color:#fff}
+@media(max-width:760px){
+ .pv-home .pv-home-hero{padding-left:20px;padding-right:20px;border-bottom-right-radius:42px}
+ .pv-home .pv-home-header{border-radius:17px!important}
+ .pv-home .pv-home-hero h1{font-size:clamp(39px,10vw,60px)}
+ .pv-home .pv-home-browser{border-width:5px}
+}
+@media(prefers-reduced-motion:reduce){.pv-home .pv-home-button,.pv-home .pv-home-button:before,.shell .btn{transition:none!important}}
