@@ -48,6 +48,7 @@ import "./content-portal-operational.css";
 import "./mobile-minimal-refresh.css";
 import "./preview-control-polish.css";
 import "./pontoview-design-system-1.css";
+import "./pontoview-light-motion";
 
 const PLAYER_HOSTS = new Set(["tv.pontoview.com.br"]);
 const CENTRAL_HOSTS = new Set(["central.pontoview.com.br"]);
