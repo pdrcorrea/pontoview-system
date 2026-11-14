@@ -279,3 +279,17 @@
 .auth-main-style .auth-main-pitch p{max-width:440px}
 .auth-main-style .auth-main-foot{display:none}
 @media(max-width:800px){.auth-main-style .auth-card{min-height:100dvh!important}}
+
+
+/* Telas: ajustes de densidade na interface de acesso; não afeta o player. */
+@media(min-width:801px){
+ .auth-main-style .auth-card{padding:clamp(18px,3vw,46px)!important}
+ .auth-main-style .auth-main-card{max-width:510px!important}
+ .auth-main-style .auth-form{gap:clamp(9px,1.6vh,14px)!important}
+ .auth-main-style .auth-form label{gap:5px!important}
+ .auth-main-style .auth-form label>span{min-height:43px!important}
+ .auth-main-style .auth-form input{min-height:41px!important}
+ .auth-main-style .auth-main-tabs{margin-bottom:clamp(12px,2vh,20px)!important}
+ .auth-main-style .auth-card>div>p{margin-bottom:clamp(10px,2vh,20px)!important}
+ .auth-main-style .auth-switch{margin-top:12px!important}
+}
