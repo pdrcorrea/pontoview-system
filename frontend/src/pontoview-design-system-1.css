@@ -52,3 +52,7 @@
  .pv-home .pv-home-browser{border-width:5px}
 }
 @media(prefers-reduced-motion:reduce){.pv-home .pv-home-button,.pv-home .pv-home-button:before,.shell .btn{transition:none!important}}
+
+/* Ícone oficial do produto, vetorial e reutilizável. */
+.pv-home .pv-home-brandmark img{content:url('/assets/pv-telas-soft3d.svg')!important;object-fit:contain!important}
+.pv-home .pv-home-browserbar{border-color:#cae7fc}
