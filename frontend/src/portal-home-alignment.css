@@ -111,3 +111,56 @@
 @media(prefers-reduced-motion:reduce){
  .pv-home .pv-home-header{transition:none!important}
 }
+
+/* Header Telas: palavra única sem os pseudo-elementos históricos de marca.
+   O texto Ponto/View agora vem do JSX, para não duplicar a assinatura. */
+.pv-home .pv-home-header .pv-home-brandname strong{
+  display:inline-flex!important;align-items:baseline!important;
+  font-size:20px!important;letter-spacing:-.035em!important;
+  gap:0!important;font-family:"Nunito Sans",Arial,sans-serif!important;
+}
+.pv-home .pv-home-header .pv-home-brandname strong::before,
+.pv-home .pv-home-header .pv-home-brandname strong::after{
+  content:none!important;display:none!important;
+}
+.pv-home .pv-home-header .pv-home-brandname strong b{
+  color:#fff!important;font-weight:800!important;font-size:inherit!important;
+}
+.pv-home .pv-home-header .pv-home-brandname strong span{
+  color:#fff!important;font-weight:400!important;font-size:inherit!important;
+}
+.pv-home .pv-home-header .pv-home-brand-icon{
+  content:url('/assets/IconeBranco.png')!important;
+  width:38px!important;height:38px!important;object-fit:contain!important;
+}
+.pv-home .pv-home-header .pv-home-brandmark{
+  width:38px!important;height:38px!important;flex:0 0 38px!important;
+}
+/* Menu é irmã do header, e não filha. A camada fixa tem altura da viewport;
+   usar top:100% na caixa do menu empurrava TODAS as opções para fora da tela. */
+.pv-home .pv-home-menu-overlay{z-index:95!important}
+.pv-home .pv-home-menu-panel{
+  top:96px!important;
+  bottom:auto!important;
+  left:auto!important;
+  right:max(18px,calc((100vw - 1170px)/2))!important;
+  width:min(410px,calc(100% - 36px))!important;
+  max-height:calc(100dvh - 116px)!important;
+  overflow-y:auto!important;overscroll-behavior:contain;
+  color:#eef8ff!important;
+}
+.pv-home .pv-home-menu-head button{
+  background:rgba(255,255,255,.12)!important;color:#fff!important;
+}
+.pv-home .pv-home-menu-panel .pv-home-menu-login{color:#fff!important}
+.pv-home .pv-home-menu-panel .pv-home-menu-primary{color:#073b7a!important}
+.pv-home .pv-home-menu-panel .pv-home-menu-primary:hover{background:#a5ffff!important}
+@media(max-width:760px){
+ .pv-home .pv-home-header .pv-home-brandname strong{font-size:17px!important}
+ .pv-home .pv-home-header .pv-home-brand-icon{width:32px!important;height:32px!important}
+ .pv-home .pv-home-header .pv-home-brandmark{width:32px!important;height:32px!important;flex-basis:32px!important}
+ .pv-home .pv-home-menu-panel{
+   top:79px!important;left:14px!important;right:14px!important;
+   width:auto!important;max-height:calc(100dvh - 96px)!important;
+ }
+}
