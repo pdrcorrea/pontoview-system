@@ -44,6 +44,11 @@ function AuthLayout({
             Organize vídeos, imagens, YouTube, conteúdos integrados e painéis
             automáticos em uma experiência feita para TVs da sua empresa.
           </p>
+          <ul className="pv-auth-benefits">
+            <li>Conteúdos e playlists em um só lugar</li>
+            <li>Painéis inteligentes atualizados automaticamente</li>
+            <li>Controle das telas de qualquer lugar</li>
+          </ul>
         </div>
 
         <a className="pv-auth-company" href="https://pontoview.com.br">Um produto <strong>PontoView</strong></a>
