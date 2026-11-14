@@ -1,0 +1,113 @@
+/* Alinhamento visual real com a homepage PontoView 2026.
+   Escopo restrito à Home Telas. Nenhum seletor de player, tela ou painel. */
+.pv-home{
+  padding-top:0!important;
+  background:#f8fbff;
+  overflow-x:clip;
+}
+.pv-home .pv-home-header{
+  position:fixed!important;
+  z-index:90;
+  top:13px!important;left:50%!important;
+  transform:translateX(-50%)!important;
+  width:min(1170px,calc(100% - 48px))!important;
+  height:70px!important;
+  padding:0 15px 0 21px!important;
+  border:1px solid transparent!important;
+  border-radius:23px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transition:top .28s ease,height .28s ease,background .28s ease,box-shadow .28s ease,border-color .28s ease,backdrop-filter .28s ease!important;
+}
+.pv-home .pv-home-header.is-compact{
+  top:8px!important;
+  height:62px!important;
+  background:rgba(5,40,105,.84)!important;
+  border:1px solid rgba(163,223,255,.30)!important;
+  box-shadow:0 15px 42px rgba(0,26,76,.24)!important;
+  backdrop-filter:blur(22px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(145%)!important;
+}
+.pv-home .pv-home-header .pv-home-brandname strong{color:#fff!important;font-weight:800;font-size:20px!important}
+.pv-home .pv-home-header .pv-home-brandname small{color:#e0eeff!important;font-size:13px!important;font-weight:600}
+.pv-home .pv-home-header .pv-home-nav{display:flex;align-items:center;gap:3px;margin-left:auto}
+.pv-home .pv-home-header .pv-home-nav a{color:#eff8ff!important;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;padding:10px 11px;border-radius:11px}
+.pv-home .pv-home-header .pv-home-nav a:hover{color:white!important;background:rgba(109,217,250,.15);transform:none}
+.pv-home .pv-home-header .pv-home-header-login{color:#fff!important}
+.pv-home .pv-home-header .pv-home-header-cta{background:#57edf7!important;color:#073977!important;box-shadow:0 6px 18px rgba(0,36,100,.15)}
+.pv-home .pv-home-header .pv-home-header-cta:hover{background:#abfdff!important}
+.pv-home .pv-home-header .pv-home-menu-button{width:44px;height:44px;border-radius:13px;background:rgba(8,64,140,.65);border:1px solid rgba(121,220,250,.32)}
+.pv-home .pv-home-header .pv-home-menu-button svg{width:23px;height:23px}
+.pv-home .pv-home-hero{
+  width:100%;
+  max-width:none!important;
+  margin:0!important;
+  min-height:620px;
+  padding:145px max(26px,calc((100vw - 1290px)/2)) 78px!important;
+  display:grid;
+  grid-template-columns:minmax(0,46fr) minmax(0,54fr)!important;
+  gap:clamp(28px,4vw,65px)!important;
+  align-items:center;
+  background:radial-gradient(ellipse at 70% 36%,#146ee1 0%,#0959c5 37%,#07439c 72%,#062f7b 100%)!important;
+  border-radius:0 0 70px 0;
+}
+.pv-home .pv-home-hero-copy{width:100%;max-width:600px}
+.pv-home .pv-home-hero h1{
+  max-width:12ch;
+  margin:14px 0 24px;
+  color:#fff!important;
+  font-family:"Nunito Sans",Arial,sans-serif;
+  font-size:clamp(46px,5.15vw,77px)!important;
+  font-weight:800;
+  letter-spacing:-.055em;
+  line-height:1.05!important;
+}
+.pv-home .pv-home-hero-copy>p{max-width:480px;color:#e7f1ff!important;font-size:clamp(15px,1.28vw,18px);line-height:1.58}
+.pv-home .pv-home-hero .pv-home-kicker{color:#8df2fc}
+.pv-home .pv-home-hero-actions{gap:12px;margin-top:28px}
+.pv-home .pv-home-hero .pv-home-button{min-height:49px;padding:13px 21px;border-radius:16px;background:white;color:#073b7c}
+.pv-home .pv-home-hero .pv-home-button:hover{background:#073e8c;color:white}
+.pv-home .pv-home-hero .pv-home-visual{width:100%;min-width:0;max-width:680px;margin:auto}
+.pv-home .pv-home-hero .pv-home-browser{transform:perspective(1100px) rotateY(-3deg) rotateZ(-1deg);border-radius:31px}
+.pv-home .pv-home-menu-overlay{z-index:85}
+.pv-home .pv-home-menu-panel{top:calc(100% + 8px);bottom:auto;background:rgba(5,37,90,.98);border-color:rgba(133,210,248,.27);box-shadow:0 22px 58px rgba(0,17,58,.42)}
+.pv-home .pv-home-menu-head>span{color:#d5edff}
+.pv-home .pv-home-menu-grid a{background:rgba(255,255,255,.07);border-color:rgba(129,208,246,.14)}
+.pv-home .pv-home-menu-grid strong{color:#f1f9ff}
+.pv-home .pv-home-menu-grid span{color:#b0c8df}
+.pv-home .pv-home-menu-grid a:hover{background:rgba(79,220,247,.18)}
+.pv-home .pv-home-menu-login{background:rgba(255,255,255,.09);border-color:rgba(129,208,246,.3);color:white}
+.pv-home .pv-home-menu-primary{background:#58eaf5;color:#073a7a}
+@media(max-width:1150px){
+ .pv-home .pv-home-header .pv-home-nav{gap:0}
+ .pv-home .pv-home-header .pv-home-nav a{font-size:12px;padding:8px}
+ .pv-home .pv-home-hero{gap:28px!important}
+}
+@media(max-width:940px){
+ .pv-home .pv-home-header .pv-home-nav{display:none}
+ .pv-home .pv-home-hero{grid-template-columns:minmax(0,1fr)!important;padding-top:125px!important;gap:44px!important}
+ .pv-home .pv-home-hero-copy{max-width:640px}
+ .pv-home .pv-home-hero h1{max-width:13ch}
+ .pv-home .pv-home-hero .pv-home-visual{max-width:660px}
+}
+@media(max-width:760px){
+ .pv-home .pv-home-header{top:10px!important;width:calc(100% - 28px)!important;height:60px!important;padding:0 9px 0 13px!important;border-radius:19px!important}
+ .pv-home .pv-home-header.is-compact{top:7px!important;height:54px!important}
+ .pv-home .pv-home-header .pv-home-brandname strong{font-size:17px!important}
+ .pv-home .pv-home-header .pv-home-brandname small{font-size:12px!important}
+ .pv-home .pv-home-header-actions{display:none}
+ .pv-home .pv-home-hero{padding:113px 20px 54px!important;border-bottom-right-radius:43px;min-height:0}
+ .pv-home .pv-home-hero h1{font-size:clamp(42px,9.7vw,60px)!important;max-width:12ch}
+ .pv-home .pv-home-hero-copy>p{font-size:15px;line-height:1.6}
+ .pv-home .pv-home-menu-panel{position:absolute;top:72px!important;bottom:auto!important;left:12px!important;right:12px!important;width:auto!important}
+ .pv-home .pv-home-hero .pv-home-visual{max-width:100%}
+}
+@media(max-width:400px){
+ .pv-home .pv-home-hero-actions{display:grid;grid-template-columns:1fr}
+ .pv-home .pv-home-hero-actions>*{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ .pv-home .pv-home-header{transition:none!important}
+}

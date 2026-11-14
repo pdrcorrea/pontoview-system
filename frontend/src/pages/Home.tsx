@@ -69,6 +69,14 @@ const useCases = [
 export function HomePage() {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const updateHeader = () => setScrolled(window.scrollY > 36);
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeader);
+  }, []);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -91,7 +99,7 @@ export function HomePage() {
 
   return (
     <div className="pv-home">
-      <header className="pv-home-header">
+      <header className={`pv-home-header${scrolled ? " is-compact" : ""}`}>
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas">
           <span className="pv-home-brandmark">
             <img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-4" alt="" />
