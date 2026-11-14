@@ -268,3 +268,14 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+
+/* Auth V2: a coluna azul existe apenas para conteúdo, nunca para assinatura. */
+.auth-main-style .auth-card{display:flex!important;align-items:center!important;justify-content:center!important}
+.auth-main-style .auth-main-card.pv-auth-form-surface{width:min(100%,510px)!important;max-width:510px!important}
+.auth-main-style .auth-main-eyebrow{margin-top:4px}
+.auth-main-style .auth-main-pitch{max-width:540px}
+.auth-main-style .auth-main-pitch h1{max-width:12ch!important}
+.auth-main-style .auth-main-pitch p{max-width:440px}
+.auth-main-style .auth-main-foot{display:none}
+@media(max-width:800px){.auth-main-style .auth-card{min-height:100dvh!important}}
