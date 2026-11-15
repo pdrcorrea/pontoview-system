@@ -615,41 +615,95 @@
   .mobile-glass-track > .mobile-utility-help { flex: 0 0 auto; }
 }
 
-/* Botões do painel: prioridade visual clara, mantendo ações destrutivas intactas. */
+
+/* Botões: efeitos originais do pontoview-portal, adaptados ao painel. */
+@property --pv-button-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes pv-button-orbit {
+  to { --pv-button-angle: 360deg; }
+}
 .shell :is(.btn.primary, button.primary:not(.danger), .button-primary) {
+  --pv-x: 50%;
+  --pv-y: 50%;
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  min-height: 44px;
   background: #08438d;
   border: 1px solid #0c559e;
-  border-radius: 14px;
+  border-radius: 15px;
   color: #fff;
-  box-shadow: 0 6px 18px rgba(4,50,109,.13);
-  transition: background .22s ease, border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+  box-shadow: none;
+  transform: none;
+  transition: background .32s ease, color .32s ease, border-color .32s ease, box-shadow .32s ease;
 }
-.shell :is(.btn.primary, button.primary:not(.danger), .button-primary):hover {
-  background: #0955a9;
-  border-color: #3dc5ef;
-  box-shadow: 0 9px 24px rgba(7,75,160,.23), inset 0 0 20px rgba(75,220,255,.14);
-  transform: translateY(-1px);
+.shell :is(.btn.primary, button.primary:not(.danger), .button-primary)::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(230px circle at var(--pv-x) var(--pv-y), rgba(82,235,255,.52), transparent 83%);
+  transition: opacity .25s ease;
+}
+.shell :is(.btn.primary, button.primary:not(.danger), .button-primary):is(:hover,:focus-visible) {
+  background: #073e8c;
+  border-color: #2389d9;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(0,30,85,.25);
+  transform: none;
+}
+.shell :is(.btn.primary, button.primary:not(.danger), .button-primary):is(:hover,:focus-visible)::before {
+  opacity: 1;
 }
 .shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: #fff;
-  border: 1px solid #55cde8;
-  border-radius: 12px;
+  border: 1px solid #c7dfff;
+  border-radius: 11px;
   color: #12477b;
-  box-shadow: 0 2px 9px rgba(5,71,135,.04);
-  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  box-shadow: none;
+  transform: none;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
 }
-.shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary):hover {
-  background: #effbff;
-  border-color: #12b9e8;
-  box-shadow: 0 0 0 2px rgba(31,201,237,.12);
+.shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  pointer-events: none;
+  opacity: 0;
+  background: conic-gradient(from var(--pv-button-angle),transparent 0 275deg,#45ebf9 312deg,#0a8bde 343deg,transparent 360deg);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
-.shell :is(.btn.primary, .btn.secondary, .btn.tertiary, button.primary, button.secondary):focus-visible {
+.shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary):is(:hover,:focus-visible) {
+  background: #fff;
+  color: #0753a4;
+  border-color: #a7d4ff;
+  box-shadow: none;
+  transform: none;
+}
+.shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary):is(:hover,:focus-visible)::after {
+  opacity: 1;
+  animation: pv-button-orbit 1.8s linear infinite;
+}
+.shell :is(.btn.primary, .btn.secondary, .btn.tertiary):focus-visible {
   outline: 2px solid #36c7ec;
   outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .shell :is(.btn.primary, .btn.secondary, .btn.tertiary) { transition: none; transform: none !important; }
+  .shell :is(.btn.primary, .btn.secondary, .btn.tertiary)::before,
+  .shell :is(.btn.primary, .btn.secondary, .btn.tertiary)::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
