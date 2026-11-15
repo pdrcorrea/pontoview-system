@@ -64,9 +64,6 @@ export function AppShell() {
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "true");
-  const title = location.pathname.startsWith("/programacoes")
-    ? "Programação de grupos"
-    : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
   const initials = (profile?.full_name || profile?.email || "PV")
     .split(/\s+/)
     .slice(0, 2)
@@ -110,7 +107,6 @@ export function AppShell() {
           <span className="telas-sidebar-brand-product">Telas</span>
         </div>
 
-        <div className="nav-label">PontoView Telas</div>
         <nav>{links(primary)}</nav>
 
         <div className="account-menu-block">
@@ -156,11 +152,7 @@ export function AppShell() {
       </aside>
 
       <main>
-        <header className="topbar telas-topbar">
-          <div className="telas-topbar-heading">
-            <span className="telas-topbar-eyebrow">PontoView Telas</span>
-            <strong>{title}</strong>
-          </div>
+        <header className="topbar telas-topbar" aria-label="Ações do painel">
           <div className="top-actions telas-topbar-actions">
             <NotificationCenter />
             <NavLink className="help-button" to="/ajuda" title="Central de ajuda" aria-label="Central de ajuda"><CircleHelp size={18} /></NavLink>
