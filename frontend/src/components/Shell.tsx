@@ -153,12 +153,10 @@ export function AppShell() {
   return (
     <div className={`shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       <aside id="main-sidebar" className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
-        <div className="brand pv-full-brand" aria-label="PontoView Telas">
-          <img className="pv-full-brand-icon" src="/assets/pontoview-telas-soft3d.svg" alt="" />
-          <span className="pv-full-brand-wordmark">
-            <strong>Ponto</strong><span>View</span>
-          </span>
-          <span className="sidebar-product-badge">Telas</span>
+        <div className="telas-sidebar-brand" aria-label="PontoView Telas">
+          <img className="telas-sidebar-brand-icon" src="/assets/pontoview-telas-soft3d.svg" alt="" />
+          <span className="telas-sidebar-brand-wordmark"><strong>Ponto</strong>View</span>
+          <span className="telas-sidebar-brand-product">Telas</span>
         </div>
 
         <div
