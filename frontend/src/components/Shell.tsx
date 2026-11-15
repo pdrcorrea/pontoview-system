@@ -14,6 +14,7 @@ import {
   LogOut,
   MessageSquareText,
   Monitor,
+  Menu,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -48,10 +49,14 @@ const mobileNav = [
   ["/dashboard", "Início", LayoutDashboard],
   ["/conteudo", "Conteúdo", AppWindow],
   ["/playlists", "Playlists", ListVideo],
-  ["/mensagens", "Mensagens", MessageSquareText],
   ["/telas", "Telas", Monitor],
+] as const;
+
+const mobileMoreNav = [
+  ["/mensagens", "Mensagens", MessageSquareText],
   ["/apps", "Painéis", Sparkles],
-  ["/conta", "Conta", UserRound],
+  ["/conta", "Minha conta", UserRound],
+  ["/ajuda", "Ajuda", CircleHelp],
 ] as const;
 
 export function AppShell() {
@@ -64,6 +69,7 @@ export function AppShell() {
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 650px)").matches);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "true");
   const initials = (profile?.full_name || profile?.email || "PV")
     .split(/\s+/)
@@ -74,6 +80,7 @@ export function AppShell() {
 
   useEffect(() => {
     if (accountRouteActive) setAccountOpen(true);
+    setMobileMoreOpen(false);
   }, [location.pathname, accountRouteActive]);
 
   useEffect(() => {
@@ -199,23 +206,44 @@ export function AppShell() {
         <div className="page"><Outlet /></div>
       </main>
 
+      {isMobile && mobileMoreOpen && (
+        <div className="mobile-more-overlay">
+          <button type="button" className="mobile-more-backdrop" aria-label="Fechar menu" onClick={() => setMobileMoreOpen(false)} />
+          <div className="mobile-more-sheet" role="dialog" aria-label="Mais opções">
+            <div className="mobile-more-sheet-heading">
+              <strong>Mais opções</strong>
+              <button type="button" onClick={() => setMobileMoreOpen(false)} aria-label="Fechar menu">Fechar</button>
+            </div>
+            <div className="mobile-more-sheet-links">
+              {mobileMoreNav.map(([to, label, Icon]) => (
+                <NavLink key={to} to={to} onClick={() => setMobileMoreOpen(false)}>
+                  <Icon size={20} /><span>{label}</span>
+                </NavLink>
+              ))}
+              <div className="mobile-more-notifications"><NotificationCenter mobile label /></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="mobile-glass-nav" aria-label="Navegação principal">
         <div className="mobile-glass-track">
           {mobileNav.map(([to, label, Icon]) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => isActive || (to === "/conta" && accountRouteActive) ? "active" : ""}
-            >
+            <NavLink key={to} to={to} className={({ isActive }) => isActive ? "active" : ""}>
               <span className="mobile-glass-icon"><Icon size={20} /></span>
               <span>{label}</span>
             </NavLink>
           ))}
-          {isMobile && <div className="mobile-utility-notifications"><NotificationCenter mobile /></div>}
-          <NavLink to="/ajuda" className="mobile-utility-help" title="Ajuda" aria-label="Ajuda">
-            <span className="mobile-glass-icon"><CircleHelp size={20} /></span>
-            <span>Ajuda</span>
-          </NavLink>
+          <button
+            type="button"
+            className={`mobile-more-trigger ${mobileMoreOpen || mobileMoreNav.some(([to]) => location.pathname.startsWith(to)) ? "active" : ""}`}
+            onClick={() => setMobileMoreOpen((value) => !value)}
+            aria-expanded={mobileMoreOpen}
+            aria-label="Mais opções"
+          >
+            <span className="mobile-glass-icon"><Menu size={20} /></span>
+            <span>Mais</span>
+          </button>
         </div>
       </nav>
     </div>
