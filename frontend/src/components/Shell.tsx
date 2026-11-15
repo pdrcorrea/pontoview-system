@@ -70,6 +70,7 @@ export function AppShell() {
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 650px)").matches);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [mobileMoreMounted, setMobileMoreMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "true");
   const initials = (profile?.full_name || profile?.email || "PV")
     .split(/\s+/)
@@ -82,6 +83,21 @@ export function AppShell() {
     if (accountRouteActive) setAccountOpen(true);
     setMobileMoreOpen(false);
   }, [location.pathname, accountRouteActive]);
+
+  useEffect(() => {
+    if (mobileMoreOpen || !mobileMoreMounted) return;
+    const timer = window.setTimeout(() => setMobileMoreMounted(false), 200);
+    return () => window.clearTimeout(timer);
+  }, [mobileMoreOpen, mobileMoreMounted]);
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMoreOpen(false);
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [mobileMoreOpen]);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 650px)");
@@ -206,8 +222,8 @@ export function AppShell() {
         <div className="page"><Outlet /></div>
       </main>
 
-      {isMobile && mobileMoreOpen && (
-        <div className="mobile-more-overlay">
+      {isMobile && mobileMoreMounted && (
+        <div className={`mobile-more-overlay ${mobileMoreOpen ? "is-open" : "is-closing"}`}>
           <button type="button" className="mobile-more-backdrop" aria-label="Fechar menu" onClick={() => setMobileMoreOpen(false)} />
           <div className="mobile-more-sheet" role="dialog" aria-label="Mais opções">
             <div className="mobile-more-sheet-heading">
@@ -237,7 +253,10 @@ export function AppShell() {
           <button
             type="button"
             className={`mobile-more-trigger ${mobileMoreOpen || mobileMoreNav.some(([to]) => location.pathname.startsWith(to)) ? "active" : ""}`}
-            onClick={() => setMobileMoreOpen((value) => !value)}
+            onClick={() => {
+              if (mobileMoreOpen) setMobileMoreOpen(false);
+              else { setMobileMoreMounted(true); setMobileMoreOpen(true); }
+            }}
             aria-expanded={mobileMoreOpen}
             aria-label="Mais opções"
           >
