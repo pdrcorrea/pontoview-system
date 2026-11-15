@@ -97,63 +97,6 @@
   white-space: nowrap;
 }
 
-.sidebar-screen-health {
-  margin: 14px 4px 17px;
-  min-height: 62px;
-  padding: 10px 11px;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 14px;
-  background: rgba(255,255,255,.06);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
-}
-
-.sidebar-health-icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 34px;
-  border-radius: 10px;
-  background: rgba(255,255,255,.08);
-  color: var(--pv-sidebar-cyan);
-}
-
-.sidebar-screen-health.attention .sidebar-health-icon {
-  color: #ffd36c;
-}
-
-.sidebar-screen-health > span:last-child {
-  min-width: 0;
-}
-
-.sidebar-screen-health b,
-.sidebar-screen-health small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-screen-health b {
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.sidebar-screen-health small {
-  margin-top: 3px;
-  color: var(--pv-sidebar-muted);
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.sidebar-screen-health.attention small {
-  color: #ffd36c;
-}
-
 .sidebar .nav-label {
   padding: 0 12px 8px;
   color: rgba(255,255,255,.42);
@@ -333,7 +276,6 @@
 .sidebar.collapsed .privacy-link > span,
 .sidebar.collapsed .sidebar-product-badge,
 .sidebar.collapsed .nav-label,
-.sidebar.collapsed .sidebar-screen-health > span:last-child,
 .sidebar.collapsed .account-menu-toggle > span,
 .sidebar.collapsed .account-menu-toggle > svg:last-child,
 .sidebar.collapsed .account-menu-content,
@@ -341,19 +283,6 @@
 .sidebar.collapsed .org-card .icon-button,
 .sidebar.collapsed .sidebar-collapse-toggle span {
   display: none !important;
-}
-
-.sidebar.collapsed .sidebar-screen-health {
-  width: 46px;
-  min-height: 46px;
-  margin: 14px auto 17px;
-  padding: 5px;
-  justify-content: center;
-}
-
-.sidebar.collapsed .sidebar-health-icon {
-  width: 34px;
-  height: 34px;
 }
 
 .sidebar.collapsed nav a,
@@ -404,7 +333,6 @@
   .sidebar .privacy-link > span,
   .sidebar .sidebar-product-badge,
   .sidebar .nav-label,
-  .sidebar .sidebar-screen-health > span:last-child,
   .sidebar .account-menu-toggle > span,
   .sidebar .account-menu-toggle > svg:last-child,
   .sidebar .account-menu-content,
@@ -414,19 +342,12 @@
     display: none !important;
   }
 
-  .sidebar .sidebar-screen-health,
   .sidebar nav a,
   .sidebar .account-menu-toggle,
   .sidebar .sidebar-collapse-toggle {
     width: 46px;
     margin-left: auto;
     margin-right: auto;
-  }
-
-  .sidebar .sidebar-screen-health {
-    min-height: 46px;
-    padding: 5px;
-    justify-content: center;
   }
 
   .sidebar nav a,
@@ -555,4 +476,72 @@
   .sidebar .telas-sidebar-brand { justify-content: center; gap: 0; }
   .sidebar .telas-sidebar-brand-wordmark,
   .sidebar .telas-sidebar-brand-product { display: none !important; }
+}
+
+/* Cabeçalho interno: compacto, sem estado de conexão redundante. */
+.shell .topbar.telas-topbar {
+  min-height: 72px;
+  height: 72px;
+  padding: 0 30px;
+  gap: 20px;
+  background: rgba(255,255,255,.97);
+  border-bottom: 1px solid #dce7f3;
+  box-shadow: 0 2px 12px rgba(6,44,103,.025);
+}
+.telas-topbar-heading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 3px;
+  font-family: "Nunito Sans", Arial, sans-serif;
+}
+.telas-topbar-heading .telas-topbar-eyebrow {
+  display: block;
+  color: #7187a3;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .095em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.shell .telas-topbar-heading > strong {
+  display: block;
+  margin: 0;
+  color: #103e79;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -.025em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.telas-topbar-actions {
+  flex: 0 0 auto;
+  gap: 10px;
+}
+.telas-topbar .help-button {
+  width: 38px;
+  height: 38px;
+  background: #f5f9fe;
+  border: 1px solid #dce8f5;
+  border-radius: 12px;
+  color: #35628f;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.telas-topbar .help-button:hover,
+.telas-topbar .help-button:focus-visible {
+  background: #e9f4ff;
+  color: #0858ae;
+  border-color: #a9d6f5;
+}
+@media (max-width: 650px) {
+  .shell .topbar.telas-topbar {
+    height: 64px;
+    min-height: 64px;
+    padding: 0 16px;
+  }
+  .shell .telas-topbar-heading > strong { font-size: 15px; }
+  .telas-topbar-heading .telas-topbar-eyebrow { font-size: 9px; }
 }
