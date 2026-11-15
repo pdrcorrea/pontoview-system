@@ -87,6 +87,20 @@ export function AppShell() {
     localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
 
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest<HTMLElement>(".shell .btn.primary, .shell button.primary:not(.danger), .shell .button-primary");
+      if (!button) return;
+      const bounds = button.getBoundingClientRect();
+      button.style.setProperty("--pv-x", `${event.clientX - bounds.left}px`);
+      button.style.setProperty("--pv-y", `${event.clientY - bounds.top}px`);
+    };
+    document.addEventListener("pointermove", onPointerMove, { passive: true });
+    return () => document.removeEventListener("pointermove", onPointerMove);
+  }, []);
+
   const leave = async () => {
     await signOut();
     navigate("/login");
