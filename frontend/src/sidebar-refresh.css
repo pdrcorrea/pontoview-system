@@ -540,3 +540,116 @@
     padding-top: 22px;
   }
 }
+
+/* Barra superior removida: o conteúdo utiliza a altura disponível. */
+.shell main > .page { padding-top: 28px; }
+.sidebar-utility-nav {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--pv-sidebar-line);
+}
+.sidebar-utility-nav .notification-trigger,
+.sidebar-utility-nav .sidebar-utility-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pv-sidebar-text);
+  font: 700 13px "Nunito Sans", sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sidebar-utility-nav .notification-trigger:hover,
+.sidebar-utility-nav .sidebar-utility-link:hover {
+  background: var(--pv-sidebar-hover);
+  color: #fff;
+  transform: none;
+}
+.sidebar-utility-nav .notification-trigger svg,
+.sidebar-utility-nav .sidebar-utility-link svg {
+  flex: 0 0 18px;
+}
+.sidebar.collapsed .sidebar-utility-nav .notification-trigger,
+.sidebar.collapsed .sidebar-utility-nav .sidebar-utility-link {
+  width: 46px;
+  margin-inline: auto;
+  padding: 0;
+  justify-content: center;
+}
+.sidebar.collapsed .notification-trigger-label,
+.sidebar.collapsed .sidebar-utility-link > span {
+  display: none !important;
+}
+@media (max-width: 950px) and (min-width: 651px) {
+  .sidebar-utility-nav .notification-trigger,
+  .sidebar-utility-nav .sidebar-utility-link {
+    width: 46px;
+    margin-inline: auto;
+    padding: 0;
+    justify-content: center;
+  }
+  .sidebar-utility-nav .notification-trigger-label,
+  .sidebar-utility-nav .sidebar-utility-link > span {
+    display: none !important;
+  }
+}
+.mobile-utility-notifications .notification-trigger {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: inherit;
+}
+@media (max-width: 650px) {
+  .shell main > .page { padding-top: 22px; }
+  .mobile-utility-notifications { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .mobile-glass-track > .mobile-utility-help { flex: 0 0 auto; }
+}
+
+/* Botões do painel: prioridade visual clara, mantendo ações destrutivas intactas. */
+.shell :is(.btn.primary, button.primary:not(.danger), .button-primary) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #08438d;
+  border: 1px solid #0c559e;
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(4,50,109,.13);
+  transition: background .22s ease, border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+}
+.shell :is(.btn.primary, button.primary:not(.danger), .button-primary):hover {
+  background: #0955a9;
+  border-color: #3dc5ef;
+  box-shadow: 0 9px 24px rgba(7,75,160,.23), inset 0 0 20px rgba(75,220,255,.14);
+  transform: translateY(-1px);
+}
+.shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary) {
+  background: #fff;
+  border: 1px solid #55cde8;
+  border-radius: 12px;
+  color: #12477b;
+  box-shadow: 0 2px 9px rgba(5,71,135,.04);
+  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.shell :is(.btn.secondary, .btn.tertiary, button.secondary:not(.danger), .button-secondary):hover {
+  background: #effbff;
+  border-color: #12b9e8;
+  box-shadow: 0 0 0 2px rgba(31,201,237,.12);
+}
+.shell :is(.btn.primary, .btn.secondary, .btn.tertiary, button.primary, button.secondary):focus-visible {
+  outline: 2px solid #36c7ec;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell :is(.btn.primary, .btn.secondary, .btn.tertiary) { transition: none; transform: none !important; }
+}
