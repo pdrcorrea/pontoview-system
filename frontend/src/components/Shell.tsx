@@ -18,13 +18,10 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { supabase } from "../lib/supabase";
 import { NotificationCenter } from "./NotificationCenter";
 
 const primary = [
@@ -67,7 +64,6 @@ export function AppShell() {
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "true");
-  const [screenHealth, setScreenHealth] = useState({ total: 0, online: 0 });
   const title = location.pathname.startsWith("/programacoes")
     ? "Programação de grupos"
     : [...primary, ...account].find(([path]) => location.pathname.startsWith(path))?.[1] || "PontoView";
@@ -85,49 +81,6 @@ export function AppShell() {
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
-
-  const loadScreenHealth = useCallback(async () => {
-    if (!organization) {
-      setScreenHealth({ total: 0, online: 0 });
-      return;
-    }
-    const result = await supabase
-      .from("screens")
-      .select("id,screen_status(last_seen)")
-      .eq("organization_id", organization.id)
-      .eq("is_active", true);
-    if (result.error) return;
-    const now = Date.now();
-    const rows = result.data || [];
-    const online = rows.filter((row) => {
-      const raw = row.screen_status as unknown as
-        | { last_seen?: string | null }
-        | Array<{ last_seen?: string | null }>
-        | null;
-      const status = Array.isArray(raw) ? raw[0] : raw;
-      return Boolean(status?.last_seen && now - new Date(status.last_seen).getTime() < 120000);
-    }).length;
-    setScreenHealth({ total: rows.length, online });
-  }, [organization]);
-
-  useEffect(() => {
-    void loadScreenHealth();
-    if (!organization) return;
-    const channel = supabase
-      .channel(`shell-screen-health:${organization.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "screen_status", filter: `organization_id=eq.${organization.id}` },
-        () => void loadScreenHealth(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "screens", filter: `organization_id=eq.${organization.id}` },
-        () => void loadScreenHealth(),
-      )
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  }, [organization, loadScreenHealth]);
 
   const leave = async () => {
     await signOut();
@@ -148,8 +101,6 @@ export function AppShell() {
       </NavLink>
     ));
 
-  const offline = Math.max(0, screenHealth.total - screenHealth.online);
-
   return (
     <div className={`shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       <aside id="main-sidebar" className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
@@ -157,17 +108,6 @@ export function AppShell() {
           <img className="telas-sidebar-brand-icon" src="/assets/pontoview-telas-soft3d.svg" alt="" />
           <span className="telas-sidebar-brand-wordmark"><strong>Ponto</strong>View</span>
           <span className="telas-sidebar-brand-product">Telas</span>
-        </div>
-
-        <div
-          className={`sidebar-screen-health ${offline > 0 ? "attention" : screenHealth.total ? "healthy" : "empty"}`}
-          title={sidebarCollapsed ? (offline > 0 ? `${offline} tela${offline > 1 ? "s" : ""} precisa${offline > 1 ? "m" : ""} de atenção` : screenHealth.total ? `${screenHealth.online}/${screenHealth.total} telas online` : "Nenhuma tela conectada") : undefined}
-        >
-          <span className="sidebar-health-icon">{offline > 0 ? <WifiOff /> : <Wifi />}</span>
-          <span>
-            <b>{screenHealth.total ? `${screenHealth.online}/${screenHealth.total} telas online` : "Nenhuma tela conectada"}</b>
-            <small>{offline > 0 ? `${offline} precisa${offline > 1 ? "m" : ""} de atenção` : screenHealth.total ? "Tudo funcionando" : "Conecte sua primeira tela"}</small>
-          </span>
         </div>
 
         <div className="nav-label">PontoView Telas</div>
@@ -216,12 +156,14 @@ export function AppShell() {
       </aside>
 
       <main>
-        <header className="topbar">
-          <div><strong>{title}</strong></div>
-          <div className="top-actions">
-            <span className="system-ok">● Conectado</span>
+        <header className="topbar telas-topbar">
+          <div className="telas-topbar-heading">
+            <span className="telas-topbar-eyebrow">PontoView Telas</span>
+            <strong>{title}</strong>
+          </div>
+          <div className="top-actions telas-topbar-actions">
             <NotificationCenter />
-            <NavLink className="help-button" to="/ajuda" title="Ajuda"><CircleHelp size={17} /></NavLink>
+            <NavLink className="help-button" to="/ajuda" title="Central de ajuda" aria-label="Central de ajuda"><CircleHelp size={18} /></NavLink>
           </div>
         </header>
 
