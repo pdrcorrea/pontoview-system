@@ -488,35 +488,6 @@
   border-bottom: 1px solid #dce7f3;
   box-shadow: 0 2px 12px rgba(6,44,103,.025);
 }
-.telas-topbar-heading {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  gap: 3px;
-  font-family: "Nunito Sans", Arial, sans-serif;
-}
-.telas-topbar-heading .telas-topbar-eyebrow {
-  display: block;
-  color: #7187a3;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .095em;
-  line-height: 1.1;
-  text-transform: uppercase;
-}
-.shell .telas-topbar-heading > strong {
-  display: block;
-  margin: 0;
-  color: #103e79;
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -.025em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .telas-topbar-actions {
   flex: 0 0 auto;
   gap: 10px;
@@ -542,6 +513,30 @@
     min-height: 64px;
     padding: 0 16px;
   }
-  .shell .telas-topbar-heading > strong { font-size: 15px; }
-  .telas-topbar-heading .telas-topbar-eyebrow { font-size: 9px; }
+}
+
+/* Hierarquia única: marca na lateral, título apenas na página. */
+.shell .topbar.telas-topbar {
+  height: 58px;
+  min-height: 58px;
+  padding: 0 30px;
+  justify-content: flex-end;
+  background: #fff;
+  box-shadow: none;
+}
+.shell .page {
+  padding-top: 26px;
+}
+.sidebar .telas-sidebar-brand {
+  margin-bottom: 18px;
+}
+@media (max-width: 650px) {
+  .shell .topbar.telas-topbar {
+    height: 54px;
+    min-height: 54px;
+    padding: 0 16px;
+  }
+  .shell .page {
+    padding-top: 22px;
+  }
 }
