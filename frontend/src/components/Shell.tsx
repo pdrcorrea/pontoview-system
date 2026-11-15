@@ -139,7 +139,8 @@ export function AppShell() {
       <NavLink
         key={to}
         to={to}
-        title={sidebarCollapsed ? label : undefined}
+        title={label}
+        aria-label={label}
         className={({ isActive }) => (isActive ? "active" : "")}
       >
         <Icon size={18} />
@@ -153,7 +154,7 @@ export function AppShell() {
     <div className={`shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       <aside id="main-sidebar" className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="brand pv-full-brand" aria-label="PontoView Telas">
-          <img className="pv-full-brand-icon" src="/assets/TelasIconBranco.png" alt="" />
+          <img className="pv-full-brand-icon" src="/assets/pontoview-telas-soft3d.svg" alt="" />
           <span className="pv-full-brand-wordmark">
             <strong>Ponto</strong><span>View</span>
           </span>
