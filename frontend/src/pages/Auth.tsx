@@ -57,7 +57,7 @@ function AuthLayout({
 
       <main className="auth-card pv-auth-form-side">
         <div className="auth-main-card pv-auth-form-surface">
-          <Link className="pv-auth-product" to="/" aria-label="Voltar ao PontoView Telas"><img src="/assets/pv-telas-glyph.svg" alt="" /><span>PontoView <small>Acesso ao Telas</small></span></Link>
+          <Link className="pv-auth-product" to="/" aria-label="Voltar ao PontoView Telas"><img src="/assets/pv-telas-soft3d.svg" alt="" /><span>PontoView <small>Acesso ao Telas</small></span></Link>
           <h2>{title}</h2>
           <p>{text}</p>
 
