@@ -205,7 +205,7 @@
 }
 
 .sidebar .pv-full-brand-icon {
-  content: url("/assets/IconeBranco.png?v=20261017-3") !important;
+  content: url("/assets/pontoview-telas-soft3d.svg") !important;
   display: block !important;
   width: var(--pv-brand-icon-size) !important;
   height: var(--pv-brand-icon-size) !important;
@@ -301,5 +301,39 @@
   .loading-screen .player-mark.loading-brand-mark img {
     width: 52px !important;
     height: 52px !important;
+  }
+}
+
+/* Menu Telas recolhido: manter exclusivamente o símbolo do produto. */
+.sidebar.collapsed .brand.pv-full-brand {
+  display: flex !important;
+  justify-content: center !important;
+  padding: 0 0 16px !important;
+}
+.sidebar.collapsed .pv-full-brand-icon {
+  content: url("/assets/pontoview-telas-soft3d.svg") !important;
+  width: 46px !important;
+  height: 46px !important;
+  flex: 0 0 46px !important;
+}
+.sidebar.collapsed .pv-full-brand-wordmark,
+.sidebar.collapsed .sidebar-product-badge {
+  display: none !important;
+}
+@media (max-width: 950px) and (min-width: 651px) {
+  .sidebar .brand.pv-full-brand {
+    display: flex !important;
+    justify-content: center !important;
+    padding: 0 0 16px !important;
+  }
+  .sidebar .pv-full-brand-icon {
+    content: url("/assets/pontoview-telas-soft3d.svg") !important;
+    width: 46px !important;
+    height: 46px !important;
+    flex: 0 0 46px !important;
+  }
+  .sidebar .pv-full-brand-wordmark,
+  .sidebar .sidebar-product-badge {
+    display: none !important;
   }
 }
