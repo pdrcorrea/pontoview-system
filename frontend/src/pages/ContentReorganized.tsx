@@ -16,6 +16,7 @@ import {
   Link2,
   MessageSquareText,
   MoreHorizontal,
+  ListPlus,
   Search,
   Sparkles,
   Trash2,
@@ -25,6 +26,7 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { DriveThumbnail } from "../components/DriveThumbnail";
+import { AddToPlaylist } from "../components/AddToPlaylist";
 import {
   AsyncButton,
   EmptyState,
@@ -113,6 +115,8 @@ export function ContentReorganizedPage() {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Media | null>(null);
+  const [playlistMedia, setPlaylistMedia] = useState<Media | null>(null);
+  const [playlistSuccess, setPlaylistSuccess] = useState<string | null>(null);
   const [source, setSource] = useState<Source>("youtube");
   const [busy, setBusy] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -550,6 +554,7 @@ export function ContentReorganizedPage() {
       </div>
 
       <FormMessage error={!modal ? error : null} />
+      <FormMessage success={playlistSuccess} />
       {shown.length ? (
         <div className="media-grid">
           {shown.map((item) => (
@@ -564,6 +569,7 @@ export function ContentReorganizedPage() {
                 <small className={item.online_required ? "requires-net" : "offline-ready"}>{item.online_required ? <><Wifi size={11} /> Requer internet</> : <>Disponível no cache</>}</small>
               </div>
               <div className="media-actions">
+                <button className="icon-button" title="Adicionar à playlist" aria-label={`Adicionar ${item.name} à playlist`} onClick={() => { setPlaylistSuccess(null); setPlaylistMedia(item); }}><ListPlus size={17} /></button>
                 <button className="icon-button" title="Editar" onClick={() => setEditing(item)}><MoreHorizontal size={17} /></button>
                 <button className="icon-button danger-hover" title="Remover" onClick={() => void archive(item)}><Trash2 size={17} /></button>
               </div>
@@ -600,6 +606,8 @@ export function ContentReorganizedPage() {
           )}
         </Modal>
       )}
+
+      {playlistMedia && organization && <AddToPlaylist media={playlistMedia} organizationId={organization.id} onClose={() => setPlaylistMedia(null)} onSuccess={(names) => setPlaylistSuccess(names.length ? `Adicionado à playlist: ${names.join(", ")}.` : "O conteúdo já estava nas playlists selecionadas.")} />}
 
       {editing && (
         <Modal eyebrow="EDITAR CONTEÚDO" title={editing.name} onClose={() => setEditing(null)}>

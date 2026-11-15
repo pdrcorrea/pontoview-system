@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarHeart,
   Check,
+  ListPlus,
   Search,
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
+import { AddToPlaylist } from "../components/AddToPlaylist";
 import { AsyncButton, FormMessage, PageHead } from "../components/ui";
 import { supabase } from "../lib/supabase";
+import type { Media } from "../types";
 import { PANEL_CATALOG, panelUrl, type PanelCatalogItem } from "../panelCatalog";
 import {
   SEASONAL_CAMPAIGNS,
@@ -34,6 +37,8 @@ export function PanelsCatalogPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState<Set<string>>(() => new Set());
+  const [libraryIds, setLibraryIds] = useState<Record<string, string>>({});
+  const [playlistMedia, setPlaylistMedia] = useState<Pick<Media, "id" | "name" | "type" | "duration_seconds"> | null>(null);
 
   const loadAdded = useCallback(async () => {
     if (!organization) {
@@ -42,7 +47,7 @@ export function PanelsCatalogPage() {
     }
     const result = await supabase
       .from("media")
-      .select("type,page_url,app_key,status")
+      .select("id,type,page_url,app_key,status")
       .eq("organization_id", organization.id)
       .neq("status", "archived");
     if (result.error) {
@@ -50,14 +55,16 @@ export function PanelsCatalogPage() {
       return;
     }
     const next = new Set<string>();
+    const ids: Record<string, string> = {};
     for (const row of result.data || []) {
       if (row.type === "webpage" && row.page_url) {
         const panel = PANEL_CATALOG.find((item) => panelUrl(item.slug) === row.page_url);
-        if (panel) next.add(`panel:${panel.key}`);
+        if (panel) { next.add(`panel:${panel.key}`); ids[`panel:${panel.key}`] = row.id; }
       }
-      if (row.type === "app" && row.app_key) next.add(`seasonal:${row.app_key}`);
+      if (row.type === "app" && row.app_key) { next.add(`seasonal:${row.app_key}`); ids[`seasonal:${row.app_key}`] = row.id; }
     }
     setAdded(next);
+    setLibraryIds(ids);
   }, [organization]);
 
   useEffect(() => { void loadAdded(); }, [loadAdded]);
@@ -67,7 +74,7 @@ export function PanelsCatalogPage() {
     const marker = `panel:${panel.key}`;
     if (added.has(marker)) {
       setMessage(`${panel.title} já está na sua biblioteca.`);
-      return;
+      return libraryIds[marker];
     }
     setBusyKey(marker);
     setError(null);
@@ -97,11 +104,13 @@ export function PanelsCatalogPage() {
         metadata: { pontoview_panel: true, panel_key: panel.key, panel_category: panel.category },
       };
       const result = archived.data?.id
-        ? await supabase.from("media").update(payload).eq("id", archived.data.id)
-        : await supabase.from("media").insert(payload);
+        ? await supabase.from("media").update(payload).eq("id", archived.data.id).select("id").single()
+        : await supabase.from("media").insert(payload).select("id").single();
       if (result.error) throw result.error;
+      setLibraryIds((current) => ({ ...current, [marker]: result.data.id }));
       setAdded((current) => new Set(current).add(marker));
       setMessage(`${panel.title} adicionado à biblioteca.`);
+      return result.data.id as string;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível adicionar este painel.");
     } finally {
@@ -114,7 +123,7 @@ export function PanelsCatalogPage() {
     const marker = `seasonal:${campaign.key}`;
     if (added.has(marker)) {
       setMessage(`${campaign.name} já está na sua biblioteca.`);
-      return;
+      return libraryIds[marker];
     }
     setBusyKey(marker);
     setError(null);
@@ -153,11 +162,13 @@ export function PanelsCatalogPage() {
         },
       };
       const result = archived.data?.id
-        ? await supabase.from("media").update(payload).eq("id", archived.data.id)
-        : await supabase.from("media").insert(payload);
+        ? await supabase.from("media").update(payload).eq("id", archived.data.id).select("id").single()
+        : await supabase.from("media").insert(payload).select("id").single();
       if (result.error) throw result.error;
+      setLibraryIds((current) => ({ ...current, [marker]: result.data.id }));
       setAdded((current) => new Set(current).add(marker));
       setMessage(`${campaign.name} adicionado à biblioteca.`);
+      return result.data.id as string;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível adicionar este painel sazonal.");
     } finally {
@@ -225,6 +236,7 @@ export function PanelsCatalogPage() {
                 <AsyncButton busy={busyKey === marker} disabled={Boolean(busyKey && busyKey !== marker) || isAdded} className={isAdded ? "btn secondary" : "btn primary"} onClick={() => void addPanel(panel)}>
                   {isAdded ? <Check /> : <Sparkles />}{isAdded ? "Na biblioteca" : "Adicionar"}
                 </AsyncButton>
+                <button type="button" className="btn secondary" disabled={Boolean(busyKey)} onClick={async () => { const id = libraryIds[marker] || await addPanel(panel); if (id) setPlaylistMedia({ id, name: panel.title, type: "webpage", duration_seconds: panel.duration }); }}><ListPlus size={17} /> Playlist</button>
               </article>
             );
           })}
@@ -252,12 +264,14 @@ export function PanelsCatalogPage() {
                   <AsyncButton busy={busyKey === marker} disabled={Boolean(busyKey && busyKey !== marker) || isAdded} className={isAdded ? "btn secondary" : active ? "btn primary" : "btn secondary"} onClick={() => void addSeasonal(campaign)}>
                     {isAdded ? <Check /> : <Sparkles />}{isAdded ? "Na biblioteca" : "Adicionar"}
                   </AsyncButton>
+                  <button type="button" className="btn secondary" disabled={Boolean(busyKey)} onClick={async () => { const id = libraryIds[marker] || await addSeasonal(campaign); if (id) setPlaylistMedia({ id, name: campaign.name, type: "app", duration_seconds: campaign.durationSeconds }); }}><ListPlus size={17} /> Playlist</button>
                 </article>
               );
             })}
           </div>
         </>
       )}
+      {playlistMedia && organization && <AddToPlaylist media={playlistMedia} organizationId={organization.id} onClose={() => setPlaylistMedia(null)} onSuccess={(names) => setMessage(names.length ? `Adicionado à playlist: ${names.join(", ")}.` : "O painel já estava nas playlists selecionadas.")} />}
     </>
   );
 }

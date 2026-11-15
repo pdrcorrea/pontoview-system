@@ -1,0 +1,9 @@
+.playlist-quick-add { display: grid; gap: 16px; }
+.playlist-quick-name { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.playlist-quick-list { display: grid; gap: 7px; max-height: 300px; overflow-y: auto; }
+.playlist-quick-choice { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #dbe6ef; border-radius: 12px; cursor: pointer; }
+.playlist-quick-choice:not(.already-added):hover { border-color: #17bfe3; background: #f3fcff; }
+.playlist-quick-choice input { accent-color: #089ac5; width: 17px; height: 17px; }
+.playlist-quick-choice span { flex: 1; font-weight: 650; }
+.playlist-quick-choice small { display: flex; gap: 4px; align-items: center; color: #347a69; }
+.playlist-quick-choice.already-added { opacity: .72; cursor: default; }
