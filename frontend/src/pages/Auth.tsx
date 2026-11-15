@@ -8,11 +8,16 @@ import {
   LockKeyhole,
   Mail,
   UserRound,
+  Clapperboard,
+  PanelsTopLeft,
+  CloudSun,
+  MonitorSmartphone,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { AsyncButton, FormMessage, formData } from "../components/ui";
 import "../auth-main.css";
 import "../pv-auth-design-system.css";
+import "../pv-auth-editorial.css";
 import { InstallApp } from "../components/InstallApp";
 import { AuthTurnstile, turnstileEnabled } from "../components/AuthTurnstile";
 
@@ -35,29 +40,24 @@ function AuthLayout({
   const showTabs = ["/login", "/cadastro"].includes(location.pathname);
 
   return (
-    <div className="auth-page auth-main-style pv-auth-v1">
+    <div className="auth-page auth-main-style pv-auth-v1 pv-auth-editorial">
       <section className="auth-brand pv-auth-identity">
         <div className="auth-main-pitch">
-          <span>ECOSSISTEMA PONTOVIEW</span>
-          <h1>Transforme TVs em canais de comunicação.</h1>
-          <p>
-            Organize vídeos, imagens, YouTube, conteúdos integrados e painéis
-            automáticos em uma experiência feita para TVs da sua empresa.
-          </p>
-          <ul className="pv-auth-benefits">
-            <li>Conteúdos e playlists em um só lugar</li>
-            <li>Painéis inteligentes atualizados automaticamente</li>
-            <li>Controle das telas de qualquer lugar</li>
-          </ul>
+          <span className="pv-editorial-kicker">Telas</span>
+          <h1>Transforme TVs em <em>canais de comunicação.</em></h1>
+          <p>Sua programação, seus conteúdos e todas as suas telas em um único lugar.</p>
+          <div className="pv-editorial-features" aria-label="Funcionalidades do Telas">
+            <div><Clapperboard aria-hidden="true" /><span><strong>Playlists</strong><small>Imagens, vídeos e YouTube</small></span></div>
+            <div><PanelsTopLeft aria-hidden="true" /><span><strong>Layouts flexíveis</strong><small>Vários conteúdos na mesma TV</small></span></div>
+            <div><CloudSun aria-hidden="true" /><span><strong>Painéis automáticos</strong><small>Clima, notícias e informações</small></span></div>
+            <div><MonitorSmartphone aria-hidden="true" /><span><strong>Gestão remota</strong><small>Atualize de qualquer lugar</small></span></div>
+          </div>
         </div>
-
-        <a className="pv-auth-company" href="https://pontoview.com.br">Um produto <strong>PontoView</strong></a>
       </section>
 
       <main className="auth-card pv-auth-form-side">
         <div className="auth-main-card pv-auth-form-surface">
-          <Link className="pv-auth-product" to="/" aria-label="Voltar ao PontoView Telas"><span>PontoView <small>Telas</small></span><img src="/assets/pv-telas-soft3d.svg" alt="" /></Link>
-          <span className="auth-main-eyebrow">CONTA PONTOVIEW</span>
+          <Link className="pv-auth-product" to="/" aria-label="Voltar ao PontoView Telas"><img src="/assets/pv-telas-glyph.svg" alt="" /><span>PontoView <small>Acesso ao Telas</small></span></Link>
           <h2>{title}</h2>
           <p>{text}</p>
 
@@ -126,7 +126,7 @@ export function LoginPage() {
     }
   };
   return (
-    <AuthLayout title="Bem-vindo." text="Entre com sua Conta PontoView para acessar o PontoView Telas.">
+    <AuthLayout title="Bem-vindo de volta." text="Entre com sua conta para continuar.">
       <form onSubmit={submit} className="auth-form">
         <label>
           E-mail
