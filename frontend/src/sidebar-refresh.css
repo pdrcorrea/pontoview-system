@@ -329,6 +329,8 @@
 }
 
 .sidebar.collapsed .pv-full-brand-wordmark,
+.sidebar.collapsed nav a > span,
+.sidebar.collapsed .privacy-link > span,
 .sidebar.collapsed .sidebar-product-badge,
 .sidebar.collapsed .nav-label,
 .sidebar.collapsed .sidebar-screen-health > span:last-child,
@@ -398,6 +400,8 @@
   }
 
   .sidebar .pv-full-brand-wordmark,
+  .sidebar nav a > span,
+  .sidebar .privacy-link > span,
   .sidebar .sidebar-product-badge,
   .sidebar .nav-label,
   .sidebar .sidebar-screen-health > span:last-child,
@@ -439,5 +443,51 @@
 @media (max-width: 650px) {
   .shell.sidebar-collapsed {
     display: block;
+  }
+}
+
+/* Recolhimento: cada item deve ocupar somente a largura do ícone. */
+.sidebar.collapsed nav a > span,
+.sidebar.collapsed nav a > span *,
+.sidebar.collapsed .privacy-link > span {
+  display: none !important;
+}
+.sidebar.collapsed nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0 !important;
+  font-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.sidebar.collapsed nav a > svg {
+  display: block;
+  flex-shrink: 0;
+}
+.sidebar.collapsed .pv-full-brand-icon {
+  width: 46px;
+  height: 46px;
+  flex-basis: 46px;
+}
+@media (max-width: 950px) and (min-width: 651px) {
+  .sidebar nav a > span,
+  .sidebar nav a > span *,
+  .sidebar .privacy-link > span {
+    display: none !important;
+  }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0 !important;
+    font-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .sidebar .pv-full-brand-icon {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
   }
 }
