@@ -4,6 +4,8 @@ import {
   BadgeDollarSign,
   Building2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   Globe2,
   Headphones,
@@ -43,6 +45,8 @@ const account = [
   ["/configuracoes", "Configurações", Settings],
 ] as const;
 
+const SIDEBAR_KEY = "pontoview_telas_sidebar_collapsed";
+
 const mobileNav = [
   ["/dashboard", "Início", LayoutDashboard],
   ["/conteudo", "Conteúdo", AppWindow],
@@ -62,6 +66,7 @@ export function AppShell() {
     [location.pathname],
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "true");
   const [screenHealth, setScreenHealth] = useState({ total: 0, online: 0 });
   const title = location.pathname.startsWith("/programacoes")
     ? "Programação de grupos"
@@ -76,6 +81,10 @@ export function AppShell() {
   useEffect(() => {
     if (accountRouteActive) setAccountOpen(true);
   }, [location.pathname, accountRouteActive]);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   const loadScreenHealth = useCallback(async () => {
     if (!organization) {
@@ -127,7 +136,12 @@ export function AppShell() {
 
   const links = (items: readonly (readonly [string, string, LucideIcon])[]) =>
     items.map(([to, label, Icon]) => (
-      <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
+      <NavLink
+        key={to}
+        to={to}
+        title={sidebarCollapsed ? label : undefined}
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
         <Icon size={18} />
         <span>{label}</span>
       </NavLink>
@@ -136,8 +150,8 @@ export function AppShell() {
   const offline = Math.max(0, screenHealth.total - screenHealth.online);
 
   return (
-    <div className="shell">
-      <aside id="main-sidebar" className="sidebar">
+    <div className={`shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      <aside id="main-sidebar" className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="brand pv-full-brand" aria-label="PontoView Telas">
           <img className="pv-full-brand-icon" src="/assets/TelasIconBranco.png" alt="" />
           <span className="pv-full-brand-wordmark">
@@ -146,7 +160,10 @@ export function AppShell() {
           <span className="sidebar-product-badge">Telas</span>
         </div>
 
-        <div className={`sidebar-screen-health ${offline > 0 ? "attention" : screenHealth.total ? "healthy" : "empty"}`}>
+        <div
+          className={`sidebar-screen-health ${offline > 0 ? "attention" : screenHealth.total ? "healthy" : "empty"}`}
+          title={sidebarCollapsed ? (offline > 0 ? `${offline} tela${offline > 1 ? "s" : ""} precisa${offline > 1 ? "m" : ""} de atenção` : screenHealth.total ? `${screenHealth.online}/${screenHealth.total} telas online` : "Nenhuma tela conectada") : undefined}
+        >
           <span className="sidebar-health-icon">{offline > 0 ? <WifiOff /> : <Wifi />}</span>
           <span>
             <b>{screenHealth.total ? `${screenHealth.online}/${screenHealth.total} telas online` : "Nenhuma tela conectada"}</b>
@@ -160,7 +177,8 @@ export function AppShell() {
         <div className="account-menu-block">
           <button
             className={`account-menu-toggle ${accountOpen ? "open" : ""}`}
-            onClick={() => setAccountOpen((current) => !current)}
+            onClick={() => sidebarCollapsed ? navigate("/conta") : setAccountOpen((current) => !current)}
+            title={sidebarCollapsed ? "Minha conta" : undefined}
             aria-expanded={accountOpen}
           >
             <UserRound size={18} />
@@ -177,6 +195,16 @@ export function AppShell() {
             </a>
           </nav>
         </div>
+
+        <button
+          type="button"
+          className="sidebar-collapse-toggle"
+          onClick={() => setSidebarCollapsed((current) => !current)}
+          aria-label={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+          title={sidebarCollapsed ? "Expandir menu" : undefined}
+        >
+          {sidebarCollapsed ? <ChevronRight size={17} /> : <><ChevronLeft size={17} /><span>Recolher</span></>}
+        </button>
 
         <div className="org-card">
           <span className="avatar">{initials}</span>
