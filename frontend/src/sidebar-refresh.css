@@ -242,21 +242,16 @@
 }
 
 .account-menu-content {
-  display: grid;
-  grid-template-rows: 0fr;
+  max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: grid-template-rows .22s ease, opacity .2s ease, padding .2s ease;
+  transition: max-height .24s ease, opacity .18s ease, padding .18s ease;
 }
 
 .account-menu-content.open {
-  grid-template-rows: 1fr;
+  max-height: 360px;
   opacity: 1;
   padding-top: 5px;
-}
-
-.account-menu-content > * {
-  min-height: 0;
 }
 
 .account-menu-content a {
