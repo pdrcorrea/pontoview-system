@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bell, BellOff, Check, Monitor, Sparkles, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -9,7 +10,7 @@ type Notice = { id: string; title: string; body: string; href: string; type: "se
 type Preferences = { seasonal: boolean; offline: boolean; errors: boolean; recovered: boolean; desktop: boolean };
 const defaults: Preferences = { seasonal: true, offline: true, errors: true, recovered: true, desktop: false };
 
-export function NotificationCenter() {
+export function NotificationCenter({ label = false, collapsed = false, mobile = false }: { label?: boolean; collapsed?: boolean; mobile?: boolean }) {
   const { organization, user } = useAuth();
   const navigate = useNavigate();
   const key = `pv:notification-settings:${user?.id || "guest"}`;
@@ -133,11 +134,12 @@ export function NotificationCenter() {
   };
   return (
     <div style={{ position: "relative" }}>
-      <button type="button" className="icon-button" onClick={() => { setOpen((v) => !v); void load(); }} title="Central de notificações" aria-label={`Notificações: ${unread.length} não lidas`} style={{ position: "relative" }}>
+      <button type="button" className={`icon-button notification-trigger ${label ? "with-label" : ""}`} onClick={() => { setOpen((v) => !v); void load(); }} title="Central de notificações" aria-label={`Notificações: ${unread.length} não lidas`} style={{ position: "relative" }}>
         <Bell size={20} />
+        {label && <span className="notification-trigger-label">Notificações</span>}
         {unread.length > 0 && <span style={{ position: "absolute", top: -5, right: -6, borderRadius: 20, background: "#d65b42", color: "white", fontSize: 10, padding: "1px 5px" }}>{Math.min(unread.length, 99)}</span>}
       </button>
-      {open && <div style={{ position: "absolute", right: 0, top: "calc(100% + 10px)", width: "min(360px, 88vw)", maxHeight: "min(70vh, 570px)", overflowY: "auto", zIndex: 300, background: "var(--surface, #fff)", color: "var(--text, #17344f)", border: "1px solid #dce4eb", borderRadius: 18, boxShadow: "0 14px 45px #17344f22", padding: 16 }}>
+      {open && createPortal(<div style={{ position: "fixed", right: mobile ? 12 : "auto", left: mobile ? "auto" : collapsed ? 84 : 252, top: mobile ? 12 : 24, width: "min(360px, 88vw)", maxHeight: "min(70vh, 570px)", overflowY: "auto", zIndex: 300, background: "var(--surface, #fff)", color: "var(--text, #17344f)", border: "1px solid #dce4eb", borderRadius: 18, boxShadow: "0 14px 45px #17344f22", padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <strong>Notificações</strong>
           <button type="button" onClick={() => setSeen((old) => [...new Set([...old, ...notices.map((n) => n.id)])].slice(-200))} style={{ border: 0, background: "none", color: "inherit", cursor: "pointer", fontSize: 12 }}><Check size={14} /> Marcar lidas</button>
@@ -154,7 +156,7 @@ export function NotificationCenter() {
           <button type="button" onClick={() => void toggleDesktop()} style={{ display: "flex", alignItems: "center", gap: 7, border: "1px solid #d6e2ec", borderRadius: 10, padding: 9, background: "transparent", color: "inherit" }}>{prefs.desktop ? <BellOff size={15} /> : <Bell size={15} />}{prefs.desktop ? "Desativar permissão" : "Autorizar notificações no dispositivo"}</button>
 
         </details>
-      </div>}
+      </div>, document.body)}
     </div>
   );
 }
