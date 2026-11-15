@@ -63,6 +63,7 @@ export function AppShell() {
     [location.pathname],
   );
   const [accountOpen, setAccountOpen] = useState(accountRouteActive);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 650px)").matches);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "true");
   const initials = (profile?.full_name || profile?.email || "PV")
     .split(/\s+/)
@@ -74,6 +75,13 @@ export function AppShell() {
   useEffect(() => {
     if (accountRouteActive) setAccountOpen(true);
   }, [location.pathname, accountRouteActive]);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 650px)");
+    const onChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed));
@@ -131,6 +139,11 @@ export function AppShell() {
           </nav>
         </div>
 
+        <div className="sidebar-utility-nav">
+          {!isMobile && <NotificationCenter label collapsed={sidebarCollapsed} />}
+          <NavLink to="/ajuda" className="sidebar-utility-link" title="Ajuda" aria-label="Ajuda"><CircleHelp size={18} /><span>Ajuda</span></NavLink>
+        </div>
+
         <button
           type="button"
           className="sidebar-collapse-toggle"
@@ -152,13 +165,6 @@ export function AppShell() {
       </aside>
 
       <main>
-        <header className="topbar telas-topbar" aria-label="Ações do painel">
-          <div className="top-actions telas-topbar-actions">
-            <NotificationCenter />
-            <NavLink className="help-button" to="/ajuda" title="Central de ajuda" aria-label="Central de ajuda"><CircleHelp size={18} /></NavLink>
-          </div>
-        </header>
-
         {accountRouteActive && (
           <nav className="mobile-account-subnav" aria-label="Opções da conta">
             <div className="mobile-account-subnav-track">
@@ -191,6 +197,11 @@ export function AppShell() {
               <span>{label}</span>
             </NavLink>
           ))}
+          {isMobile && <div className="mobile-utility-notifications"><NotificationCenter mobile /></div>}
+          <NavLink to="/ajuda" className="mobile-utility-help" title="Ajuda" aria-label="Ajuda">
+            <span className="mobile-glass-icon"><CircleHelp size={20} /></span>
+            <span>Ajuda</span>
+          </NavLink>
         </div>
       </nav>
     </div>
