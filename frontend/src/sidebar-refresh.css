@@ -491,3 +491,68 @@
     flex-basis: 46px;
   }
 }
+
+/* Assinatura exclusiva da lateral: isolada das regras globais de marca. */
+.sidebar .telas-sidebar-brand {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 62px;
+  min-height: 62px;
+  padding: 0 0 16px;
+  margin: 0 0 2px;
+  border-bottom: 1px solid var(--pv-sidebar-line);
+  gap: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.sidebar .telas-sidebar-brand-icon {
+  display: block;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  flex: 0 0 40px;
+  object-fit: contain;
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+  filter: none;
+}
+.sidebar .telas-sidebar-brand-wordmark {
+  flex: 0 0 auto;
+  color: #fff;
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -.045em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.sidebar .telas-sidebar-brand-wordmark strong { font-weight: 800; }
+.sidebar .telas-sidebar-brand-product {
+  flex: 0 0 auto;
+  margin-left: 0;
+  color: rgba(255,255,255,.70);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.sidebar.collapsed .telas-sidebar-brand {
+  justify-content: center;
+  gap: 0;
+}
+.sidebar.collapsed .telas-sidebar-brand-wordmark,
+.sidebar.collapsed .telas-sidebar-brand-product {
+  display: none !important;
+}
+@media (max-width: 950px) and (min-width: 651px) {
+  .sidebar .telas-sidebar-brand { justify-content: center; gap: 0; }
+  .sidebar .telas-sidebar-brand-wordmark,
+  .sidebar .telas-sidebar-brand-product { display: none !important; }
+}
