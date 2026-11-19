@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ArrowUpRight, Download, Globe2, Menu, MonitorDown, ShieldCheck, Smartphone, Sparkles, Tv, X } from "lucide-react";
+import { ArrowRight, Check, Download, ExternalLink, Globe2, Menu, MonitorDown, ShieldCheck, Smartphone, Tv, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../home.css";
 import "../home-refinements.css";
@@ -30,9 +30,9 @@ export function DownloadsPage() {
       <header className="pv-home-header">
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas, página inicial">
           <span className="pv-home-brandmark">
-            <img className="pv-home-brand-icon" src="/assets/TelasIconAzul.png?v=20261016-4" alt="" />
+            <img className="pv-home-brand-icon" src="/assets/IconeBranco.png" alt="" />
           </span>
-          <span className="pv-home-brandname"><strong>PontoView</strong><small>Telas</small></span>
+          <span className="pv-home-brandname"><strong><b>Ponto</b><span>View</span></strong><small>Telas</small></span>
         </Link>
         <nav className="pv-home-nav" aria-label="Navegação principal">
           <Link to="/">Início</Link>
@@ -65,53 +65,75 @@ export function DownloadsPage() {
       </div>
 
       <main className="pv-downloads-content">
-        <section className="pv-downloads-intro">
-          <span className="pv-home-kicker"><Sparkles /> PontoView Telas · Player</span>
-          <h1>Suas telas prontas <span>para reproduzir.</span></h1>
-          <p>Escolha a melhor forma de exibir seus conteúdos. Abra o player no navegador ou instale o aplicativo no Windows e no Android TV.</p>
+        <section className="pv-downloads-intro" aria-labelledby="downloads-title">
+          <span className="pv-home-section-label">PLAYER PONTOVIEW TELAS</span>
+          <h1 id="downloads-title">Escolha onde colocar sua tela no ar.</h1>
+          <p>Use o navegador ou instale um player dedicado. A vinculação é feita com o código exibido na TV ou no computador.</p>
         </section>
-                <div className="pv-downloads-grid">
-          <article className="pv-downloads-card">
-            <span className="pv-downloads-icon"><Globe2 size={28} strokeWidth={1.8}/></span>
-            <div className="pv-downloads-meta">SEM INSTALAÇÃO</div>
-            <h2>Navegador</h2>
-            <p>Abra o player em uma aba do navegador e vincule sua tela com o código exibido.</p>
-            <div className="pv-downloads-spacer"/>
-            <a className="pv-downloads-button pv-downloads-primary" href={WEB_PLAYER} target="_blank" rel="noopener noreferrer">
-              Abrir player <ArrowUpRight size={18} />
-            </a>
-            <small>Chrome, Edge ou navegador compatível</small>
-          </article>
 
-          <article className="pv-downloads-card">
-            <span className="pv-downloads-icon"><MonitorDown size={28} strokeWidth={1.8}/></span>
-            <div className="pv-downloads-meta">WINDOWS</div>
-            <h2>Windows</h2>
-            <p>Aplicativo para computador com execução em tela cheia, início automático no login e recuperação de falhas.</p>
-            <div className="pv-downloads-spacer"/>
-            <a className="pv-downloads-button" href={WINDOWS_BETA} target="_blank" rel="noopener noreferrer">
-              <Download size={18} /> Baixar para Windows
-            </a>
-            <small>Download direto do instalador para Windows.</small>
-          </article>
+        <section className="pv-downloads-options" aria-label="Opções de instalação">
+          <div className="pv-downloads-grid">
+            <article className="pv-downloads-card">
+              <span className="pv-downloads-icon"><Globe2 aria-hidden="true" /></span>
+              <div className="pv-downloads-meta">SEM INSTALAÇÃO</div>
+              <h2>Navegador</h2>
+              <p>Abra o player diretamente no navegador compatível.</p>
+              <div className="pv-downloads-spacer" />
+              <a className="pv-downloads-button" href={WEB_PLAYER} target="_blank" rel="noopener noreferrer">
+                Abrir player <ExternalLink size={17} aria-hidden="true" />
+              </a>
+            </article>
+            <article className="pv-downloads-card">
+              <span className="pv-downloads-icon"><MonitorDown aria-hidden="true" /></span>
+              <div className="pv-downloads-meta">COMPUTADOR</div>
+              <h2>Windows</h2>
+              <p>Player para execução em tela cheia, com inicialização automática.</p>
+              <div className="pv-downloads-spacer" />
+              <a className="pv-downloads-button" href={WINDOWS_BETA} target="_blank" rel="noopener noreferrer">
+                <Download size={17} aria-hidden="true" /> Baixar para Windows
+              </a>
+              <small>Versão beta, sem assinatura digital.</small>
+            </article>
+            <article className="pv-downloads-card pv-downloads-card-tv">
+              <span className="pv-downloads-icon"><Tv aria-hidden="true" /></span>
+              <div className="pv-downloads-meta">TELEVISÃO</div>
+              <h2>Android TV</h2>
+              <p>Aplicativo para TVs e dispositivos Android compatíveis.</p>
+              <div className="pv-downloads-spacer" />
+              <a className="pv-downloads-button" href={ANDROID_APK} rel="noopener noreferrer">
+                <Download size={17} aria-hidden="true" /> Baixar APK
+              </a>
+              <small><a className="pv-downloads-inline-link" href={ANDROID_SHA256} rel="noopener noreferrer">Verificar integridade (SHA-256)</a></small>
+            </article>
+          </div>
+        </section>
 
-          <article className="pv-downloads-card">
-            <span className="pv-downloads-icon"><Tv size={28} strokeWidth={1.8}/></span>
-            <div className="pv-downloads-meta">ANDROID TV</div>
-            <h2>Android TV</h2>
-            <p>APK otimizado para TVs e dispositivos Android compatíveis, com reprodução em tela cheia e cache local de mídias.</p>
-            <div className="pv-downloads-spacer"/>
-            <a className="pv-downloads-button" href={ANDROID_APK} rel="noopener noreferrer">
-              <Download size={18} /> Baixar APK
-            </a>
-            <small><a className="pv-downloads-inline-link" href={ANDROID_SHA256} rel="noopener noreferrer">Verificar integridade do arquivo</a></small>
-          </article>
-        </div>
-
+        <section className="pv-downloads-guide" aria-labelledby="downloads-guide-title">
+          <div className="pv-home-section-head pv-home-section-head-left">
+            <span>ANDROID TV</span>
+            <h2 id="downloads-guide-title">Instale diretamente na sua TV.</h2>
+            <p>Use o aplicativo Downloader para baixar a APK oficial do PontoView Telas, sem precisar transferir arquivos de outro dispositivo.</p>
+          </div>
+          <div className="pv-downloads-guide-layout">
+            <ol className="pv-downloads-steps">
+              <li><span className="pv-downloads-step-number">01</span><div><h3>Abra o Downloader</h3><p>Instale o aplicativo <strong>Downloader</strong> pela loja de apps da sua Android TV e abra-o.</p></div></li>
+              <li><span className="pv-downloads-step-number">02</span><div><h3>Acesse esta página</h3><p>No campo de endereço do Downloader, digite:</p><code>telas.pontoview.com.br/downloads</code></div></li>
+              <li><span className="pv-downloads-step-number">03</span><div><h3>Baixe e instale</h3><p>Selecione <strong>Baixar APK</strong>. Quando o download terminar, escolha <strong>Instalar</strong>.</p></div></li>
+              <li><span className="pv-downloads-step-number">04</span><div><h3>Vincule sua tela</h3><p>Abra o PontoView Telas e informe no painel administrativo o código exibido na TV.</p></div></li>
+            </ol>
+            <aside className="pv-downloads-help">
+              <div className="pv-downloads-help-icon"><ShieldCheck aria-hidden="true" /></div>
+              <h3>Permissão de instalação</h3>
+              <p>Se o Android solicitar, permita a instalação de aplicativos desconhecidos <strong>somente para o Downloader</strong> e volte à instalação.</p>
+              <p>O nome e o caminho da configuração podem variar conforme a TV. Após instalar, você pode desativar essa permissão.</p>
+              <div className="pv-downloads-help-tip"><Check aria-hidden="true" /><span>Baixe sempre pelo endereço oficial do PontoView.</span></div>
+            </aside>
+          </div>
+        </section>
 
         <div className="pv-downloads-notes">
-          <div><ShieldCheck size={21}/><span><strong>Vinculação simples</strong><small>Ao abrir o player, use o código na seção Telas do painel de controle.</small></span></div>
-          <div><Smartphone size={21}/><span><strong>Instalação segura</strong><small>Utilize os instaladores disponibilizados oficialmente pelo PontoView.</small></span></div>
+          <div><ShieldCheck size={21}/><span><strong>Vinculação simples</strong><small>O código exibido pelo player conecta o dispositivo à sua conta.</small></span></div>
+          <div><Smartphone size={21}/><span><strong>Instaladores oficiais</strong><small>Utilize os links desta página para obter os arquivos do PontoView.</small></span></div>
         </div>
       </main>
 
