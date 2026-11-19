@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  CalendarClock,
   Check,
   Cloud,
   CloudSun,
@@ -15,13 +14,11 @@ import {
   Newspaper,
   QrCode,
   TrendingUp,
-  Gauge,
   Images,
   LayoutDashboard,
   Menu,
   MonitorPlay,
   Play,
-  PanelsTopLeft,
   RefreshCw,
   ShieldCheck,
   SlidersHorizontal,
@@ -33,39 +30,6 @@ import {
 import { useAuth } from "../auth/AuthProvider";
 import "../home.css";
 import "../home-refinements.css";
-
-const features = [
-  {
-    icon: Cloud,
-    title: "Google Drive integrado",
-    text: "Use os arquivos que já estão no seu Drive. O PontoView organiza o que será exibido sem transformar sua operação em um depósito de uploads.",
-  },
-  {
-    icon: Youtube,
-    title: "Vídeos do YouTube",
-    text: "Adicione links à programação e combine vídeos online com os demais conteúdos da sua playlist.",
-  },
-  {
-    icon: PanelsTopLeft,
-    title: "Painéis automáticos",
-    text: "Inclua conteúdos prontos para clima, notícias, economia, mensagens e outros formatos pensados para exibição em TV.",
-  },
-  {
-    icon: CalendarClock,
-    title: "Programações",
-    text: "Defina quando cada playlist deve aparecer e organize a comunicação ao longo do dia sem depender de troca manual.",
-  },
-  {
-    icon: MonitorPlay,
-    title: "Telas sob controle",
-    text: "Cadastre e acompanhe suas TVs em uma única área, com uma experiência criada para gerenciamento remoto.",
-  },
-  {
-    icon: Gauge,
-    title: "Feito para leitura à distância",
-    text: "Layouts e painéis priorizam hierarquia, legibilidade e informação objetiva para ambientes onde a tela precisa ser entendida rapidamente.",
-  },
-];
 
 const contentTypes = [
   { icon: Image, label: "Imagens" },
