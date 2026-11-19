@@ -45,3 +45,29 @@
 @media(max-width:800px){.pv-downloads-grid{grid-template-columns:1fr}.pv-downloads-card{min-height:260px}.pv-downloads-notes{grid-template-columns:1fr}}
 @media(max-width:640px){.pv-downloads-content{width:calc(100% - 36px)}.pv-downloads-intro{padding:45px 0 35px}.pv-downloads-intro h1{font-size:clamp(36px,9vw,50px)}.pv-downloads-intro p{font-size:16px}.pv-downloads-card{padding:23px;min-height:245px}.pv-downloads-guide{padding-top:70px}.pv-downloads-steps{grid-template-columns:1fr}.pv-downloads-steps li{padding:20px}.pv-downloads-notes{margin-bottom:52px}}
 @media(prefers-reduced-motion:reduce){.pv-downloads-card,.pv-downloads-button{transition:none}.pv-downloads-card:hover,.pv-downloads-button:hover{transform:none}}
+
+/* Mesma abertura azul, cabeçalho e ritmo visual da Home */
+.pv-downloads.pv-home{padding-top:0!important;background:#f8fbff}
+.pv-downloads .pv-downloads-content{width:100%;max-width:none}
+.pv-downloads .pv-downloads-intro{
+  width:100%;max-width:none;margin:0;
+  padding:145px max(26px,calc((100vw - 1290px)/2)) 85px;
+  background:radial-gradient(ellipse at 70% 36%,#146ee1 0%,#0959c5 37%,#07439c 72%,#062f7b 100%);
+  border-radius:0 0 70px 0;
+}
+.pv-downloads .pv-downloads-intro .pv-home-section-label{color:#8df2fc}
+.pv-downloads .pv-downloads-intro h1{max-width:780px;color:#fff;font-family:"Nunito Sans",Arial,sans-serif;font-size:clamp(46px,5.15vw,77px);font-weight:800;line-height:1.05;letter-spacing:-.055em}
+.pv-downloads .pv-downloads-intro p{max-width:630px;color:#e7f1ff;font-size:clamp(15px,1.28vw,18px);line-height:1.58}
+.pv-downloads .pv-home-header .pv-home-nav a[aria-current="page"]{color:#fff!important;background:rgba(109,217,250,.16)}
+.pv-downloads .pv-downloads-options,.pv-downloads .pv-downloads-guide,.pv-downloads .pv-downloads-notes{width:min(1210px,calc(100% - 44px));margin-left:auto;margin-right:auto}
+.pv-downloads .pv-downloads-options{padding-top:55px}
+.pv-downloads .pv-downloads-guide{padding-top:94px}
+.pv-downloads .pv-downloads-notes{margin-top:32px;margin-bottom:72px}
+@media(max-width:760px){
+  .pv-downloads .pv-downloads-intro{padding:125px 20px 58px;border-bottom-right-radius:43px}
+  .pv-downloads .pv-downloads-intro h1{font-size:clamp(42px,9.7vw,60px);max-width:12ch}
+  .pv-downloads .pv-downloads-intro p{font-size:15px;line-height:1.6}
+  .pv-downloads .pv-downloads-options,.pv-downloads .pv-downloads-guide,.pv-downloads .pv-downloads-notes{width:calc(100% - 36px)}
+  .pv-downloads .pv-downloads-options{padding-top:38px}
+  .pv-downloads .pv-downloads-guide{padding-top:74px}
+}
