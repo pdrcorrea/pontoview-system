@@ -14,6 +14,13 @@ const ANDROID_SHA256 = "https://github.com/pdrcorrea/pontoview-system/releases/d
 
 export function DownloadsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const updateHeader = () => setScrolled(window.scrollY > 36);
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeader);
+  }, []);
   useEffect(() => {
     const previousTitle = document.title;
     document.title = "Baixar PontoView Player | PontoView Telas";
@@ -27,7 +34,7 @@ export function DownloadsPage() {
 
   return (
     <div className="pv-home pv-downloads">
-      <header className="pv-home-header">
+      <header className={`pv-home-header${scrolled ? " is-compact" : ""}`}>
         <Link className="pv-home-brand" to="/" aria-label="PontoView Telas, página inicial">
           <span className="pv-home-brandmark">
             <img className="pv-home-brand-icon" src="/assets/IconeBranco.png" alt="" />
