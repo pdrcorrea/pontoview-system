@@ -311,7 +311,12 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="pv-home-section pv-home-content-section" id="recursos" aria-label="Conteúdos disponíveis no PontoView Telas">
+        <section className="pv-home-section pv-home-content-section" id="recursos" aria-labelledby="pv-home-content-heading">
+          <div className="pv-home-content-heading">
+            <span className="pv-home-section-label">CONTEÚDOS</span>
+            <h2 id="pv-home-content-heading">Tudo o que você precisa, na sua tela.</h2>
+            <p>De imagens e vídeos a painéis informativos que se atualizam automaticamente.</p>
+          </div>
           <div className="pv-home-content-grid">
             {contentTypes.map(({ icon: Icon, label }) => (
               <div className="pv-home-content-item" key={label}>
