@@ -312,8 +312,8 @@ export function HomePage() {
         </section>
 
         <section className="pv-home-section pv-home-content-section" id="recursos" aria-labelledby="pv-home-content-heading">
-          <div className="pv-home-content-heading">
-            <span className="pv-home-section-label">CONTEÚDOS</span>
+          <div className="pv-home-section-head pv-home-section-head-left">
+            <span>CONTEÚDOS</span>
             <h2 id="pv-home-content-heading">Tudo o que você precisa, na sua tela.</h2>
             <p>De imagens e vídeos a painéis informativos que se atualizam automaticamente.</p>
           </div>
