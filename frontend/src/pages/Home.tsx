@@ -5,6 +5,16 @@ import {
   CalendarClock,
   Check,
   Cloud,
+  CloudSun,
+  Clock3,
+  Code2,
+  Clapperboard,
+  Image,
+  Lightbulb,
+  Megaphone,
+  Newspaper,
+  QrCode,
+  TrendingUp,
   Gauge,
   Images,
   LayoutDashboard,
@@ -55,6 +65,21 @@ const features = [
     title: "Feito para leitura à distância",
     text: "Layouts e painéis priorizam hierarquia, legibilidade e informação objetiva para ambientes onde a tela precisa ser entendida rapidamente.",
   },
+];
+
+const contentTypes = [
+  { icon: Image, label: "Imagens" },
+  { icon: Clapperboard, label: "Vídeos" },
+  { icon: Youtube, label: "YouTube" },
+  { icon: Cloud, label: "Google Drive" },
+  { icon: Newspaper, label: "Notícias" },
+  { icon: CloudSun, label: "Previsão do tempo" },
+  { icon: TrendingUp, label: "Economia" },
+  { icon: Clock3, label: "Relógio" },
+  { icon: Megaphone, label: "Campanhas" },
+  { icon: Lightbulb, label: "Curiosidades" },
+  { icon: Code2, label: "Páginas HTML" },
+  { icon: QrCode, label: "QR Code" },
 ];
 
 const useCases = [
@@ -322,23 +347,13 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="pv-home-section pv-home-section-soft" id="recursos">
-          <div className="pv-home-section-head pv-home-section-head-left">
-            <span>RECURSOS</span>
-            <h2>Uma central de comunicação para suas TVs.</h2>
-            <p>
-              O necessário para sair da lógica de arquivos soltos e transformar a TV
-              em um ponto de informação administrável.
-            </p>
-          </div>
-
-          <div className="pv-home-feature-grid">
-            {features.map(({ icon: Icon, title, text }) => (
-              <article key={title}>
-                <span className="pv-home-feature-icon"><Icon /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
+        <section className="pv-home-section pv-home-content-section" id="recursos" aria-label="Conteúdos disponíveis no PontoView Telas">
+          <div className="pv-home-content-grid">
+            {contentTypes.map(({ icon: Icon, label }) => (
+              <div className="pv-home-content-item" key={label}>
+                <Icon aria-hidden="true" />
+                <span>{label}</span>
+              </div>
             ))}
           </div>
         </section>
