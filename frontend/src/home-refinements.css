@@ -121,3 +121,13 @@ html{scroll-behavior:smooth;scroll-padding-top:108px}
   html{scroll-behavior:auto}
   .pv-home-header .pv-home-nav a,.pv-home-header .pv-home-nav a::after,.pv-home-header-login,.pv-home-header-cta,.pv-home-menu-button,.pv-home-menu-overlay,.pv-home-menu-panel,.pv-home-menu-grid a,.pv-home-menu-login,.pv-home-menu-primary{transition:none}
 }
+/* Conteúdos que o Telas exibe: ícones autoexplicativos */
+.pv-home-content-section{padding-top:76px;padding-bottom:76px;background:#f3f7fa}
+.pv-home-content-grid{max-width:1120px;margin:auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.pv-home-content-item{min-width:0;min-height:143px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:17px;padding:19px 9px;border:1px solid #dbe5ed;border-radius:18px;background:rgba(255,255,255,.76);color:#23415c;text-align:center;font-family:"Nunito Sans",Arial,sans-serif;font-size:15px;line-height:1.25;font-weight:750;transition:transform .25s ease,color .25s ease,border-color .25s ease,box-shadow .25s ease}
+.pv-home-content-item svg{width:37px;height:37px;stroke-width:1.65;flex:0 0 auto;transition:transform .25s ease}
+.pv-home-content-item:hover{color:#075aa1;transform:translateY(-4px);border-color:#91cfea;box-shadow:0 13px 28px rgba(15,65,110,.08)}
+.pv-home-content-item:hover svg{transform:scale(1.07)}
+@media(max-width:900px){.pv-home-content-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:620px){.pv-home-content-section{padding:46px 18px}.pv-home-content-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.pv-home-content-item{min-height:108px;padding:14px 5px;gap:11px;font-size:12px;border-radius:13px}.pv-home-content-item svg{width:29px;height:29px}}
+@media(prefers-reduced-motion:reduce){.pv-home-content-item,.pv-home-content-item svg{transition:none}.pv-home-content-item:hover{transform:none}}
