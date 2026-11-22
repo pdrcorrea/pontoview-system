@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, CreditCard, Monitor, ShieldCheck } from "lucide-react";
+import { Check, CreditCard, Monitor, RefreshCw, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import {
@@ -46,6 +46,13 @@ type BillingSummary = {
   payments: Payment[];
 };
 
+type PaymentDiagnostic = {
+  local: { status: string; providerStatus: string | null; periodEnd: string | null };
+  remote: { status: string | null; nextDebitDate: string | null; lastChargedDate: string | null; lastChargedAmount: number | null };
+  invoices: Array<{ authorizedPaymentId: string; paymentId: string | null; paymentStatus: string; invoiceStatus: string; amount: number; debitDate: string | null }>;
+  truncated: boolean;
+};
+
 export function BillingPage() {
   const { organization, role } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -54,6 +61,9 @@ export function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [diagnostic, setDiagnostic] = useState<PaymentDiagnostic | null>(null);
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!organization) return;
@@ -105,6 +115,23 @@ export function BillingPage() {
       setError(cause instanceof Error ? friendlyBillingError(cause.message) : "Não foi possível cancelar a assinatura.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const checkPayment = async () => {
+    if (!organization || role !== "owner") return;
+    setDiagnosing(true);
+    setDiagnosticError(null);
+    setDiagnostic(null);
+    try {
+      const result = await invokeFunction<PaymentDiagnostic>("screens-payment-diagnostic", {
+        organizationId: organization.id,
+      });
+      setDiagnostic(result);
+    } catch {
+      setDiagnosticError("Não foi possível consultar o Mercado Pago agora. Nenhum pagamento ou assinatura foi alterado.");
+    } finally {
+      setDiagnosing(false);
     }
   };
 
@@ -247,6 +274,44 @@ export function BillingPage() {
               </div>
             )) : <div className="table-empty">Nenhum pagamento registrado ainda.</div>}
           </div>
+        </section>
+      )}
+
+      {!exempt && subscription?.provider_subscription_id && role === "owner" && (
+        <section className="panel history">
+          <div className="panel-title">
+            <div>
+              <h2>Conferir pagamento</h2>
+              <p>Consulta de diagnóstico. Não realiza cobranças nem modifica sua assinatura.</p>
+            </div>
+            <RefreshCw />
+          </div>
+          <AsyncButton busy={diagnosing} className="btn secondary" onClick={() => void checkPayment()}>
+            <RefreshCw /> Consultar Mercado Pago
+          </AsyncButton>
+          <FormMessage error={diagnosticError} />
+          {diagnostic && (
+            <div className="table" style={{ marginTop: 16 }}>
+              <div className="payment-line">
+                <span><b>Assinatura no Mercado Pago</b><small>Status informado pelo provedor</small></span>
+                <strong>{diagnostic.remote.status || "Não informado"}</strong>
+              </div>
+              <div className="payment-line">
+                <span><b>Próxima cobrança no Mercado Pago</b></span>
+                <strong>{diagnostic.remote.nextDebitDate ? formatDate(diagnostic.remote.nextDebitDate) : "Não informada"}</strong>
+              </div>
+              <div className="tr th"><span>Data</span><span>Pagamento</span><span>Valor</span><span>Status</span></div>
+              {diagnostic.invoices.length ? diagnostic.invoices.map((invoice) => (
+                <div className="tr" key={invoice.authorizedPaymentId}>
+                  <span>{invoice.debitDate ? formatDate(invoice.debitDate) : "—"}</span>
+                  <span>{invoice.paymentId || invoice.authorizedPaymentId}</span>
+                  <span>{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(invoice.amount)}</span>
+                  <span>{paymentStatus(invoice.paymentStatus || invoice.invoiceStatus)}</span>
+                </div>
+              )) : <div className="table-empty">Nenhuma fatura retornada para esta assinatura.</div>}
+              {diagnostic.truncated && <p>Há outras faturas não exibidas nesta consulta.</p>}
+            </div>
+          )}
         </section>
       )}
     </>
