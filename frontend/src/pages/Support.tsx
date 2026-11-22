@@ -4,7 +4,7 @@ import {
   Check,
   Headphones,
   Mail,
-  MessageCircle,
+  ExternalLink,
   Monitor,
   Users,
 } from "lucide-react";
@@ -20,7 +20,7 @@ import { supabase } from "../lib/supabase";
 import type { Screen } from "../types";
 
 const SUPPORT_EMAIL = "pontoviewmidia@gmail.com";
-const WHATSAPP_URL = "https://wa.me/5527999011689?text=" + encodeURIComponent("Olá, preciso de suporte urgente no PontoView Telas.");
+const CONTACT_URL = "https://pontoview.com.br/contato?categoria=Suporte";
 
 type RequestRow = {
   id: string;
@@ -118,7 +118,7 @@ export function SupportPage() {
 
       <div className="support-contact-strip">
         <a className="btn secondary" href={`mailto:${SUPPORT_EMAIL}`}><Mail /> {SUPPORT_EMAIL}</a>
-        <a className="btn whatsapp" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp para urgências</a>
+        <a className="btn whatsapp" href={CONTACT_URL} target="_blank" rel="noopener noreferrer"><ExternalLink /> Central de contato PontoView</a>
       </div>
 
       <div className="support-grid">
@@ -166,7 +166,7 @@ export function SupportPage() {
             </select>
           </label>
           <label>Mensagem<textarea name="message" minLength={10} required rows={6} placeholder="Descreva o que aconteceu, o que deveria acontecer e quando o problema começou." /></label>
-          <small className="support-note">Para ocorrências que impeçam uma tela de operar e precisem de retorno rápido, use o botão de WhatsApp acima.</small>
+          <small className="support-note">Para atendimento direto, utilize a Central de contato acima. Este formulário registra o chamado e prepara um e-mail no seu dispositivo.</small>
           <FormMessage error={error} success={success} />
           <AsyncButton busy={busy} className="btn primary"><Mail /> Registrar e preparar e-mail</AsyncButton>
         </form>
