@@ -98,3 +98,4 @@ observer.observe(document.documentElement, {
 window.addEventListener('resize', scheduleMarkInternalPanels, { passive: true });
 window.addEventListener('orientationchange', scheduleMarkInternalPanels, { passive: true });
 markInternalPanels();
+export {};
