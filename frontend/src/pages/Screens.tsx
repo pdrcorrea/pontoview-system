@@ -53,8 +53,17 @@ const defaultSettings: ScreenSettings = {
   },
   weather_location: null,
   news_categories: ["general"],
+  theme: "light",
+  widget_settings: {
+    clock: { preset: "classic" },
+    weather: { preset: "complete" },
+    news: { preset: "editorial" },
+    messages: { preset: "highlight" },
+    business: { preset: "logo", position: "side_footer" },
+  },
   transition: "fade",
   image_duration_seconds: 15,
+  auto_start: true,
   operating_hours: defaultOperatingHours,
 };
 
