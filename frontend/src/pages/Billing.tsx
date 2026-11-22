@@ -217,10 +217,10 @@ export function BillingPage() {
             <div className="tr th"><span>Data</span><span>Descrição</span><span>Valor</span><span>Status</span></div>
             {payments.length ? payments.map((payment) => (
               <div className="tr" key={payment.id}>
-                <span>{formatDate(payment.paid_at || payment.created_at)}</span>
-                <span>PontoView Telas</span>
-                <span>{money(payment.amount_cents)}</span>
-                <span>{paymentStatus(payment.status)}</span>
+                <span data-label="Data">{formatDate(payment.paid_at || payment.created_at)}</span>
+                <span data-label="Descrição">PontoView Telas</span>
+                <span data-label="Valor">{money(payment.amount_cents)}</span>
+                <span data-label="Situação">{paymentStatus(payment.status)}</span>
               </div>
             )) : <div className="table-empty">Ainda não há pagamentos registrados.</div>}
           </div>
@@ -249,10 +249,10 @@ export function BillingPage() {
               <div className="tr th"><span>Data</span><span>Pagamento</span><span>Valor</span><span>Status</span></div>
               {diagnostic.invoices.length ? diagnostic.invoices.map((invoice) => (
                 <div className="tr" key={invoice.authorizedPaymentId}>
-                  <span>{invoice.debitDate ? formatDate(invoice.debitDate) : "—"}</span>
-                  <span>{invoice.paymentId || invoice.authorizedPaymentId}</span>
-                  <span>{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(invoice.amount)}</span>
-                  <span>{paymentStatus(invoice.paymentStatus || invoice.invoiceStatus)}</span>
+                  <span data-label="Data">{invoice.debitDate ? formatDate(invoice.debitDate) : "—"}</span>
+                  <span data-label="Pagamento">{invoice.paymentId || invoice.authorizedPaymentId}</span>
+                  <span data-label="Valor">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(invoice.amount)}</span>
+                  <span data-label="Situação">{paymentStatus(invoice.paymentStatus || invoice.invoiceStatus)}</span>
                 </div>
               )) : <div className="table-empty">Nenhuma fatura retornada para esta assinatura.</div>}
               {diagnostic.truncated && <p>Há outras faturas não exibidas nesta consulta.</p>}
