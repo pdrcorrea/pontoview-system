@@ -12,6 +12,7 @@ import {
   MessageSquareText,
   Pause,
   Play,
+  Plus,
   Save,
   Search,
   Sparkles,
@@ -119,7 +120,6 @@ export function PlaylistsPage() {
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [previewElapsed, setPreviewElapsed] = useState(0);
   const [librarySearch, setLibrarySearch] = useState("");
-  const [selectedLibraryId, setSelectedLibraryId] = useState<string | null>(null);
   const [selectedPlaylistIndex, setSelectedPlaylistIndex] = useState<number | null>(null);
   const [compactEditor, setCompactEditor] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches);
 
@@ -178,7 +178,7 @@ export function PlaylistsPage() {
 
   const openEditor = async (playlist: Playlist) => {
     if (!organization) return;
-    setEditing(playlist); setBusy(true); setError(null); setLibrarySearch(""); setSelectedLibraryId(null); setSelectedPlaylistIndex(null);
+    setEditing(playlist); setBusy(true); setError(null); setLibrarySearch(""); setSelectedPlaylistIndex(null);
     const [itemsResult, mediaResult] = await Promise.all([
       supabase.from("playlist_items").select("id,media_id,position,duration_seconds,settings,media(name,type,duration_seconds)").eq("playlist_id", playlist.id).order("position"),
       supabase.from("media").select("*").eq("organization_id", organization.id).eq("status", "ready").order("name"),
@@ -201,18 +201,6 @@ export function PlaylistsPage() {
     const item = mediaById.get(id);
     if (!item) return;
     setEditorItems((rows) => [...rows, toEditorItem(item)]);
-  };
-
-  const addSelected = () => {
-    if (!selectedLibraryId) return;
-    addMedia(selectedLibraryId);
-    setSelectedLibraryId(null);
-  };
-
-  const removeSelected = () => {
-    if (selectedPlaylistIndex == null) return;
-    setEditorItems((rows) => rows.filter((_, index) => index !== selectedPlaylistIndex));
-    setSelectedPlaylistIndex(null);
   };
 
   const moveItem = (index: number, direction: -1 | 1) => {
@@ -310,27 +298,21 @@ export function PlaylistsPage() {
             ) : (
               <div className="playlist-builder-grid playlist-button-grid">
                 <section className="playlist-builder-column library-column">
-                  <div className="playlist-column-head"><div><small>BIBLIOTECA</small><h3>Conteúdos disponíveis</h3></div></div>
+                  <div className="playlist-column-head"><div><small>BIBLIOTECA</small><h3>Conteúdos disponíveis</h3><p>Toque em um conteúdo para adicionar à playlist.</p></div></div>
                   <label className="playlist-library-search"><Search size={15} /><input value={librarySearch} onChange={(event) => setLibrarySearch(event.target.value)} placeholder="Buscar conteúdo" aria-label="Buscar conteúdo na biblioteca" /></label>
                   <div className="playlist-library-list">
                     {filteredMedia.length ? filteredMedia.map((item) => {
                       const count = editorItems.filter((row) => row.mediaId === item.id).length;
-                      const selected = selectedLibraryId === item.id;
                       return (
-                        <button type="button" className={`playlist-library-card playlist-select-card ${selected ? "selected" : ""}`} key={item.id} onClick={() => setSelectedLibraryId(selected ? null : item.id)}>
+                        <button type="button" className="playlist-library-card playlist-select-card" key={item.id} onClick={() => addMedia(item.id)} aria-label={`Adicionar ${item.name} à playlist`}>
                           <MediaVisual item={item} />
                           <span className="grow playlist-library-info"><b>{item.name}</b><small>{mediaTypeLabel(item)}</small>{count > 0 && <em>{count}× na playlist</em>}</span>
-                          <span className="playlist-select-indicator">{selected ? "Selecionado" : ""}</span>
+                          <span className="playlist-select-indicator playlist-quick-add-indicator"><Plus size={16} /> Adicionar</span>
                         </button>
                       );
                     }) : <div className="playlist-library-empty">Nenhum conteúdo encontrado.</div>}
                   </div>
                 </section>
-
-                <div className="playlist-transfer-controls" aria-label="Mover conteúdo entre biblioteca e playlist">
-                  <button type="button" className="playlist-transfer-button primary" disabled={!selectedLibraryId} onClick={addSelected} title="Adicionar à playlist" aria-label="Adicionar conteúdo selecionado à playlist"><ChevronRight /></button>
-                  <button type="button" className="playlist-transfer-button" disabled={selectedPlaylistIndex == null} onClick={removeSelected} title="Remover da playlist" aria-label="Remover conteúdo selecionado da playlist"><ChevronLeft /></button>
-                </div>
 
                 <section className="playlist-builder-column playlist-column">
                   <div className="playlist-column-head"><div><small>PLAYLIST</small><h3>Ordem de exibição</h3></div><span>{editorItems.length} {editorItems.length === 1 ? "item" : "itens"}</span></div>
@@ -367,7 +349,7 @@ export function PlaylistsPage() {
 }
 
 function PlaylistItems({ items, mediaById, selectedIndex, onSelect, onMove, onDuration, onRemove }: { items: EditorItem[]; mediaById: Map<string, Media>; selectedIndex: number | null; onSelect: (index: number | null) => void; onMove: (index: number, direction: -1 | 1) => void; onDuration: (index: number, value: number | null) => void; onRemove: (index: number) => void; }) {
-  if (!items.length) return <div className="playlist-drop-empty playlist-empty-static"><b>Playlist vazia</b><small>Selecione um conteúdo na Biblioteca e use o botão › para adicionar.</small></div>;
+  if (!items.length) return <div className="playlist-drop-empty playlist-empty-static"><b>Playlist vazia</b><small>Toque em um conteúdo da biblioteca para adicionar.</small></div>;
   return (
     <div className="editor-items playlist-editor-items playlist-static-items">
       {items.map((item, index) => {
