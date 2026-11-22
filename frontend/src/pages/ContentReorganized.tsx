@@ -116,6 +116,7 @@ export function ContentReorganizedPage() {
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Media | null>(null);
   const [playlistMedia, setPlaylistMedia] = useState<Media | null>(null);
+  const [newMedia, setNewMedia] = useState<Media[]>([]);
   const [playlistSuccess, setPlaylistSuccess] = useState<string | null>(null);
   const [source, setSource] = useState<Source>("youtube");
   const [busy, setBusy] = useState(false);
@@ -226,6 +227,7 @@ export function ContentReorganizedPage() {
       if (result.error) throw result.error;
       setModal(false);
       await load();
+      setNewMedia([result.data as Media]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível adicionar o conteúdo.");
     } finally {
@@ -477,10 +479,11 @@ export function ContentReorganizedPage() {
         online_required: false,
         created_by: user.id,
         status: "ready",
-      })));
+      }))).select();
       if (result.error) throw result.error;
       setModal(false);
       await load();
+      setNewMedia((result.data || []) as Media[]);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Não foi possível adicionar os arquivos do Google Drive.";
       if (message.includes("DRIVE_NOT_CONNECTED") || message.includes("DRIVE_RECONNECT_REQUIRED")) { await startDriveOAuth(true); return; }
@@ -527,10 +530,11 @@ export function ContentReorganizedPage() {
         online_required: false,
         created_by: user.id,
         status: "ready",
-      })));
+      }))).select();
       if (result.error) throw result.error;
       setModal(false);
       await load();
+      setNewMedia((result.data || []) as Media[]);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Não foi possível abrir o Google Drive.";
       if (message.includes("DRIVE_NOT_CONNECTED") || message.includes("DRIVE_RECONNECT_REQUIRED")) { await startDriveOAuth(); return; }
@@ -608,6 +612,7 @@ export function ContentReorganizedPage() {
       )}
 
       {playlistMedia && organization && <AddToPlaylist media={playlistMedia} organizationId={organization.id} onClose={() => setPlaylistMedia(null)} onSuccess={(names) => setPlaylistSuccess(names.length ? `Adicionado à playlist: ${names.join(", ")}.` : "O conteúdo já estava nas playlists selecionadas.")} />}
+      {newMedia.length > 0 && organization && <AddToPlaylist mediaItems={newMedia} organizationId={organization.id} onClose={() => setNewMedia([])} onSuccess={(names) => setPlaylistSuccess(names.length ? `Conteúdo distribuído para: ${names.join(", ")}.` : "Os conteúdos já estavam nas playlists selecionadas.")} />}
 
       {editing && (
         <Modal eyebrow="EDITAR CONTEÚDO" title={editing.name} onClose={() => setEditing(null)}>

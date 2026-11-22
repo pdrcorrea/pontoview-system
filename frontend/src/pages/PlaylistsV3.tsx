@@ -10,7 +10,9 @@ import {
   Globe2,
   ListVideo,
   MessageSquareText,
+  Pause,
   Play,
+  Plus,
   Save,
   Search,
   Sparkles,
@@ -115,8 +117,9 @@ export function PlaylistsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewElapsed, setPreviewElapsed] = useState(0);
   const [librarySearch, setLibrarySearch] = useState("");
-  const [selectedLibraryId, setSelectedLibraryId] = useState<string | null>(null);
   const [selectedPlaylistIndex, setSelectedPlaylistIndex] = useState<number | null>(null);
   const [compactEditor, setCompactEditor] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches);
 
@@ -126,6 +129,21 @@ export function PlaylistsPage() {
     if (!query) return media;
     return media.filter((item) => normalizeText(`${item.name} ${mediaTypeLabel(item)}`).includes(query));
   }, [librarySearch, media]);
+
+  const previewDuration = previewIndex === null ? 0 : Math.max(1, editorItems[previewIndex]?.durationSeconds || 30);
+  useEffect(() => {
+    if (!previewPlaying || previewIndex === null || !editorItems.length) return;
+    const timer = window.setInterval(() => {
+      setPreviewElapsed((elapsed) => {
+        if (elapsed + 1 < previewDuration) return elapsed + 1;
+        setPreviewIndex((index) => index === null ? null : (index + 1) % editorItems.length);
+        return 0;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [previewPlaying, previewIndex, previewDuration, editorItems.length]);
+
+  const goToPreview = (index: number) => { setPreviewIndex(index); setPreviewElapsed(0); };
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 720px)");
@@ -160,7 +178,7 @@ export function PlaylistsPage() {
 
   const openEditor = async (playlist: Playlist) => {
     if (!organization) return;
-    setEditing(playlist); setBusy(true); setError(null); setLibrarySearch(""); setSelectedLibraryId(null); setSelectedPlaylistIndex(null);
+    setEditing(playlist); setBusy(true); setError(null); setLibrarySearch(""); setSelectedPlaylistIndex(null);
     const [itemsResult, mediaResult] = await Promise.all([
       supabase.from("playlist_items").select("id,media_id,position,duration_seconds,settings,media(name,type,duration_seconds)").eq("playlist_id", playlist.id).order("position"),
       supabase.from("media").select("*").eq("organization_id", organization.id).eq("status", "ready").order("name"),
@@ -183,18 +201,6 @@ export function PlaylistsPage() {
     const item = mediaById.get(id);
     if (!item) return;
     setEditorItems((rows) => [...rows, toEditorItem(item)]);
-  };
-
-  const addSelected = () => {
-    if (!selectedLibraryId) return;
-    addMedia(selectedLibraryId);
-    setSelectedLibraryId(null);
-  };
-
-  const removeSelected = () => {
-    if (selectedPlaylistIndex == null) return;
-    setEditorItems((rows) => rows.filter((_, index) => index !== selectedPlaylistIndex));
-    setSelectedPlaylistIndex(null);
   };
 
   const moveItem = (index: number, direction: -1 | 1) => {
@@ -292,27 +298,21 @@ export function PlaylistsPage() {
             ) : (
               <div className="playlist-builder-grid playlist-button-grid">
                 <section className="playlist-builder-column library-column">
-                  <div className="playlist-column-head"><div><small>BIBLIOTECA</small><h3>Conteúdos disponíveis</h3></div></div>
+                  <div className="playlist-column-head"><div><small>BIBLIOTECA</small><h3>Conteúdos disponíveis</h3><p>Toque em um conteúdo para adicionar à playlist.</p></div></div>
                   <label className="playlist-library-search"><Search size={15} /><input value={librarySearch} onChange={(event) => setLibrarySearch(event.target.value)} placeholder="Buscar conteúdo" aria-label="Buscar conteúdo na biblioteca" /></label>
                   <div className="playlist-library-list">
                     {filteredMedia.length ? filteredMedia.map((item) => {
                       const count = editorItems.filter((row) => row.mediaId === item.id).length;
-                      const selected = selectedLibraryId === item.id;
                       return (
-                        <button type="button" className={`playlist-library-card playlist-select-card ${selected ? "selected" : ""}`} key={item.id} onClick={() => setSelectedLibraryId(selected ? null : item.id)}>
+                        <button type="button" className="playlist-library-card playlist-select-card" key={item.id} onClick={() => addMedia(item.id)} aria-label={`Adicionar ${item.name} à playlist`}>
                           <MediaVisual item={item} />
                           <span className="grow playlist-library-info"><b>{item.name}</b><small>{mediaTypeLabel(item)}</small>{count > 0 && <em>{count}× na playlist</em>}</span>
-                          <span className="playlist-select-indicator">{selected ? "Selecionado" : ""}</span>
+                          <span className="playlist-select-indicator playlist-quick-add-indicator"><Plus size={16} /> Adicionar</span>
                         </button>
                       );
                     }) : <div className="playlist-library-empty">Nenhum conteúdo encontrado.</div>}
                   </div>
                 </section>
-
-                <div className="playlist-transfer-controls" aria-label="Mover conteúdo entre biblioteca e playlist">
-                  <button type="button" className="playlist-transfer-button primary" disabled={!selectedLibraryId} onClick={addSelected} title="Adicionar à playlist" aria-label="Adicionar conteúdo selecionado à playlist"><ChevronRight /></button>
-                  <button type="button" className="playlist-transfer-button" disabled={selectedPlaylistIndex == null} onClick={removeSelected} title="Remover da playlist" aria-label="Remover conteúdo selecionado da playlist"><ChevronLeft /></button>
-                </div>
 
                 <section className="playlist-builder-column playlist-column">
                   <div className="playlist-column-head"><div><small>PLAYLIST</small><h3>Ordem de exibição</h3></div><span>{editorItems.length} {editorItems.length === 1 ? "item" : "itens"}</span></div>
@@ -324,7 +324,7 @@ export function PlaylistsPage() {
             <div className="editor-summary playlist-builder-summary"><span>{editorItems.length} itens</span><span>Duração estimada: {formatDuration(editorItems.reduce((sum, item) => sum + (item.durationSeconds || 0), 0))}</span></div>
             <div className="modal-actions playlist-builder-actions">
               <button className="btn secondary" onClick={() => setEditing(null)}>Cancelar</button>
-              <button className="btn secondary" disabled={!editorItems.length} onClick={() => setPreviewIndex(0)}><Play /> Pré-visualizar</button>
+              <button className="btn secondary" disabled={!editorItems.length} onClick={() => { goToPreview(0); setPreviewPlaying(true); }}><Play /> Pré-visualizar</button>
               <AsyncButton busy={busy} className="btn primary" onClick={() => void save()}><Save /> Salvar playlist</AsyncButton>
             </div>
           </div>
@@ -332,12 +332,15 @@ export function PlaylistsPage() {
       )}
 
       {previewIndex !== null && editorItems[previewIndex] && (
-        <Modal eyebrow="PRÉ-VISUALIZAÇÃO" title={editing?.name || "Playlist"} onClose={() => setPreviewIndex(null)}>
+        <Modal eyebrow="PRÉ-VISUALIZAÇÃO" title={editing?.name || "Playlist"} onClose={() => { setPreviewIndex(null); setPreviewPlaying(false); }}>
           <div className="playlist-preview-stage"><MediaPreview item={mediaById.get(editorItems[previewIndex].mediaId)} name={editorItems[previewIndex].name} /></div>
+          <div className="playlist-preview-meta"><b>{editorItems[previewIndex].name}</b><span>{previewElapsed}s / {previewDuration}s · Próximo: {editorItems[(previewIndex + 1) % editorItems.length]?.name}</span></div>
+          <div className="playlist-preview-progress" role="progressbar" aria-label="Progresso do conteúdo" aria-valuenow={previewElapsed} aria-valuemax={previewDuration}><span style={{ width: `${previewElapsed / previewDuration * 100}%` }} /></div>
           <div className="preview-controls">
-            <button className="btn secondary" disabled={previewIndex === 0} onClick={() => setPreviewIndex((value) => Math.max(0, (value || 0) - 1))}><ChevronLeft /> Anterior</button>
+            <button className="btn secondary" onClick={() => goToPreview((previewIndex - 1 + editorItems.length) % editorItems.length)}><ChevronLeft /> Anterior</button>
+            <button className="btn secondary" onClick={() => setPreviewPlaying((playing) => !playing)}>{previewPlaying ? <Pause /> : <Play />}{previewPlaying ? "Pausar" : "Reproduzir"}</button>
             <span>{previewIndex + 1} de {editorItems.length}</span>
-            <button className="btn secondary" disabled={previewIndex === editorItems.length - 1} onClick={() => setPreviewIndex((value) => Math.min(editorItems.length - 1, (value || 0) + 1))}>Próximo <ChevronRight /></button>
+            <button className="btn secondary" onClick={() => goToPreview((previewIndex + 1) % editorItems.length)}>Próximo <ChevronRight /></button>
           </div>
         </Modal>
       )}
@@ -346,7 +349,7 @@ export function PlaylistsPage() {
 }
 
 function PlaylistItems({ items, mediaById, selectedIndex, onSelect, onMove, onDuration, onRemove }: { items: EditorItem[]; mediaById: Map<string, Media>; selectedIndex: number | null; onSelect: (index: number | null) => void; onMove: (index: number, direction: -1 | 1) => void; onDuration: (index: number, value: number | null) => void; onRemove: (index: number) => void; }) {
-  if (!items.length) return <div className="playlist-drop-empty playlist-empty-static"><b>Playlist vazia</b><small>Selecione um conteúdo na Biblioteca e use o botão › para adicionar.</small></div>;
+  if (!items.length) return <div className="playlist-drop-empty playlist-empty-static"><b>Playlist vazia</b><small>Toque em um conteúdo da biblioteca para adicionar.</small></div>;
   return (
     <div className="editor-items playlist-editor-items playlist-static-items">
       {items.map((item, index) => {

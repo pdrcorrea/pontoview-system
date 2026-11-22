@@ -530,3 +530,8 @@
     gap: 6px 12px;
   }
 }
+.playlist-preview-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:12px 0 8px;flex-wrap:wrap}
+.playlist-preview-meta span{color:var(--muted,#64748b);font-size:13px}
+.playlist-preview-progress{height:6px;background:#e5eaf1;border-radius:99px;overflow:hidden;margin-bottom:14px}
+.playlist-preview-progress span{display:block;height:100%;background:#2389ee;border-radius:inherit;transition:width .2s linear}
+@media(max-width:640px){.playlist-preview-meta{align-items:flex-start;flex-direction:column}.preview-controls{flex-wrap:wrap}.preview-controls .btn{flex:1 1 auto}}

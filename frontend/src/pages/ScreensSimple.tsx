@@ -386,6 +386,7 @@ function ScreenCard({ screen, playlists, issues, onManage }: { screen: Screen; p
   const settings = firstSettings(screen);
   const online = status?.checked_connectivity === "online";
   const playlistName = playlists.find((playlist) => playlist.id === screen.default_playlist_id)?.name || "Sem playlist padrão";
+  const reportedPlaylist = status?.current_playlist_id ? playlists.find((playlist) => playlist.id === status.current_playlist_id)?.name : null;
 
   return (
     <article className="simple-screen-card">
@@ -403,6 +404,7 @@ function ScreenCard({ screen, playlists, issues, onManage }: { screen: Screen; p
       <div className="simple-screen-summary">
         <div><small>Conteúdo padrão</small><b>{playlistName}</b></div>
         <div><small>Verificado em</small><b>{formatStatusCheck(status?.checked_at)}</b></div>
+        <div><small>Última playlist informada</small><b>{reportedPlaylist || "Ainda não informada"}</b>{status?.last_seen && <small>Comunicação {timeAgo(status.last_seen)}</small>}</div>
       </div>
 
       {issues.length > 0 && (
@@ -683,7 +685,7 @@ function ScreenEditor({
 
       <div className="screen-health-strip">
         <span className={online ? "screen-health online" : "screen-health offline"}>{!status?.checked_at ? <Clock3 /> : online ? <Wifi /> : <WifiOff />}<b>{!status?.checked_at ? "Não verificada" : online ? "Online" : "Sem resposta"}</b></span>
-        <span><Play /><b>{currentPlaylistName}</b></span>
+        <span title={status?.current_playlist_id ? "Última playlist informada pelo player" : "Playlist padrão configurada; sem reprodução informada"}><Play /><b>{status?.current_playlist_id ? `Última reprodução: ${currentPlaylistName}` : `Padrão: ${currentPlaylistName}`}</b></span>
         <span><Clock3 /><b>{operatingHoursSummary(settings.operating_hours)}</b></span>
         <span className="screen-health-last">Verificado em: {formatStatusCheck(status?.checked_at)}</span>
       </div>

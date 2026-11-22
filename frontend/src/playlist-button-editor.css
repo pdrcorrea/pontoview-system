@@ -5,10 +5,13 @@
 }
 
 .playlist-button-grid {
-  grid-template-columns: minmax(300px, .9fr) 56px minmax(420px, 1.25fr) !important;
+  grid-template-columns: minmax(300px, .9fr) minmax(420px, 1.25fr) !important;
   gap: 12px !important;
   align-items: stretch;
 }
+.playlist-quick-add-indicator{display:inline-flex;align-items:center;gap:4px;color:#1768b5;font-size:12px;font-weight:700;white-space:nowrap}
+.playlist-quick-add-indicator svg{width:16px;height:16px}
+.playlist-column-head p{font-size:12px;color:#64748b;margin:4px 0 0}
 
 .playlist-transfer-controls {
   display: flex;
