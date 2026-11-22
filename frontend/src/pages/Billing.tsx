@@ -64,6 +64,10 @@ export function BillingPage() {
   const [diagnostic, setDiagnostic] = useState<PaymentDiagnostic | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
+  const [diagnosticCooldownUntil, setDiagnosticCooldownUntil] = useState(() => {
+    try { return Number(sessionStorage.getItem("pv_payment_check_cooldown") || 0); }
+    catch { return 0; }
+  });
 
   const load = useCallback(async () => {
     if (!organization) return;
@@ -95,7 +99,7 @@ export function BillingPage() {
       window.location.assign(result.checkoutUrl);
     } catch (cause) {
       setBusy(false);
-      setError(cause instanceof Error ? friendlyBillingError(cause.message) : "Não foi possível abrir o Mercado Pago.");
+      setError(cause instanceof Error ? friendlyBillingError(cause.message) : "Não foi possível abrir o ambiente de pagamento.");
     }
   };
 
@@ -120,6 +124,7 @@ export function BillingPage() {
 
   const checkPayment = async () => {
     if (!organization || role !== "owner") return;
+    if (Date.now() < diagnosticCooldownUntil) return;
     setDiagnosing(true);
     setDiagnosticError(null);
     setDiagnostic(null);
@@ -128,8 +133,16 @@ export function BillingPage() {
         organizationId: organization.id,
       });
       setDiagnostic(result);
-    } catch {
-      setDiagnosticError("Não foi possível consultar o Mercado Pago agora. Nenhum pagamento ou assinatura foi alterado.");
+    } catch (cause) {
+      const limited = cause instanceof Error && cause.message.includes("PROVIDER_RATE_LIMIT");
+      if (limited) {
+        const cooldownUntil = Date.now() + 10 * 60_000;
+        setDiagnosticCooldownUntil(cooldownUntil);
+        try { sessionStorage.setItem("pv_payment_check_cooldown", String(cooldownUntil)); } catch { /* storage unavailable */ }
+      }
+      setDiagnosticError(limited
+        ? "A verificação está temporariamente indisponível. Aguarde pelo menos 10 minutos antes de tentar novamente."
+        : "Não foi possível atualizar as informações agora. Nenhum pagamento ou assinatura foi alterado.");
     } finally {
       setDiagnosing(false);
     }
@@ -233,19 +246,19 @@ export function BillingPage() {
             ) : (
               <section className="panel payment-card">
                 <div className="panel-title">
-                  <div><h2>Pagamento</h2><p>Pagamento seguro pelo Mercado Pago.</p></div>
+                  <div><h2>Pagamento</h2><p>Gerencie sua forma de pagamento com segurança.</p></div>
                   <CreditCard />
                 </div>
                 <div className="payment-line">
                   <span className="mp-mark">MP</span>
                   <span>
-                    <b>{providerConfigured ? "Mercado Pago configurado" : providerPending ? "Configuração pendente" : "Forma de pagamento não configurada"}</b>
+                    <b>{providerConfigured ? "Forma de pagamento configurada" : providerPending ? "Configuração pendente" : "Forma de pagamento não configurada"}</b>
                     <small>{providerConfigured ? "Sua forma de pagamento está pronta." : "Cadastre uma forma de pagamento para manter a assinatura ativa."}</small>
                   </span>
                 </div>
                 {paymentNeeded && usage.activeScreens > 0 && role === "owner" && (
                   <AsyncButton busy={busy} className="btn primary full" onClick={() => void checkout()}>
-                    <CreditCard /> {providerPending ? "Continuar no Mercado Pago" : "Cadastrar forma de pagamento"}
+                    <CreditCard /> {providerPending ? "Continuar configuração" : "Cadastrar forma de pagamento"}
                   </AsyncButton>
                 )}
                 {paymentNeeded && usage.activeScreens === 0 && (
@@ -281,23 +294,23 @@ export function BillingPage() {
         <section className="panel history">
           <div className="panel-title">
             <div>
-              <h2>Conferir pagamento</h2>
+              <h2>Verificar pagamento</h2>
               <p>Consulta de diagnóstico. Não realiza cobranças nem modifica sua assinatura.</p>
             </div>
             <RefreshCw />
           </div>
-          <AsyncButton busy={diagnosing} className="btn secondary" onClick={() => void checkPayment()}>
-            <RefreshCw /> Consultar Mercado Pago
+          <AsyncButton busy={diagnosing} disabled={Date.now() < diagnosticCooldownUntil} className="btn secondary" onClick={() => void checkPayment()}>
+            <RefreshCw /> {Date.now() < diagnosticCooldownUntil ? "Aguarde para verificar novamente" : "Verificar pagamento"}
           </AsyncButton>
           <FormMessage error={diagnosticError} />
           {diagnostic && (
             <div className="table" style={{ marginTop: 16 }}>
               <div className="payment-line">
-                <span><b>Assinatura no Mercado Pago</b><small>Status informado pelo provedor</small></span>
+                <span><b>Situação da assinatura</b><small>Status informado pelo processador de pagamentos</small></span>
                 <strong>{diagnostic.remote.status || "Não informado"}</strong>
               </div>
               <div className="payment-line">
-                <span><b>Próxima cobrança no Mercado Pago</b></span>
+                <span><b>Próxima cobrança prevista</b></span>
                 <strong>{diagnostic.remote.nextDebitDate ? formatDate(diagnostic.remote.nextDebitDate) : "Não informada"}</strong>
               </div>
               <div className="tr th"><span>Data</span><span>Pagamento</span><span>Valor</span><span>Status</span></div>
@@ -345,8 +358,8 @@ function paymentStatus(value: string) {
 
 function friendlyBillingError(value: string) {
   if (value.includes("CONNECT_A_SCREEN_FIRST")) return "Conecte pelo menos uma tela antes de cadastrar a forma de pagamento.";
-  if (value.includes("MERCADO_PAGO_NOT_CONFIGURED")) return "O Mercado Pago ainda não está configurado para esta conta.";
-  if (value.includes("MERCADO_PAGO_REQUEST_INVALID") || value.includes("MERCADO_PAGO_400")) return "Não foi possível iniciar o Mercado Pago. Tente novamente em instantes.";
+  if (value.includes("MERCADO_PAGO_NOT_CONFIGURED")) return "O processamento de pagamentos ainda não está disponível para esta conta.";
+  if (value.includes("MERCADO_PAGO_REQUEST_INVALID") || value.includes("MERCADO_PAGO_400")) return "Não foi possível iniciar o pagamento. Tente novamente em instantes.";
   if (value.includes("SUBSCRIPTION_NOT_FOUND")) return "Não encontramos a assinatura desta empresa.";
   return value;
 }
