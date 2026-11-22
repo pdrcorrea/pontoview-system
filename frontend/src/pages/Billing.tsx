@@ -9,6 +9,7 @@ import {
   formatDate,
 } from "../components/ui";
 import { invokeFunction } from "../lib/supabase";
+import "./billing-clean.css";
 
 type Subscription = {
   id: string;
@@ -172,111 +173,47 @@ export function BillingPage() {
 
   return (
     <>
-      <PageHead eyebrow="Financeiro" title="PontoView Telas" text="Gerencie sua assinatura e seus pagamentos." />
+      <PageHead eyebrow="" title="Financeiro" text="Sua assinatura e seus pagamentos em um só lugar." />
       <FormMessage error={error} />
 
       {usage && subscription && (
         <>
-          <div className="billing-hero panel">
-            <div>
-              <span className="eyebrow">ASSINATURA</span>
-              <h2>PontoView Telas</h2>
-              {!exempt && usage.trialActive && <span className="promo-badge">5 DIAS GRÁTIS</span>}
-              {exempt ? (
-                <div className="price"><strong>Isenta</strong><span>sem cobrança</span></div>
-              ) : (
-                <div className="price"><strong>{money(usage.unitPriceCents)}</strong><span>/ tela / mês</span></div>
-              )}
-              <small>{exempt ? "Conta administrativa liberada de cobranças recorrentes." : "Adicione ou remova telas quando precisar."}</small>
+          <section className="panel billing-clean-summary">
+            <div className="billing-clean-top">
+              <div>
+                <span className="billing-clean-label">Assinatura PontoView Telas</span>
+                <div className="billing-clean-total">{exempt ? "Isenta" : money(monthlyValue)} {!exempt && <small>/ mês</small>}</div>
+                {!exempt && <p>{money(usage.unitPriceCents)} por tela · {usage.activeScreens} {usage.activeScreens === 1 ? "tela" : "telas"}</p>}
+              </div>
+              <span className={`status ${statusActive ? "active" : "offline-status"}`}><Check size={14} /> {status}</span>
             </div>
-
-            <div className="billing-status">
-              <span className={`status ${statusActive ? "active" : "offline-status"}`}><Check /> {status}</span>
-              {exempt ? (
-                <>
-                  <small>Condição da conta</small>
-                  <b>Sem vencimento</b>
-                </>
-              ) : (
-                <>
-                  <small>{usage.trialActive ? "Teste grátis até" : "Próxima cobrança"}</small>
-                  <b>{formatDate(nextDate)}</b>
-                  {usage.trialActive && <small style={{ marginTop: 0 }}>{trialCopy(usage.trialDaysRemaining)}</small>}
-                </>
-              )}
-              {!exempt && subscription.cancel_at_period_end && (
-                <small className="pending-plan-note">A assinatura será encerrada ao final do ciclo atual.</small>
-              )}
+            <div className="billing-clean-facts">
+              <div><span><Monitor size={17} /> Telas vinculadas</span><strong>{usage.activeScreens}</strong></div>
+              <div><span>{exempt ? "Condição" : usage.trialActive ? "Teste gratuito até" : "Próximo vencimento"}</span><strong>{exempt ? "Sem cobrança" : formatDate(nextDate)}</strong></div>
+              <div><span>Plano</span><strong>Mensal por tela</strong></div>
             </div>
-          </div>
+            {usage.trialActive && !exempt && <p className="billing-clean-note">{trialCopy(usage.trialDaysRemaining)}</p>}
+            {subscription.cancel_at_period_end && !exempt && <p className="billing-clean-note">A assinatura será encerrada ao final do período atual.</p>}
+          </section>
 
-          <div className="billing-grid">
-            <section className="panel">
-              <div className="panel-title">
-                <div><h2>Sua assinatura</h2><p>Resumo das telas vinculadas à sua conta.</p></div>
-                <Monitor />
-              </div>
-              <div className="payment-line">
-                <span><b>Telas vinculadas</b><small>Telas ativas na sua conta</small></span>
-                <strong>{usage.activeScreens}</strong>
-              </div>
-              <div className="payment-line">
-                <span><b>Valor mensal</b><small>{exempt ? "Conta isenta" : "Com a quantidade atual de telas"}</small></span>
-                <strong>{money(monthlyValue)}</strong>
-              </div>
-              {!exempt && usage.trialActive && (
-                <div className="payment-line">
-                  <span><b>Período gratuito</b><small>Você ainda não será cobrado</small></span>
-                  <strong>R$ 0,00</strong>
-                </div>
-              )}
-            </section>
-
-            {exempt ? (
-              <section className="panel payment-card">
-                <div className="panel-title">
-                  <div><h2>Conta isenta</h2><p>Nenhuma forma de pagamento é necessária.</p></div>
-                  <ShieldCheck />
-                </div>
-                <div className="payment-line">
-                  <span className="screen-device-icon"><ShieldCheck /></span>
-                  <span><b>Cobranças desativadas</b><small>Esta organização não gera cobrança recorrente nem entra em suspensão financeira.</small></span>
-                </div>
-              </section>
-            ) : (
-              <section className="panel payment-card">
-                <div className="panel-title">
-                  <div><h2>Pagamento</h2><p>Gerencie sua forma de pagamento com segurança.</p></div>
-                  <CreditCard />
-                </div>
-                <div className="payment-line">
-                  <span className="mp-mark">MP</span>
-                  <span>
-                    <b>{providerConfigured ? "Forma de pagamento configurada" : providerPending ? "Configuração pendente" : "Forma de pagamento não configurada"}</b>
-                    <small>{providerConfigured ? "Sua forma de pagamento está pronta." : "Cadastre uma forma de pagamento para manter a assinatura ativa."}</small>
-                  </span>
-                </div>
-                {paymentNeeded && usage.activeScreens > 0 && role === "owner" && (
-                  <AsyncButton busy={busy} className="btn primary full" onClick={() => void checkout()}>
-                    <CreditCard /> {providerPending ? "Continuar configuração" : "Cadastrar forma de pagamento"}
-                  </AsyncButton>
-                )}
-                {paymentNeeded && usage.activeScreens === 0 && (
-                  <Link className="btn primary full" to="/telas?parear=1"><Monitor /> Conectar primeira tela</Link>
-                )}
-                {providerConfigured && !subscription.cancel_at_period_end && role === "owner" && (
-                  <AsyncButton busy={busy} className="btn secondary full" onClick={() => void cancel()}>Cancelar assinatura</AsyncButton>
-                )}
-              </section>
-            )}
-          </div>
+          <section className="panel billing-clean-method">
+            <div className="billing-clean-method-info">
+              <span className="billing-clean-method-icon">{exempt ? <ShieldCheck size={21} /> : <CreditCard size={21} />}</span>
+              <div><h2>{exempt ? "Conta isenta" : "Forma de pagamento"}</h2><p>{exempt ? "Nenhuma cobrança será gerada." : providerConfigured ? "Cadastrada para cobranças recorrentes." : providerPending ? "Configuração pendente." : "Nenhuma forma de pagamento cadastrada."}</p></div>
+            </div>
+            <div className="billing-clean-actions">
+              {paymentNeeded && usage.activeScreens > 0 && role === "owner" && <AsyncButton busy={busy} className="btn primary" onClick={() => void checkout()}>{providerPending ? "Continuar configuração" : "Cadastrar pagamento"}</AsyncButton>}
+              {paymentNeeded && usage.activeScreens === 0 && <Link className="btn primary" to="/telas?parear=1">Conectar primeira tela</Link>}
+              {providerConfigured && !subscription.cancel_at_period_end && role === "owner" && <AsyncButton busy={busy} className="btn secondary" onClick={() => void cancel()}>Cancelar assinatura</AsyncButton>}
+            </div>
+          </section>
         </>
       )}
 
       {!exempt && (
-        <section className="panel history">
-          <div className="panel-title"><div><h2>Histórico de pagamentos</h2><p>Últimos pagamentos da sua assinatura.</p></div></div>
-          <div className="table">
+        <section className="panel history billing-clean-history">
+          <div className="panel-title"><div><h2>Pagamentos</h2><p>Histórico das cobranças da assinatura.</p></div></div>
+          <div className="table billing-clean-table">
             <div className="tr th"><span>Data</span><span>Descrição</span><span>Valor</span><span>Status</span></div>
             {payments.length ? payments.map((payment) => (
               <div className="tr" key={payment.id}>
@@ -285,25 +222,21 @@ export function BillingPage() {
                 <span>{money(payment.amount_cents)}</span>
                 <span>{paymentStatus(payment.status)}</span>
               </div>
-            )) : <div className="table-empty">Nenhum pagamento registrado ainda.</div>}
+            )) : <div className="table-empty">Ainda não há pagamentos registrados.</div>}
           </div>
         </section>
       )}
 
       {!exempt && subscription?.provider_subscription_id && role === "owner" && (
-        <section className="panel history">
-          <div className="panel-title">
-            <div>
-              <h2>Verificar pagamento</h2>
-              <p>Consulta de diagnóstico. Não realiza cobranças nem modifica sua assinatura.</p>
-            </div>
-            <RefreshCw />
-          </div>
-          <AsyncButton busy={diagnosing} disabled={Date.now() < diagnosticCooldownUntil} className="btn secondary" onClick={() => void checkPayment()}>
-            <RefreshCw /> {Date.now() < diagnosticCooldownUntil ? "Aguarde para verificar novamente" : "Verificar pagamento"}
-          </AsyncButton>
-          <FormMessage error={diagnosticError} />
-          {diagnostic && (
+        <details className="billing-clean-detail">
+          <summary>Verificação de pagamento</summary>
+          <div className="billing-clean-detail-body">
+            <p>Confira a situação de uma cobrança. Esta consulta não altera sua assinatura.</p>
+            <AsyncButton busy={diagnosing} disabled={Date.now() < diagnosticCooldownUntil} className="btn secondary" onClick={() => void checkPayment()}>
+              <RefreshCw size={16} /> {Date.now() < diagnosticCooldownUntil ? "Aguarde para tentar novamente" : "Verificar pagamento"}
+            </AsyncButton>
+            <FormMessage error={diagnosticError} />
+            {diagnostic && (
             <div className="table" style={{ marginTop: 16 }}>
               <div className="payment-line">
                 <span><b>Situação da assinatura</b><small>Status informado pelo processador de pagamentos</small></span>
@@ -324,8 +257,9 @@ export function BillingPage() {
               )) : <div className="table-empty">Nenhuma fatura retornada para esta assinatura.</div>}
               {diagnostic.truncated && <p>Há outras faturas não exibidas nesta consulta.</p>}
             </div>
-          )}
-        </section>
+            )}
+          </div>
+        </details>
       )}
     </>
   );
