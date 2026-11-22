@@ -7,3 +7,5 @@
 .playlist-quick-choice span { flex: 1; font-weight: 650; }
 .playlist-quick-choice small { display: flex; gap: 4px; align-items: center; color: #347a69; }
 .playlist-quick-choice.already-added { opacity: .72; cursor: default; }
+.playlist-quick-duration{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0;font-size:14px}
+.playlist-quick-duration select{max-width:180px;min-height:38px;border:1px solid #d5deea;border-radius:9px;padding:6px 10px;background:white;color:#243449}
