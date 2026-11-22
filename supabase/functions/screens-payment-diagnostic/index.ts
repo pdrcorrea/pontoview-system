@@ -25,6 +25,7 @@ async function mpGet(path: string) {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     signal: AbortSignal.timeout(10000),
   });
+  if (response.status === 429) throw new Error("PROVIDER_RATE_LIMIT");
   if (!response.ok) throw new Error(`MP_HTTP_${response.status}`);
   return response.json();
 }
@@ -62,10 +63,9 @@ Deno.serve(async (request) => {
 
   try {
     const providerId = encodeURIComponent(subscription.provider_subscription_id);
-    const [remote, invoices] = await Promise.all([
-      mpGet(`/preapproval/${providerId}`),
-      mpGet(`/authorized_payments/search?preapproval_id=${providerId}&limit=50`),
-    ]);
+    // Sequential calls reduce burst traffic against the provider's shared rate limit.
+    const remote = await mpGet(`/preapproval/${providerId}`);
+    const invoices = await mpGet(`/authorized_payments/search?preapproval_id=${providerId}&limit=50`);
     const matches = (Array.isArray(invoices.results) ? invoices.results : [])
       .filter((invoice: Record<string, unknown>) =>
         String(invoice.preapproval_id || "") === subscription.provider_subscription_id)
@@ -95,6 +95,9 @@ Deno.serve(async (request) => {
       readOnly: true,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "PROVIDER_RATE_LIMIT") {
+      return respond({ error: "PROVIDER_RATE_LIMIT" }, 429);
+    }
     console.error("screens payment diagnostic failed", error instanceof Error ? error.message : "unknown");
     return respond({ error: "PROVIDER_LOOKUP_FAILED" }, 502);
   }
