@@ -10,6 +10,7 @@ import {
   Globe2,
   ListVideo,
   MessageSquareText,
+  Pause,
   Play,
   Save,
   Search,
@@ -115,6 +116,8 @@ export function PlaylistsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewElapsed, setPreviewElapsed] = useState(0);
   const [librarySearch, setLibrarySearch] = useState("");
   const [selectedLibraryId, setSelectedLibraryId] = useState<string | null>(null);
   const [selectedPlaylistIndex, setSelectedPlaylistIndex] = useState<number | null>(null);
@@ -126,6 +129,21 @@ export function PlaylistsPage() {
     if (!query) return media;
     return media.filter((item) => normalizeText(`${item.name} ${mediaTypeLabel(item)}`).includes(query));
   }, [librarySearch, media]);
+
+  const previewDuration = previewIndex === null ? 0 : Math.max(1, editorItems[previewIndex]?.durationSeconds || 30);
+  useEffect(() => {
+    if (!previewPlaying || previewIndex === null || !editorItems.length) return;
+    const timer = window.setInterval(() => {
+      setPreviewElapsed((elapsed) => {
+        if (elapsed + 1 < previewDuration) return elapsed + 1;
+        setPreviewIndex((index) => index === null ? null : (index + 1) % editorItems.length);
+        return 0;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [previewPlaying, previewIndex, previewDuration, editorItems.length]);
+
+  const goToPreview = (index: number) => { setPreviewIndex(index); setPreviewElapsed(0); };
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 720px)");
@@ -324,7 +342,7 @@ export function PlaylistsPage() {
             <div className="editor-summary playlist-builder-summary"><span>{editorItems.length} itens</span><span>Duração estimada: {formatDuration(editorItems.reduce((sum, item) => sum + (item.durationSeconds || 0), 0))}</span></div>
             <div className="modal-actions playlist-builder-actions">
               <button className="btn secondary" onClick={() => setEditing(null)}>Cancelar</button>
-              <button className="btn secondary" disabled={!editorItems.length} onClick={() => setPreviewIndex(0)}><Play /> Pré-visualizar</button>
+              <button className="btn secondary" disabled={!editorItems.length} onClick={() => { goToPreview(0); setPreviewPlaying(true); }}><Play /> Pré-visualizar</button>
               <AsyncButton busy={busy} className="btn primary" onClick={() => void save()}><Save /> Salvar playlist</AsyncButton>
             </div>
           </div>
@@ -332,12 +350,15 @@ export function PlaylistsPage() {
       )}
 
       {previewIndex !== null && editorItems[previewIndex] && (
-        <Modal eyebrow="PRÉ-VISUALIZAÇÃO" title={editing?.name || "Playlist"} onClose={() => setPreviewIndex(null)}>
+        <Modal eyebrow="PRÉ-VISUALIZAÇÃO" title={editing?.name || "Playlist"} onClose={() => { setPreviewIndex(null); setPreviewPlaying(false); }}>
           <div className="playlist-preview-stage"><MediaPreview item={mediaById.get(editorItems[previewIndex].mediaId)} name={editorItems[previewIndex].name} /></div>
+          <div className="playlist-preview-meta"><b>{editorItems[previewIndex].name}</b><span>{previewElapsed}s / {previewDuration}s · Próximo: {editorItems[(previewIndex + 1) % editorItems.length]?.name}</span></div>
+          <div className="playlist-preview-progress" role="progressbar" aria-label="Progresso do conteúdo" aria-valuenow={previewElapsed} aria-valuemax={previewDuration}><span style={{ width: `${previewElapsed / previewDuration * 100}%` }} /></div>
           <div className="preview-controls">
-            <button className="btn secondary" disabled={previewIndex === 0} onClick={() => setPreviewIndex((value) => Math.max(0, (value || 0) - 1))}><ChevronLeft /> Anterior</button>
+            <button className="btn secondary" onClick={() => goToPreview((previewIndex - 1 + editorItems.length) % editorItems.length)}><ChevronLeft /> Anterior</button>
+            <button className="btn secondary" onClick={() => setPreviewPlaying((playing) => !playing)}>{previewPlaying ? <Pause /> : <Play />}{previewPlaying ? "Pausar" : "Reproduzir"}</button>
             <span>{previewIndex + 1} de {editorItems.length}</span>
-            <button className="btn secondary" disabled={previewIndex === editorItems.length - 1} onClick={() => setPreviewIndex((value) => Math.min(editorItems.length - 1, (value || 0) + 1))}>Próximo <ChevronRight /></button>
+            <button className="btn secondary" onClick={() => goToPreview((previewIndex + 1) % editorItems.length)}>Próximo <ChevronRight /></button>
           </div>
         </Modal>
       )}
