@@ -10,7 +10,7 @@ const response = (body: unknown, status = 200) => new Response(JSON.stringify(bo
 });
 
 class ProviderError extends Error {
-  constructor(public status: number) { super("PROVIDER_HTTP_" + status); }
+  constructor(public status: number, public operation: string) { super("PROVIDER_HTTP_" + status + "_" + operation); }
 }
 
 async function providerGet(path: string) {
@@ -20,7 +20,7 @@ async function providerGet(path: string) {
     headers: { Authorization: "Bearer " + token, Accept: "application/json" },
     signal: AbortSignal.timeout(12000),
   });
-  if (!res.ok) throw new ProviderError(res.status);
+  if (!res.ok) throw new ProviderError(res.status, path.startsWith("/preapproval/") ? "subscription" : "invoice_search");
   return await res.json();
 }
 
