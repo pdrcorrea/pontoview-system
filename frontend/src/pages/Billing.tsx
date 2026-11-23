@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, CreditCard, Monitor, RefreshCw, ShieldCheck } from "lucide-react";
+import { Check, CreditCard, Monitor, ShieldCheck, ChevronDown, ReceiptText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import {
@@ -47,13 +47,6 @@ type BillingSummary = {
   payments: Payment[];
 };
 
-type PaymentDiagnostic = {
-  local: { status: string; providerStatus: string | null; periodEnd: string | null };
-  remote: { status: string | null; nextDebitDate: string | null; lastChargedDate: string | null; lastChargedAmount: number | null };
-  invoices: Array<{ authorizedPaymentId: string; paymentId: string | null; paymentStatus: string; invoiceStatus: string; amount: number; debitDate: string | null }>;
-  truncated: boolean;
-};
-
 export function BillingPage() {
   const { organization, role } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -62,14 +55,6 @@ export function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [diagnostic, setDiagnostic] = useState<PaymentDiagnostic | null>(null);
-  const [diagnosing, setDiagnosing] = useState(false);
-  const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
-  const [diagnosticCooldownUntil, setDiagnosticCooldownUntil] = useState(() => {
-    try { return Number(sessionStorage.getItem("pv_payment_check_cooldown") || 0); }
-    catch { return 0; }
-  });
-
   const load = useCallback(async () => {
     if (!organization) return;
     setLoading(true);
@@ -120,32 +105,6 @@ export function BillingPage() {
       setError(cause instanceof Error ? friendlyBillingError(cause.message) : "Não foi possível cancelar a assinatura.");
     } finally {
       setBusy(false);
-    }
-  };
-
-  const checkPayment = async () => {
-    if (!organization || role !== "owner") return;
-    if (Date.now() < diagnosticCooldownUntil) return;
-    setDiagnosing(true);
-    setDiagnosticError(null);
-    setDiagnostic(null);
-    try {
-      const result = await invokeFunction<PaymentDiagnostic>("screens-payment-diagnostic", {
-        organizationId: organization.id,
-      });
-      setDiagnostic(result);
-    } catch (cause) {
-      const limited = cause instanceof Error && cause.message.includes("PROVIDER_RATE_LIMIT");
-      if (limited) {
-        const cooldownUntil = Date.now() + 10 * 60_000;
-        setDiagnosticCooldownUntil(cooldownUntil);
-        try { sessionStorage.setItem("pv_payment_check_cooldown", String(cooldownUntil)); } catch { /* storage unavailable */ }
-      }
-      setDiagnosticError(limited
-        ? "A verificação está temporariamente indisponível. Aguarde pelo menos 10 minutos antes de tentar novamente."
-        : "Não foi possível atualizar as informações agora. Nenhum pagamento ou assinatura foi alterado.");
-    } finally {
-      setDiagnosing(false);
     }
   };
 
@@ -211,55 +170,49 @@ export function BillingPage() {
       )}
 
       {!exempt && (
-        <section className="panel history billing-clean-history">
-          <div className="panel-title"><div><h2>Pagamentos</h2><p>Histórico das cobranças da assinatura.</p></div></div>
-          <div className="table billing-clean-table">
-            <div className="tr th"><span>Data</span><span>Descrição</span><span>Valor</span><span>Status</span></div>
-            {payments.length ? payments.map((payment) => (
-              <div className="tr" key={payment.id}>
-                <span data-label="Data">{formatDate(payment.paid_at || payment.created_at)}</span>
-                <span data-label="Descrição">PontoView Telas</span>
-                <span data-label="Valor">{money(payment.amount_cents)}</span>
-                <span data-label="Situação">{paymentStatus(payment.status)}</span>
-              </div>
-            )) : <div className="table-empty">Ainda não há pagamentos registrados.</div>}
+        <section className="panel billing-clean-history billing-ledger">
+          <div className="panel-title">
+            <div><h2>Histórico de pagamentos</h2><p>Consulte os detalhes das suas mensalidades.</p></div>
+            <ReceiptText size={21} aria-hidden="true" />
           </div>
+          {payments.length ? (
+            <div className="billing-ledger-list">
+              {payments.map((payment) => (
+                <details className="billing-ledger-entry" key={payment.id}>
+                  <summary>
+                    <span className="billing-ledger-main">
+                      <strong>{formatDate(payment.paid_at || payment.created_at)}</strong>
+                      <small>PontoView Telas · Mensalidade</small>
+                    </span>
+                    <span className="billing-ledger-side">
+                      <strong>{money(payment.amount_cents)}</strong>
+                      <span className={`billing-ledger-badge billing-ledger-${payment.status === "approved" || payment.status === "paid" ? "paid" : payment.status === "pending" ? "pending" : "other"}`}>
+                        {paymentStatus(payment.status)}
+                      </span>
+                    </span>
+                    <ChevronDown className="billing-ledger-chevron" size={18} aria-hidden="true" />
+                  </summary>
+                  <div className="billing-ledger-details">
+                    <div><span>Descrição</span><b>Assinatura PontoView Telas</b></div>
+                    <div><span>Situação</span><b>{paymentStatus(payment.status)}</b></div>
+                    <div><span>Valor</span><b>{money(payment.amount_cents)}</b></div>
+                    <div><span>Data</span><b>{formatDate(payment.paid_at || payment.created_at)}</b></div>
+                  </div>
+                </details>
+              ))}
+            </div>
+          ) : (
+            <div className="billing-ledger-empty">
+              <ReceiptText size={24} aria-hidden="true" />
+              <strong>Nenhuma confirmação registrada</strong>
+              <p>Quando um pagamento for confirmado, ele aparecerá aqui automaticamente. Em caso de cobrança já realizada, entre em contato com o suporte.</p>
+              <Link to="/suporte" className="btn secondary">Falar com suporte</Link>
+            </div>
+          )}
         </section>
       )}
-
-      {!exempt && subscription?.provider_subscription_id && role === "owner" && (
-        <details className="billing-clean-detail">
-          <summary>Verificação de pagamento</summary>
-          <div className="billing-clean-detail-body">
-            <p>Confira a situação de uma cobrança. Esta consulta não altera sua assinatura.</p>
-            <AsyncButton busy={diagnosing} disabled={Date.now() < diagnosticCooldownUntil} className="btn secondary" onClick={() => void checkPayment()}>
-              <RefreshCw size={16} /> {Date.now() < diagnosticCooldownUntil ? "Aguarde para tentar novamente" : "Verificar pagamento"}
-            </AsyncButton>
-            <FormMessage error={diagnosticError} />
-            {diagnostic && (
-            <div className="table" style={{ marginTop: 16 }}>
-              <div className="payment-line">
-                <span><b>Situação da assinatura</b><small>Status informado pelo processador de pagamentos</small></span>
-                <strong>{diagnostic.remote.status || "Não informado"}</strong>
-              </div>
-              <div className="payment-line">
-                <span><b>Próxima cobrança prevista</b></span>
-                <strong>{diagnostic.remote.nextDebitDate ? formatDate(diagnostic.remote.nextDebitDate) : "Não informada"}</strong>
-              </div>
-              <div className="tr th"><span>Data</span><span>Pagamento</span><span>Valor</span><span>Status</span></div>
-              {diagnostic.invoices.length ? diagnostic.invoices.map((invoice) => (
-                <div className="tr" key={invoice.authorizedPaymentId}>
-                  <span data-label="Data">{invoice.debitDate ? formatDate(invoice.debitDate) : "—"}</span>
-                  <span data-label="Pagamento">{invoice.paymentId || invoice.authorizedPaymentId}</span>
-                  <span data-label="Valor">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(invoice.amount)}</span>
-                  <span data-label="Situação">{paymentStatus(invoice.paymentStatus || invoice.invoiceStatus)}</span>
-                </div>
-              )) : <div className="table-empty">Nenhuma fatura retornada para esta assinatura.</div>}
-              {diagnostic.truncated && <p>Há outras faturas não exibidas nesta consulta.</p>}
-            </div>
-            )}
-          </div>
-        </details>
+      {!exempt && usage && nextDate && !usage.trialActive && !canceled && (
+        <p className="billing-ledger-footnote">Próximo vencimento previsto: <strong>{formatDate(nextDate)}</strong>. Uma data prevista não significa que o pagamento foi confirmado.</p>
       )}
     </>
   );
