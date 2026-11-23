@@ -286,7 +286,9 @@ Deno.serve(async (req) => {
         const periodStart = subscription.current_period_start || closedUsage.periodStart;
         const periodEnd = subscription.current_period_end || closedUsage.periodEnd;
 
-        await admin.from("billing_payments").upsert(
+        // INSERT é idempotente pela chave única provider_payment_id.
+        // Um evento duplicado jamais deve avançar o período novamente.
+        const { error: paymentInsertError } = await admin.from("billing_payments").insert(
           {
             organization_id: synced.organizationId,
             subscription_id: subscription.id,
@@ -304,8 +306,11 @@ Deno.serve(async (req) => {
               unit_price_cents: closedUsage.unitPriceCents,
             },
           },
-          { onConflict: "provider_payment_id" },
         );
+        if (paymentInsertError?.code === "23505") {
+          return reply({ ok: true, approved: true, duplicate: true });
+        }
+        if (paymentInsertError) throw paymentInsertError;
 
         if (subscription.cancel_at_period_end) {
           await mp(
