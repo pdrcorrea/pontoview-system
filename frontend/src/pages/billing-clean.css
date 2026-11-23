@@ -62,3 +62,43 @@
   .billing-clean-detail-body .tr:not(.th) span:nth-child(3){grid-column:2;grid-row:1}
   .billing-clean-detail-body .tr:not(.th) span:nth-child(4){grid-column:2;grid-row:2}
 }
+
+/* Extrato financeiro: leitura imediata no desktop e no celular */
+.billing-ledger{margin-top:16px}
+.billing-ledger .panel-title{align-items:center;gap:12px}
+.billing-ledger-list{border-top:1px solid #e7ecf1}
+.billing-ledger-entry{border-bottom:1px solid #e7ecf1}
+.billing-ledger-entry summary{display:flex;align-items:center;gap:16px;padding:17px 2px;cursor:pointer;list-style:none;min-width:0}
+.billing-ledger-entry summary::-webkit-details-marker{display:none}
+.billing-ledger-main,.billing-ledger-side{display:flex;flex-direction:column;gap:5px;min-width:0}
+.billing-ledger-main{flex:1}
+.billing-ledger-main strong,.billing-ledger-side strong{font-size:14px;color:#163450}
+.billing-ledger-main small{font-size:12px;color:#6c7c8e}
+.billing-ledger-side{align-items:flex-end;text-align:right}
+.billing-ledger-badge{font-size:11px;font-weight:700;border-radius:8px;padding:4px 9px}
+.billing-ledger-paid{background:#e8f7ee;color:#167746}
+.billing-ledger-pending{background:#fff3df;color:#925c14}
+.billing-ledger-other{background:#f0f2f6;color:#5d687b}
+.billing-ledger-chevron{flex-shrink:0;color:#73869a;transition:transform .2s}
+.billing-ledger-entry[open] .billing-ledger-chevron{transform:rotate(180deg)}
+.billing-ledger-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 4px 17px}
+.billing-ledger-details>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.billing-ledger-details span{font-size:11px;color:#78889b}
+.billing-ledger-details b{font-size:12px;color:#213c57;overflow-wrap:anywhere}
+.billing-ledger-empty{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:28px 4px}
+.billing-ledger-empty svg{color:#94a5b6}
+.billing-ledger-empty strong{font-size:14px;color:#243e57}
+.billing-ledger-empty p{font-size:12px;max-width:460px;line-height:1.55;color:#697c8f;margin:0}
+.billing-ledger-empty .btn{margin-top:3px}
+.billing-ledger-footnote{font-size:12px;color:#6e7e90;line-height:1.5;margin:12px 0 0}
+@media(max-width:700px){
+  .billing-ledger{min-width:0;padding:18px!important}
+  .billing-ledger .panel-title h2{font-size:17px}
+  .billing-ledger-entry summary{gap:8px;padding:15px 0}
+  .billing-ledger-main strong,.billing-ledger-side strong{font-size:13px}
+  .billing-ledger-main small{font-size:11px;line-height:1.4}
+  .billing-ledger-badge{font-size:10px}
+  .billing-ledger-details{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .billing-ledger-footnote{padding:0 2px}
+  .billing-ledger-empty .btn{width:100%}
+}
