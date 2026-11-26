@@ -99,3 +99,4 @@ if (document.readyState === "loading") {
 } else {
   startOrientationController();
 }
+export {};

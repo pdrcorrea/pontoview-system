@@ -35,7 +35,7 @@ async function loadRuntimeConfig() {
 
 async function start() {
   await loadRuntimeConfig();
-  await import("./main.tsx");
+  await import("./main");
 }
 
 void start();
