@@ -1,0 +1,114 @@
+name: Build PontoView Player Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_signed_beta:
+        description: 'Publicar release assinado (exige certificados configurados)'
+        type: boolean
+        default: false
+  push:
+    branches:
+      - feature/windows-player-beta
+    paths:
+      - 'windows-player/**'
+      - '.github/workflows/build-windows-player.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Synchronize dependency lockfile
+        shell: pwsh
+        working-directory: windows-player
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw "Could not resolve dependency lockfile" }
+          git add package-lock.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "build(windows): refresh pinned dependency graph"
+            git push origin "HEAD:${{ github.ref_name }}"
+            if ($LASTEXITCODE -ne 0) { throw "Could not persist dependency lockfile" }
+          }
+
+      - name: Install exact locked dependencies
+        working-directory: windows-player
+        run: npm ci --no-fund
+
+      - name: Audit all dependencies (high and critical block release)
+        working-directory: windows-player
+        run: npm audit --audit-level=high
+
+      - name: Syntax and security regression tests
+        working-directory: windows-player
+        run: npm run check
+
+      - name: Require signing credentials for public distribution
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_signed_beta }}
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+        run: |
+          if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD) {
+            throw "External release blocked: configure WINDOWS_CSC_LINK and WINDOWS_CSC_KEY_PASSWORD in repository secrets."
+          }
+
+      - name: Build Windows installer
+        working-directory: windows-player
+        run: npm run build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          CSC_LINK: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_signed_beta && secrets.WINDOWS_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_signed_beta && secrets.WINDOWS_CSC_KEY_PASSWORD || '' }}
+
+      - name: Generate SHA256 checksum
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem windows-player/dist/*.exe | Select-Object -First 1
+          if (-not $exe) { throw "No installer produced" }
+          (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower() + "  " + $exe.Name | Set-Content windows-player/dist/SHA256SUMS.txt -Encoding ascii
+
+      - name: Verify signature for external release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_signed_beta }}
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem windows-player/dist/*.exe | Select-Object -First 1
+          $signature = Get-AuthenticodeSignature $exe.FullName
+          if ($signature.Status -ne "Valid") { throw "Installer signature is not valid: $($signature.Status)" }
+
+      - name: Upload beta test artifact (unsigned unless signed workflow)
+        uses: actions/upload-artifact@v4
+        with:
+          name: PontoView-Player-Windows-beta2
+          path: |
+            windows-player/dist/*.exe
+            windows-player/dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish external signed beta only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_signed_beta }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "windows-v1.0.0-beta.2"
+          $files = @(Get-ChildItem windows-player/dist/*.exe | ForEach-Object { $_.FullName })
+          $files += (Resolve-Path windows-player/dist/SHA256SUMS.txt).Path
+          gh release create $tag @files --target "${{ github.sha }}" --title "PontoView Player Windows 1.0.0 beta 2" --notes "Beta externa assinada. Verifique SHA256SUMS.txt antes de instalar." --prerelease
